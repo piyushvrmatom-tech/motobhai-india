@@ -627,3 +627,51 @@ def itinerary_pdf(req: TripRequest):
     buf.seek(0)
     filename = f"motobhai_{data['origin']}_{data['destination']}_{req.days}days.pdf".replace(' ', '_')
     return StreamingResponse(buf, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+
+# MOTOBHAI_BACKEND_V2
+import os as _os, json as _json, time as _time
+try:
+    from fastapi import APIRouter as _AR, Request as _Rq, HTTPException as _HE
+    from pydantic import BaseModel as _BM
+    _mb_router = _AR()
+    _OTP_STORE = {}
+    @_mb_router.post('/api/log')
+    async def _mb_log(req: _Rq):
+        body = await req.json()
+        webhook = _os.environ.get('SHEETS_WEBHOOK_URL','')
+        if webhook:
+            try:
+                import urllib.request as _ur
+                data = _json.dumps(body).encode('utf-8')
+                rq = _ur.Request(webhook, data=data, headers={'Content-Type':'application/json'})
+                _ur.urlopen(rq, timeout=4).read()
+            except Exception as e:
+                return {'ok': False, 'fwd_error': str(e)}
+        return {'ok': True}
+    class _OTPSend(_BM):
+        phone: str
+    @_mb_router.post('/api/otp/send')
+    async def _mb_otp_send(p: _OTPSend):
+        import random
+        code = '%06d' % random.randint(0,999999)
+        _OTP_STORE[p.phone] = {'code': code, 'exp': _time.time()+300}
+        return {'ok': True, 'sent': bool(_os.environ.get('SMS_PROVIDER_URL',''))}
+    class _OTPVer(_BM):
+        phone: str
+        code: str
+    @_mb_router.post('/api/otp/verify')
+    async def _mb_otp_verify(p: _OTPVer):
+        rec = _OTP_STORE.get(p.phone)
+        if not rec or rec['exp']<_time.time():
+            raise _HE(401,'expired')
+        if rec['code']!=p.code:
+            raise _HE(401,'invalid')
+        _OTP_STORE.pop(p.phone, None)
+        return {'ok': True, 'token': 'mb_'+str(int(_time.time()))}
+    try:
+        app.include_router(_mb_router)
+    except Exception:
+        pass
+except Exception as _e:
+    print('MB v2 init skipped:', _e)
