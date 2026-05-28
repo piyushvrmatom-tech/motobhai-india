@@ -2,6 +2,25 @@
 
 All notable changes to Moto Bhai India. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — feat/v1-pdf (stacked on feat/v1-refactor)
+
+### Added
+- **`POST /api/pdf`** — accepts `{ trip_id }`, returns a 7-day signed Cloud Storage URL to a WeasyPrint A4-landscape PDF.
+- **`services/pdf_renderer.py`** — Jinja2 template + WeasyPrint, lazy import (no startup cost if PDFs aren't used).
+- **`services/storage.py`** — GCS wrapper, V4 signed URLs with `attachment` content-disposition for clean downloads, falls back to streaming PDF if GCS isn't configured.
+- **`templates/itinerary.html`** — magazine-grade A4 landscape PDF: cover with stat grid + advisories + share URL, day-by-day with fuel/food/hotel/bhai_tip/warnings panels, appendix with pre-ride checklist + emergency numbers.
+- **8 new template tests** covering canonical Gurugram→Manali, HTML escape safety, A4 landscape declaration, page-break behaviour.
+- `PDF_BUCKET` env var (defaults to `motobhai-pdf-files`).
+- `google-cloud-storage` dependency.
+
+### Changed
+- `plan.py` now stashes `_bike_id`, `_bike_custom`, `_bike_label`, `_vibe`, `_budget_tier` on the persisted trip doc so the PDF endpoint can recover context.
+
+### Migration notes
+- Bucket `motobhai-pdf-files` must exist in `motobhai-india` GCP project before deploy (or set `PDF_BUCKET` to an existing bucket).
+- Set bucket lifecycle: delete objects after 14 days (matches our 7-day signed URL TTL + headroom).
+- `motobhai-firestore` service account needs `roles/storage.objectAdmin` on this bucket. (Optional — without it, the endpoint streams PDFs directly instead of uploading; rider still gets the file.)
+
 ## [Unreleased] — feat/v1-refactor
 
 ### Added

@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Moto Bhai — {{ trip.summary["from"] }} to {{ trip.summary["to"] }}</title>
+<style>
+  @page {
+    size: A4 landscape;
+    margin: 14mm 14mm 16mm 14mm;
+    @top-left {
+      content: "MOTO BHAI INDIA";
+      font: 700 8pt "Inter", "Helvetica", sans-serif;
+      color: #FF6A1A;
+      letter-spacing: 0.12em;
+    }
+    @top-right {
+      content: "{{ trip.summary['from'] }}  →  {{ trip.summary['to'] }}";
+      font: 600 8pt "Inter", "Helvetica", sans-serif;
+      color: #6A6A78;
+    }
+    @bottom-left {
+      content: "Generated {{ generated_at }}";
+      font: 400 7pt "Inter", "Helvetica", sans-serif;
+      color: #999;
+    }
+    @bottom-center {
+      content: "ATGATT  ·  All The Gear, All The Time";
+      font: 700 7pt "Inter", "Helvetica", sans-serif;
+      color: #FF6A1A;
+      letter-spacing: 0.08em;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " / " counter(pages);
+      font: 400 7pt "Inter", "Helvetica", sans-serif;
+      color: #999;
+    }
+  }
+
+  :root {
+    --accent: #FF6A1A;
+    --accent-soft: #FFF1E8;
+    --ink: #15151C;
+    --muted: #6A6A78;
+    --line: #E5E5EA;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", "Helvetica Neue", "Helvetica", sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  /* ─── Cover page ──────────────────────────────────────────── */
+  .cover {
+    page-break-after: always;
+    padding: 4mm 0 0;
+  }
+  .cover__eyebrow {
+    font-size: 9pt;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .cover__title {
+    font-size: 40pt;
+    line-height: 1.05;
+    margin: 6mm 0 4mm;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .cover__arrow { color: var(--accent); }
+  .cover__sub {
+    font-size: 11pt;
+    color: var(--muted);
+    margin-bottom: 8mm;
+  }
+  .cover__stats {
+    display: flex;
+    gap: 0;
+    margin-bottom: 8mm;
+    border-top: 1pt solid var(--line);
+    border-bottom: 1pt solid var(--line);
+  }
+  .cover__stat {
+    flex: 1;
+    padding: 6mm 4mm;
+    border-right: 1pt solid var(--line);
+  }
+  .cover__stat:last-child { border-right: none; }
+  .cover__stat-num {
+    font-size: 24pt;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .cover__stat-label {
+    font-size: 8pt;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2mm;
+  }
+
+  .cover__warnings {
+    background: #FFF8E1;
+    border-left: 3pt solid #D97706;
+    padding: 4mm 6mm;
+    border-radius: 0 3pt 3pt 0;
+    margin-bottom: 6mm;
+  }
+  .cover__warnings h3 {
+    margin: 0 0 2mm;
+    font-size: 9pt;
+    color: #92400E;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .cover__warnings ul { margin: 0; padding-left: 4mm; color: #78350F; }
+
+  .cover__share {
+    margin-top: 4mm;
+    font-size: 8.5pt;
+    color: var(--muted);
+  }
+  .cover__share a { color: var(--accent); font-weight: 600; }
+
+  /* ─── Day pages ───────────────────────────────────────────── */
+  .day {
+    page-break-after: always;
+  }
+  .day:last-of-type { page-break-after: avoid; }
+  .day__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 3mm;
+    margin-bottom: 5mm;
+    border-bottom: 2pt solid var(--accent);
+  }
+  .day__num {
+    font-size: 9pt;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .day__route {
+    font-size: 22pt;
+    font-weight: 800;
+    margin: 1mm 0 0;
+    letter-spacing: -0.015em;
+  }
+  .day__meta {
+    color: var(--muted);
+    font-size: 9pt;
+    font-weight: 500;
+    text-align: right;
+  }
+  .day__meta strong {
+    display: block;
+    color: var(--ink);
+    font-size: 16pt;
+    font-weight: 800;
+  }
+
+  .day__grid {
+    display: grid;
+    grid-template-columns: 5fr 4fr;
+    gap: 6mm;
+  }
+
+  .panel {
+    border: 1pt solid var(--line);
+    border-radius: 3pt;
+    padding: 4mm 5mm;
+    margin-bottom: 4mm;
+  }
+  .panel h3 {
+    font-size: 8pt;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 3mm;
+    font-weight: 700;
+  }
+  .panel table { width: 100%; border-collapse: collapse; }
+  .panel td { padding: 2mm 0; vertical-align: top; }
+  .panel td.km {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    width: 18mm;
+    font-weight: 600;
+  }
+
+  .tip {
+    background: var(--accent-soft);
+    border-left: 3pt solid var(--accent);
+    padding: 3mm 5mm;
+    border-radius: 0 3pt 3pt 0;
+    font-size: 10pt;
+    font-style: italic;
+  }
+  .tip strong { font-style: normal; color: var(--accent); font-weight: 700; }
+
+  .hotel-name { font-weight: 700; font-size: 11pt; margin-bottom: 1mm; }
+  .hotel-area { color: var(--muted); font-size: 9pt; }
+  .hotel-price { margin-top: 2mm; font-weight: 600; }
+
+  .warnings-list {
+    background: #FEF2F2;
+    border-left: 3pt solid #DC2626;
+    padding: 3mm 5mm;
+    color: #991B1B;
+    font-size: 9pt;
+    border-radius: 0 3pt 3pt 0;
+  }
+  .warnings-list ul { margin: 0; padding-left: 4mm; }
+
+  /* ─── Appendix page ───────────────────────────────────────── */
+  .appendix h2 {
+    font-size: 22pt;
+    margin: 0 0 8mm;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .appendix__cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6mm;
+  }
+  .appendix__cols h3 {
+    font-size: 9pt;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 3mm;
+    padding-bottom: 2mm;
+    border-bottom: 1pt solid var(--line);
+  }
+  .appendix__cols ul { padding-left: 4mm; margin: 0; }
+  .appendix__cols li { margin-bottom: 1.5mm; }
+
+  .emergency-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11pt;
+  }
+  .emergency-table td {
+    padding: 3mm 5mm;
+    border-bottom: 1pt solid var(--line);
+  }
+  .emergency-table td:last-child {
+    text-align: right;
+    font-weight: 800;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    font-size: 14pt;
+  }
+</style>
+</head>
+<body>
+
+{# ════════════════════════ COVER ════════════════════════ #}
+<section class="cover">
+  <div class="cover__eyebrow">Motorcycle itinerary</div>
+  <h1 class="cover__title">
+    {{ trip.summary["from"] }} <span class="cover__arrow">→</span> {{ trip.summary["to"] }}
+  </h1>
+  <p class="cover__sub">
+    {{ trip.summary["total_days"] }} days · {{ bike_label }} · {{ vibe|capitalize }} vibe
+  </p>
+
+  <div class="cover__stats">
+    <div class="cover__stat">
+      <div class="cover__stat-num">{{ trip.summary["total_km"]|round|int }}</div>
+      <div class="cover__stat-label">Total km</div>
+    </div>
+    <div class="cover__stat">
+      <div class="cover__stat-num">{{ trip.summary["max_day_km"]|round|int }}</div>
+      <div class="cover__stat-label">Longest day</div>
+    </div>
+    <div class="cover__stat">
+      <div class="cover__stat-num">₹{{ "{:,}".format(trip.summary["est_fuel_cost_inr"]|int) }}</div>
+      <div class="cover__stat-label">Fuel budget</div>
+    </div>
+    <div class="cover__stat">
+      <div class="cover__stat-num">₹{{ "{:,}".format(trip.summary["est_hotel_cost_inr"]|int) }}</div>
+      <div class="cover__stat-label">Stay budget</div>
+    </div>
+  </div>
+
+  {% if trip.warnings %}
+  <div class="cover__warnings">
+    <h3>Trip-wide advisories</h3>
+    <ul>
+      {% for w in trip.warnings %}<li>{{ w }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="cover__share">
+    Share online: <a href="{{ trip.share_url }}">{{ trip.share_url }}</a>
+    <br>Trip ID: <strong>{{ trip.trip_id }}</strong>
+  </div>
+</section>
+
+{# ════════════════════════ DAYS ════════════════════════ #}
+{% for day in trip.days_plan %}
+<section class="day">
+  <header class="day__head">
+    <div>
+      <div class="day__num">Day {{ day.day }} of {{ trip.summary["total_days"] }}</div>
+      <h2 class="day__route">{{ day["from"] }} → {{ day["to"] }}</h2>
+    </div>
+    <div class="day__meta">
+      <strong>{{ day.km|round|int }} km</strong>
+      {% if day.eta_hours %}≈ {{ day.eta_hours }} hrs riding{% endif %}
+      {% if day.elevation_gain_m %} · ↑ {{ day.elevation_gain_m }} m{% endif %}
+    </div>
+  </header>
+
+  <div class="day__grid">
+    {# LEFT column #}
+    <div>
+      {% if day.fuel_stops %}
+      <div class="panel">
+        <h3>Fuel stops</h3>
+        <table>
+          {% for fs in day.fuel_stops %}
+          <tr>
+            <td class="km">km {{ fs.km_from_start|round|int }}</td>
+            <td>{{ fs.name }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+
+      {% if day.food_stops %}
+      <div class="panel">
+        <h3>Food stops</h3>
+        <table>
+          {% for fs in day.food_stops %}
+          <tr><td>{{ fs }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+
+      {% if day.bhai_tip %}
+      <div class="tip"><strong>Bhai tip · </strong>{{ day.bhai_tip }}</div>
+      {% endif %}
+    </div>
+
+    {# RIGHT column #}
+    <div>
+      {% if day.hotel_suggestion %}
+      <div class="panel">
+        <h3>Where to stay</h3>
+        <div class="hotel-name">{{ day.hotel_suggestion.name }}</div>
+        <div class="hotel-area">{{ day.hotel_suggestion.area }}</div>
+        {% if day.hotel_suggestion.price_range_inr %}
+        <div class="hotel-price">₹ {{ day.hotel_suggestion.price_range_inr }} / night</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if day.warnings %}
+      <div class="warnings-list">
+        <strong>Heads up:</strong>
+        <ul>
+          {% for w in day.warnings %}<li>{{ w }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endfor %}
+
+{# ════════════════════════ APPENDIX ════════════════════════ #}
+<section class="appendix">
+  <h2>Pre-ride checklist</h2>
+
+  <div class="appendix__cols">
+    <div>
+      <h3>Documents</h3>
+      <ul>
+        <li>Driving licence (LL/permanent)</li>
+        <li>Bike RC</li>
+        <li>Insurance (third-party valid)</li>
+        <li>PUC certificate</li>
+        <li>Aadhaar / ID for permits</li>
+        <li>Inner Line Permit (if applicable)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Gear (ATGATT)</h3>
+      <ul>
+        <li>Full-face helmet (ISI/ECE)</li>
+        <li>CE-armoured jacket</li>
+        <li>Riding gloves</li>
+        <li>Riding pants (kevlar/CE)</li>
+        <li>Ankle boots</li>
+        <li>Rain liner / suit</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Bike check</h3>
+      <ul>
+        <li>Tyre pressure (cold) + tread</li>
+        <li>Chain lube + slack</li>
+        <li>Brake pads + fluid</li>
+        <li>Engine oil level</li>
+        <li>Headlight / indicators / horn</li>
+        <li>Tool kit + puncture kit + 12V pump</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 style="margin-top:12mm">Emergency numbers</h2>
+  <table class="emergency-table">
+    <tr><td>National Highway Patrol</td><td>1033</td></tr>
+    <tr><td>Ambulance</td><td>108</td></tr>
+    <tr><td>Police</td><td>100</td></tr>
+    <tr><td>Women's helpline</td><td>1091</td></tr>
+    <tr><td>Disaster management</td><td>108</td></tr>
+    <tr><td>Tourist helpline</td><td>1363</td></tr>
+  </table>
+
+  <p style="margin-top:14mm;color:var(--muted);font-size:8pt;text-align:center">
+    Generated by Moto Bhai India · <a href="https://motobhai-india.web.app" style="color:var(--accent);text-decoration:none">motobhai-india.web.app</a> · ride safe · ATGATT
+  </p>
+</section>
+
+</body>
+</html>
