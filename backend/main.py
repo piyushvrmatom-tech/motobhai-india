@@ -39,7 +39,7 @@ if SENTRY_DSN:
         log.warning("Sentry init failed: %s", exc)
 
 # ─── App ─────────────────────────────────────────────────────────────────────
-app = FastAPI(title="Moto Bhai India", version="1.0.0")
+app = FastAPI(title="Moto Bhai India", version="1.1.0")
 
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://motobhai-india.web.app")
 app.add_middleware(

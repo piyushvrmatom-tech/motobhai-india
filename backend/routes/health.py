@@ -10,7 +10,7 @@ from backend.services import firestore_client, gemini, routes_api
 
 router = APIRouter()
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 
 @router.get("/healthz")
