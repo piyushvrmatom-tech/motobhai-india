@@ -134,7 +134,14 @@ def create_plan(req: PlanRequest) -> PlanResponse:
     )
 
     # Persist (best-effort) + log (fire-and-forget).
-    firestore_client.save_trip(trip_id, response.model_dump(mode="json", by_alias=True))
+    persisted = response.model_dump(mode="json", by_alias=True)
+    # Stash the original inputs so /api/pdf can recover bike/vibe context.
+    persisted["_bike_id"] = req.bike_id
+    persisted["_bike_custom"] = req.bike_custom
+    persisted["_bike_label"] = bike_label
+    persisted["_vibe"] = req.vibe
+    persisted["_budget_tier"] = req.budget_tier
+    firestore_client.save_trip(trip_id, persisted)
     sheets_logger.log_event_sync(
         "plan_created",
         trip_id=trip_id,

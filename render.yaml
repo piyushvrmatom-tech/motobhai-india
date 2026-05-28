@@ -6,6 +6,9 @@ services:
     rootDir: .
     plan: free
     region: singapore
+    # WeasyPrint needs pango/cairo system libs. Render's standard Python runtime
+    # ships them; if a future image change breaks this, /api/pdf returns 502 with
+    # a clear error (it does NOT crash the rest of the service).
     buildCommand: pip install -r backend/requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /healthz
@@ -35,5 +38,7 @@ services:
         value: https://motobhai-india.web.app
       - key: SHARE_BASE_URL
         value: https://motobhai-india.web.app
+      - key: PDF_BUCKET
+        value: motobhai-pdf-files
       - key: ENV
         value: production
