@@ -4,6 +4,9 @@ import { api } from "/assets/js/api.js";
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+const RIDES_KEY = "mb_rides_v1";
+const RIDES_MAX = 10;
+
 const els = {
   form: $("#plan-form"),
   from: $("#from"),
@@ -30,6 +33,10 @@ const els = {
   kmRing: $("#km-ring"),
   kmAvg: $("#km-avg"),
   kmFill: $(".km-ring__fill"),
+  openMyRides: $("#open-my-rides"),
+  ridesDrawer: $("#my-rides-drawer"),
+  ridesList: $("#rides-list"),
+  ridesSub: $("#my-rides-sub"),
 };
 
 const state = {
@@ -145,8 +152,11 @@ els.form.addEventListener("submit", async (e) => {
     const trip = await api.plan(payload);
     state.lastTrip = trip;
     renderItinerary(trip);
-    // Persist last trip locally for "My Rides" + offline
-    try { localStorage.setItem("mb_last_trip", JSON.stringify(trip)); } catch {}
+    // Persist for "My Rides" + offline. Keep last 10 trips by trip_id.
+    try {
+      localStorage.setItem("mb_last_trip", JSON.stringify(trip));
+      saveToRides(trip);
+    } catch {}
     api.log("plan_succeeded", { trip_id: trip.trip_id });
   } catch (err) {
     console.error(err);
@@ -242,6 +252,94 @@ els.btnShare.addEventListener("click", async () => {
 function escape(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+// ─── My Rides ────────────────────────────────────────────────────────────
+function loadRides() {
+  try { return JSON.parse(localStorage.getItem(RIDES_KEY) || "[]"); } catch { return []; }
+}
+
+function saveToRides(trip) {
+  if (!trip?.trip_id) return;
+  const compact = {
+    trip_id: trip.trip_id,
+    share_url: trip.share_url,
+    created_at: trip.created_at || new Date().toISOString(),
+    summary: {
+      from: trip.summary?.from,
+      to: trip.summary?.to,
+      total_km: trip.summary?.total_km,
+      total_days: trip.summary?.total_days,
+      max_day_km: trip.summary?.max_day_km,
+      est_fuel_cost_inr: trip.summary?.est_fuel_cost_inr,
+    },
+  };
+  const existing = loadRides().filter((r) => r.trip_id !== trip.trip_id);
+  const next = [compact, ...existing].slice(0, RIDES_MAX);
+  localStorage.setItem(RIDES_KEY, JSON.stringify(next));
+}
+
+function formatWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const diffMin = Math.round((Date.now() - d) / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const hr = Math.round(diffMin / 60);
+  if (hr < 24) return `${hr} hr ago`;
+  const days = Math.round(hr / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function renderRidesList() {
+  const rides = loadRides();
+  els.ridesSub.textContent = rides.length
+    ? `${rides.length} ride${rides.length === 1 ? "" : "s"} saved on this device`
+    : "No rides saved yet";
+  els.ridesList.innerHTML = "";
+  if (!rides.length) {
+    const empty = document.createElement("li");
+    empty.className = "rides-empty";
+    empty.textContent = "Plan a ride and it'll show up here.";
+    els.ridesList.appendChild(empty);
+    return;
+  }
+  for (const r of rides) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.className = "ride-row";
+    a.href = r.share_url || "#";
+    a.target = "_blank";
+    a.rel = "noopener";
+    const s = r.summary || {};
+    a.innerHTML = `
+      <div class="ride-row__route">${escape(s.from || "?")} → ${escape(s.to || "?")}</div>
+      <div class="ride-row__meta">${s.total_days || "—"} days · ${Math.round(s.total_km || 0)} km${s.est_fuel_cost_inr ? " · ₹" + s.est_fuel_cost_inr.toLocaleString("en-IN") + " fuel" : ""}</div>
+      <div class="ride-row__when">${formatWhen(r.created_at)}</div>
+    `;
+    li.appendChild(a);
+    els.ridesList.appendChild(li);
+  }
+}
+
+function openDrawer() {
+  renderRidesList();
+  els.ridesDrawer.hidden = false;
+  document.body.style.overflow = "hidden";
+  document.addEventListener("keydown", drawerKeyHandler);
+}
+function closeDrawer() {
+  els.ridesDrawer.hidden = true;
+  document.body.style.overflow = "";
+  document.removeEventListener("keydown", drawerKeyHandler);
+}
+function drawerKeyHandler(e) { if (e.key === "Escape") closeDrawer(); }
+
+els.openMyRides?.addEventListener("click", openDrawer);
+els.ridesDrawer?.addEventListener("click", (e) => {
+  if (e.target.dataset.dismiss !== undefined) closeDrawer();
+});
 
 // ─── Boot ────────────────────────────────────────────────────────────────
 updateDays();
