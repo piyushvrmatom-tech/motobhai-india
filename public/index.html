@@ -1,903 +1,445 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moto Bhai India — Motorcycle Trip Planner</title>
-  <meta name="description" content="Smart motorcycle trip planner for India. Get smart itineraries with fuel stops, scenic routes, and shareable Google Maps links.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2056%22%3E%3Cpath%20d%3D%22M24%2054C24%2054%2044%2036%2044%2022C44%2011%2035%202%2024%202C13%202%204%2011%204%2022C4%2036%2024%2054%2024%2054Z%22%20stroke%3D%22black%22%20stroke-width%3D%223%22%20fill%3D%22none%22/%3E%3Cpath%20d%3D%22M15%2028C15%2028%2014%2024%2015%2020C16%2016%2019%2013%2024%2012C29%2011%2033%2014%2034%2018C35%2022%2034%2026%2033%2028C32%2030%2028%2031%2024%2031C20%2031%2016%2030%2015%2028Z%22%20fill%3D%22black%22/%3E%3Cpath%20d%3D%22M28%2019C29%2020%2030%2022%2030%2024C30%2025%2029%2026%2027%2026C25%2026%2024%2025%2024%2024C24%2022%2025%2020%2026%2019C27%2018.5%2027.5%2018.5%2028%2019Z%22%20fill%3D%22white%22/%3E%3C/svg%3E">
-  <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#d96b1a">
+<title>Moto Bhai India</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 56'%3E%3Cpath d='M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z' stroke='%23d96b1a' stroke-width='3' fill='none'/%3E%3Cpath d='M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z' fill='%23d96b1a'/%3E%3C/svg%3E">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    :root, [data-theme="light"] {
-      --color-bg: #faf9f6;
-      --color-surface: #ffffff;
-      --color-surface-2: #f5f4f1;
-      --color-surface-offset: #eeece8;
-      --color-border: #e2dfd9;
-      --color-divider: #eae7e2;
-      --color-text: #1a1815;
-      --color-text-muted: #6b6860;
-      --color-text-faint: #a8a49c;
-      --color-primary: #d96b1a;
-      --color-primary-hover: #c45e15;
-      --color-primary-active: #a84f10;
-      --color-primary-light: rgba(217, 107, 26, 0.08);
-      --color-accent: #1a6b4a;
-      --color-accent-light: rgba(26, 107, 74, 0.08);
-      --color-error: #c4342b;
-      --color-error-light: rgba(196, 52, 43, 0.06);
-      --color-success: #2a7a3e;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
-      --shadow-lg: 0 12px 40px rgba(0,0,0,0.1);
-      --radius-sm: 0.375rem;
-      --radius-md: 0.625rem;
-      --radius-lg: 1rem;
-      --radius-xl: 1.25rem;
-      --radius-full: 9999px;
-      --font-display: 'Cabinet Grotesk', sans-serif;
-      --font-body: 'Satoshi', sans-serif;
-      --transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
+<style>
+:root{--bg:#faf9f6;--surface:#fff;--surface-2:#f5f4f1;--surface-3:#eeece8;--border:#e2dfd9;--text:#1a1815;--text-2:#6b6860;--text-3:#a8a49c;--primary:#d96b1a;--primary-h:#c45e15;--primary-a:#a84f10;--primary-lx:rgba(217,107,26,.1);--accent:#1a6b4a;--error:#c4342b;--warn:#92600a;--warn-bg:#fff8e1;--success:#2a7a3e;--shadow-sm:0 1px 3px rgba(0,0,0,.04);--shadow-md:0 4px 16px rgba(0,0,0,.07);--shadow-lg:0 12px 40px rgba(0,0,0,.12);--r-sm:.375rem;--r-md:.625rem;--r-lg:1rem;--r-xl:1.25rem;--r-full:9999px;--font-d:'Cabinet Grotesk',sans-serif;--font-b:'Satoshi',sans-serif;--ease:cubic-bezier(.16,1,.3,1);--t:220ms var(--ease)}
+@media(prefers-color-scheme:dark){:root{--bg:#111009;--surface:#1c1b18;--surface-2:#232220;--surface-3:#2a2926;--border:#3a3835;--text:#e8e6e1;--text-2:#9c9890;--text-3:#5c5a55;--primary:#f0883a;--primary-h:#f79b55;--primary-a:#d97028;--primary-lx:rgba(240,136,58,.12);--shadow-sm:0 1px 3px rgba(0,0,0,.2);--shadow-md:0 4px 20px rgba(0,0,0,.35);--shadow-lg:0 12px 48px rgba(0,0,0,.5);--warn-bg:#2a1f00}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);line-height:1.6;min-height:100dvh;overflow-x:hidden;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+img,svg{display:block;max-width:100%}
+button{cursor:pointer;font-family:inherit;border:none;background:none}
+input{font-family:inherit}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:var(--font-d);line-height:1.2}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.hidden{display:none!important}
 
-    [data-theme="dark"] {
-      --color-bg: #141310;
-      --color-surface: #1c1b18;
-      --color-surface-2: #232220;
-      --color-surface-offset: #2a2926;
-      --color-border: #3a3835;
-      --color-divider: #2e2c29;
-      --color-text: #e8e6e1;
-      --color-text-muted: #9c9890;
-      --color-text-faint: #5c5a55;
-      --color-primary: #f0883a;
-      --color-primary-hover: #f79b55;
-      --color-primary-active: #fdb06e;
-      --color-primary-light: rgba(240, 136, 58, 0.1);
-      --color-accent: #3ebd7a;
-      --color-accent-light: rgba(62, 189, 122, 0.1);
-      --color-error: #f06b63;
-      --color-error-light: rgba(240, 107, 99, 0.08);
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.25);
-      --shadow-lg: 0 12px 40px rgba(0,0,0,0.35);
-    }
+/* LOGIN GATE */
+.login-gate{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:1.5rem;animation:fadeIn .4s var(--ease) both}
+.login-gate.hidden{display:none}
+.login-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:2rem 1.75rem;box-shadow:var(--shadow-lg);animation:slideUp .5s var(--ease) both}
+.login-logo{display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem}
+.login-logo svg{width:32px;height:37px;color:var(--primary)}
+.login-logo-txt{font-family:var(--font-d);font-weight:800;font-size:1.2rem}
+.login-logo-txt span{color:var(--primary)}
+.login-card h2{font-size:1.4rem;font-weight:800;margin-bottom:.375rem}
+.login-card>p{font-size:.875rem;color:var(--text-2);margin-bottom:1.5rem;line-height:1.5}
+.phone-row{display:flex;gap:.5rem;margin-bottom:.75rem}
+.phone-prefix{display:flex;align-items:center;gap:.4rem;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:0 .875rem;font-size:.9rem;font-weight:600;color:var(--text-2);white-space:nowrap}
+.phone-input{flex:1;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.75rem 1rem;font-size:1rem;color:var(--text);outline:none;transition:border-color var(--t);min-height:48px}
+.phone-input:focus{border-color:var(--primary);background:var(--surface)}
+.otp-section{display:none}.otp-section.visible{display:block}
+.otp-row{display:flex;gap:.5rem;margin:.75rem 0;justify-content:center}
+.otp-input{width:44px;height:52px;text-align:center;font-size:1.25rem;font-weight:700;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);outline:none;transition:border-color var(--t)}
+.otp-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-lx)}
+.btn-primary{display:block;width:100%;padding:.875rem 1rem;background:var(--primary);color:#fff;font-weight:700;font-size:.95rem;border-radius:var(--r-md);border:none;transition:all var(--t);min-height:48px}
+.btn-primary:hover{background:var(--primary-h);transform:translateY(-1px)}
+.btn-primary:active{background:var(--primary-a);transform:none}
+.btn-primary:disabled{opacity:.5;pointer-events:none}
+.login-divider{display:flex;align-items:center;gap:.75rem;margin:1rem 0 .5rem}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.login-divider span{font-size:.75rem;color:var(--text-3)}
+.btn-ghost{display:block;width:100%;padding:.8rem 1rem;background:transparent;border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text-2);font-size:.9rem;font-weight:600;transition:all var(--t);min-height:48px}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-lx)}
+.login-error{color:var(--error);font-size:.8rem;margin:.4rem 0 .6rem;min-height:1rem}
+.login-footer{font-size:.75rem;color:var(--text-3);margin-top:1rem;text-align:center}
 
-    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
-    body {
-      min-height: 100dvh;
-      font-family: var(--font-body);
-      font-size: 16px;
-      line-height: 1.6;
-      color: var(--color-text);
-      background: var(--color-bg);
-    }
+/* HEADER */
+.header{position:sticky;top:0;z-index:100;background:rgba(250,249,246,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:calc(.875rem + env(safe-area-inset-top,0px)) 1.25rem .875rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+@media(prefers-color-scheme:dark){.header{background:rgba(17,16,9,.88)}}
+.logo{display:flex;align-items:center;gap:.5rem}
+.logo svg{width:26px;height:30px;color:var(--primary);flex-shrink:0}
+.logo-txt{font-family:var(--font-d);font-weight:800;font-size:1.1rem}.logo-txt span{color:var(--primary)}
+.header-actions{display:flex;align-items:center;gap:.5rem}
+.header-btn{display:flex;align-items:center;gap:.375rem;padding:.5rem .875rem;border-radius:var(--r-full);font-size:.8125rem;font-weight:600;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);transition:all var(--t);min-height:36px}
+.header-btn:hover{background:var(--surface-3);color:var(--text)}
+.header-btn.primary-hb{background:var(--primary);color:#fff;border-color:var(--primary)}
+#signOutBtn{display:none}
 
-    /* ===== HEADER ===== */
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.5rem;
-      background: var(--color-bg);
-      border-bottom: 1px solid var(--color-divider);
-      backdrop-filter: blur(12px);
-    }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      text-decoration: none;
-      color: var(--color-text);
-    }
-    .logo svg { width: 32px; height: 38px; }
-    .logo-text { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
-    .logo-text span { color: var(--color-primary); }
-    .header-actions { display: flex; align-items: center; gap: 0.5rem; }
-    .header-btn {
-      padding: 0.5rem 0.75rem;
-      border-radius: var(--radius-full);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      color: var(--color-text-muted);
-      cursor: pointer;
-      transition: all var(--transition);
-      background: none;
-      border: none;
-    }
-    .header-btn:hover { color: var(--color-text); background: var(--color-surface-2); }
+/* HERO */
+.hero{position:relative;overflow:hidden;background:var(--primary);padding:3.5rem 1.25rem 4rem;text-align:center}
+.hero-bg-svg{position:absolute;inset:0;opacity:.07;pointer-events:none;width:100%;height:100%}
+.hero-tag{display:inline-flex;align-items:center;gap:.375rem;background:rgba(255,255,255,.2);color:#fff;border-radius:var(--r-full);padding:.3rem .875rem;font-size:.8125rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1rem}
+.hero h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;color:#fff;margin-bottom:.625rem;line-height:1.15}
+.hero h1 span{display:block;font-size:.58em;font-weight:500;opacity:.85;margin-top:.25em;letter-spacing:.01em}
+.hero-sub{color:rgba(255,255,255,.82);font-size:clamp(.875rem,2.5vw,1rem);max-width:460px;margin:0 auto 1.5rem}
+.hero-pills{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+.hero-pill{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-full);padding:.3rem .875rem;font-size:.8rem;font-weight:600}
 
-    /* ===== LOGIN GATE ===== */
-    .login-gate {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--color-bg);
-      transition: opacity 0.4s, visibility 0.4s;
-    }
-    .login-gate.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-    .login-card {
-      width: min(420px, 90vw);
-      padding: 2.5rem 2rem;
-      background: var(--color-surface);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-lg);
-      text-align: center;
-    }
-    .login-card h2 { font-family: var(--font-display); font-size: 1.375rem; margin: 1.25rem 0 0.5rem; }
-    .login-card p { color: var(--color-text-muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
-    .phone-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
-    .phone-prefix {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0 1rem;
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      font-size: 0.9375rem;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .phone-input {
-      flex: 1;
-      padding: 0.875rem 1rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      font-size: 1rem;
-      background: var(--color-surface);
-      color: var(--color-text);
-      outline: none;
-      transition: border-color var(--transition);
-    }
-    .phone-input:focus { border-color: var(--color-primary); }
-    .otp-row { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
-    .otp-input {
-      width: 44px; height: 52px;
-      text-align: center;
-      font-size: 1.25rem;
-      font-weight: 600;
-      border: 1.5px solid var(--color-border);
-      border-radius: var(--radius-md);
-      background: var(--color-surface);
-      color: var(--color-text);
-      outline: none;
-      transition: border-color var(--transition);
-    }
-    .otp-input:focus { border-color: var(--color-primary); }
-    .btn-primary {
-      width: 100%;
-      padding: 0.875rem;
-      background: var(--color-primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-md);
-      font-size: 0.9375rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background var(--transition), transform var(--transition);
-    }
-    .btn-primary:hover { background: var(--color-primary-hover); }
-    .btn-primary:active { transform: scale(0.98); background: var(--color-primary-active); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .login-error { color: var(--color-error); font-size: 0.8125rem; margin-bottom: 0.75rem; }
-    .login-footer { margin-top: 1.25rem; font-size: 0.75rem; color: var(--color-text-faint); }
-    .otp-section { display: none; }
-    .otp-section.active { display: block; }
-    .phone-section.hidden { display: none; }
+/* SEARCH BAR */
+.search-bar-wrap{max-width:600px;margin:-2rem auto 0;position:relative;z-index:10;padding:0 1.25rem}
+.search-bar{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-full);padding:.6rem .6rem .6rem 1.25rem;box-shadow:var(--shadow-lg);transition:border-color var(--t),box-shadow var(--t)}
+.search-bar:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-lx),var(--shadow-lg)}
+.search-input{flex:1;background:transparent;border:none;outline:none;font-size:1rem;color:var(--text);min-width:0}
+.search-input::placeholder{color:var(--text-3)}
+.search-btn{background:var(--primary);color:#fff;border-radius:var(--r-full);padding:.6rem 1.25rem;font-size:.9rem;font-weight:700;transition:all var(--t);white-space:nowrap;min-height:40px}
+.search-btn:hover{background:var(--primary-h);transform:scale(1.02)}
+.autocomplete-list{position:absolute;top:calc(100% + .5rem);left:1.25rem;right:1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);overflow:hidden;z-index:200;animation:slideDown .2s var(--ease) both}
+.autocomplete-item{padding:.875rem 1.25rem;font-size:.9375rem;cursor:pointer;transition:background var(--t);display:flex;align-items:center;gap:.75rem}
+.autocomplete-item:hover,.autocomplete-item.active{background:var(--surface-2)}
 
-    /* ===== HERO ===== */
-    .hero {
-      padding: 4rem 1.5rem 3rem;
-      text-align: center;
-      max-width: 720px;
-      margin: 0 auto;
-    }
-    .hero h1 {
-      font-family: var(--font-display);
-      font-size: clamp(2rem, 1rem + 4vw, 3.5rem);
-      font-weight: 800;
-      line-height: 1.1;
-      margin-bottom: 0.75rem;
-    }
-    .hero h1 span { color: var(--color-primary); }
-    .hero p {
-      font-size: clamp(0.9375rem, 0.875rem + 0.25vw, 1.0625rem);
-      color: var(--color-text-muted);
-      max-width: 520px;
-      margin: 0 auto 2rem;
-    }
+/* MAIN */
+.main-wrap{max-width:720px;margin:0 auto;padding:1.5rem 1.25rem calc(6rem + env(safe-area-inset-bottom,0px))}
+@media(min-width:640px){.main-wrap{padding:2rem 1.5rem 3rem}}
+.dest-chip{display:inline-flex;align-items:center;gap:.5rem;background:var(--primary-lx);border:1.5px solid var(--primary);border-radius:var(--r-full);padding:.4rem .75rem .4rem 1rem;font-size:.9rem;font-weight:600;color:var(--primary);margin:1.25rem 0 .5rem;animation:fadeIn .3s var(--ease) both}
+.dest-chip button{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--primary);color:#fff;font-size:.65rem;font-weight:700;transition:all var(--t);flex-shrink:0}
 
-    /* ===== SEARCH BAR ===== */
-    .search-container {
-      max-width: 560px;
-      margin: 0 auto;
-      position: relative;
-    }
-    .search-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem 0.75rem 1.25rem;
-      background: var(--color-surface);
-      border: 1.5px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-md);
-      transition: border-color var(--transition), box-shadow var(--transition);
-    }
-    .search-bar:focus-within {
-      border-color: var(--color-primary);
-      box-shadow: var(--shadow-lg), 0 0 0 3px var(--color-primary-light);
-    }
-    .search-icon { color: var(--color-text-faint); flex-shrink: 0; }
-    .search-input {
-      flex: 1;
-      border: none;
-      outline: none;
-      font-size: 1rem;
-      background: transparent;
-      color: var(--color-text);
-      font-family: var(--font-body);
-    }
-    .search-input::placeholder { color: var(--color-text-faint); }
-    .search-go {
-      padding: 0.625rem 1.25rem;
-      background: var(--color-primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-full);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      white-space: nowrap;
-    }
-    .search-go:hover { background: var(--color-primary-hover); }
-    .search-go:disabled { opacity: 0.4; cursor: not-allowed; }
+/* CONFIG CARD */
+.config-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:1rem}
+.config-section{padding:1.125rem 1.25rem;border-bottom:1px solid var(--border)}
+.config-section:last-child{border-bottom:none}
+.config-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.75rem}
+.trip-pills{display:flex;gap:.375rem;flex-wrap:wrap}
+.trip-pill{flex:1;min-width:80px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.625rem .5rem;font-size:.8125rem;font-weight:700;color:var(--text-2);transition:all var(--t);text-align:center;min-height:44px}
+.trip-pill:hover,.trip-pill.active{background:var(--primary-lx);border-color:var(--primary);color:var(--primary)}
+.origin-row{display:flex;align-items:center;gap:.625rem;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.75rem 1rem;cursor:pointer;transition:border-color var(--t)}
+.origin-row:hover{border-color:var(--primary)}
+.origin-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.origin-name{flex:1;font-size:.9375rem;color:var(--text);font-weight:500}
+.origin-change{font-size:.8rem;color:var(--text-3);font-weight:600}
+.origin-input-wrap{margin-top:.5rem;display:none}
+.origin-input-wrap.visible{display:block}
+.origin-input{width:100%;background:var(--surface-2);border:1.5px solid var(--primary);border-radius:var(--r-md);padding:.75rem 1rem;font-size:.9375rem;color:var(--text);outline:none;min-height:48px}
+.vibe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem}
+@media(min-width:400px){.vibe-grid{grid-template-columns:repeat(4,1fr)}}
+.vibe-chip{background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.75rem .5rem;text-align:center;cursor:pointer;transition:all var(--t);min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem}
+.vibe-chip:hover,.vibe-chip.active{border-color:var(--primary);background:var(--primary-lx)}
+.vibe-icon{font-size:1.375rem}
+.vibe-label{font-size:.75rem;font-weight:700;color:var(--text-2)}
+.vibe-chip.active .vibe-label{color:var(--primary)}
+.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:.625rem}
+@media(min-width:480px){.details-grid{grid-template-columns:repeat(4,1fr)}}
+.detail-field{display:flex;flex-direction:column;gap:.35rem}
+.detail-field.full{grid-column:1/-1}
+.detail-label{font-size:.75rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
+.detail-input{background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.75rem .875rem;font-size:.9375rem;color:var(--text);outline:none;transition:border-color var(--t);min-height:48px;width:100%}
+.detail-input:focus{border-color:var(--primary);background:var(--surface)}
+.generate-btn{width:100%;padding:1rem;background:var(--primary);color:#fff;font-size:1.05rem;font-weight:800;border-radius:var(--r-xl);border:none;box-shadow:0 4px 24px rgba(217,107,26,.35);transition:all var(--t);min-height:56px;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:1rem}
+.generate-btn:hover{background:var(--primary-h);transform:translateY(-2px);box-shadow:0 8px 32px rgba(217,107,26,.45)}
+.generate-btn:active{transform:none;box-shadow:0 4px 16px rgba(217,107,26,.3)}
+.generate-btn:disabled{opacity:.55;pointer-events:none;transform:none}
 
-    /* Location badge after selection */
-    .selected-destination {
-      display: none;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 1rem;
-      padding: 0.625rem 1rem;
-      background: var(--color-accent-light);
-      border: 1px solid var(--color-accent);
-      border-radius: var(--radius-full);
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--color-accent);
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .selected-destination.visible { display: flex; }
-    .selected-destination .remove {
-      cursor: pointer;
-      opacity: 0.6;
-      transition: opacity var(--transition);
-    }
-    .selected-destination .remove:hover { opacity: 1; }
+/* AI STATUS */
+.ai-status{display:none;background:var(--primary-lx);border:1px solid rgba(217,107,26,.2);border-radius:var(--r-lg);padding:1rem 1.25rem;margin-top:1rem;flex-direction:column;gap:.375rem}
+.ai-status.visible{display:flex;animation:fadeIn .3s var(--ease) both}
+.ai-status-top{display:flex;align-items:center;gap:.75rem}
+.ai-spinner{width:18px;height:18px;border:2.5px solid var(--primary-lx);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;flex-shrink:0}
+.ai-status-text{font-size:.9rem;font-weight:600;color:var(--primary)}
+.ai-substatus{font-size:.8rem;color:var(--text-2);padding-left:1.625rem}
 
-    /* ===== TRIP CONFIG (appears after destination) ===== */
-    .trip-config {
-      max-width: 560px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-      opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 0.4s, transform 0.4s;
-      pointer-events: none;
-      height: 0;
-      overflow: hidden;
-    }
-    .trip-config.visible {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: all;
-      height: auto;
-      overflow: visible;
-      margin-top: 2rem;
-    }
+/* SKELETON */
+.skeleton-wrap{display:none}
+.skeleton-wrap.visible{display:block;animation:fadeIn .4s var(--ease) both;margin-top:.75rem}
+.sk-hdr{background:linear-gradient(90deg,var(--surface-3) 25%,var(--surface-2) 50%,var(--surface-3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r-lg);height:72px;margin-bottom:1rem}
+.sk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.25rem;margin-bottom:.75rem}
+.sk-line{background:linear-gradient(90deg,var(--surface-3) 25%,var(--surface-2) 50%,var(--surface-3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r-sm);margin-bottom:.625rem}
+.sk-line.h4{height:14px}.sk-line.h3{height:11px}.sk-line.w60{width:60%}.sk-line.w80{width:80%}.sk-line.w40{width:40%}
 
-    .config-section { margin-bottom: 1.5rem; }
-    .config-label {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--color-text-muted);
-      margin-bottom: 0.625rem;
-    }
+/* RESULTS */
+#results{display:none}
+.results-banner{background:var(--primary);border-radius:var(--r-xl);padding:1.5rem 1.25rem;margin-bottom:1rem;position:relative;overflow:hidden}
+.results-banner-svg{position:absolute;inset:0;opacity:.06;pointer-events:none;width:100%;height:100%}
+.results-route{font-size:clamp(1.05rem,3.5vw,1.45rem);font-weight:800;color:#fff;margin-bottom:.5rem;font-family:var(--font-d)}
+.results-stats{display:flex;gap:.625rem;flex-wrap:wrap;margin-top:.875rem}
+.r-stat{background:rgba(255,255,255,.18);border-radius:var(--r-md);padding:.375rem .75rem;color:#fff;font-size:.8rem;font-weight:700}
+.share-card{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
+.share-card-lbl{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.625rem}
+.share-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.share-url-txt{flex:1;min-width:120px;font-size:.8rem;color:var(--text-2);background:var(--surface-2);border-radius:var(--r-sm);padding:.375rem .625rem;word-break:break-all}
+.share-actions{display:flex;gap:.375rem;flex-wrap:wrap}
+.share-btn{padding:.5rem .875rem;border-radius:var(--r-md);font-size:.8125rem;font-weight:700;transition:all var(--t);white-space:nowrap;min-height:36px}
+.share-btn.copy{background:var(--surface-2);border:1px solid var(--border);color:var(--text)}
+.share-btn.copy:hover{border-color:var(--primary);color:var(--primary)}
+.share-btn.whatsapp{background:#25D366;color:#fff;border:none}
+.share-btn.view{background:var(--primary-lx);color:var(--primary);border:1.5px solid var(--primary)}
+.stats-bar{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1rem}
+@media(min-width:480px){.stats-bar{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem .875rem;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-value{font-size:1.25rem;font-weight:800;color:var(--primary);font-family:var(--font-d);line-height:1.2}
+.stat-label{font-size:.75rem;color:var(--text-3);font-weight:600;margin-top:.25rem;text-transform:uppercase;letter-spacing:.04em}
+.map-wrap{border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);margin-bottom:1rem;box-shadow:var(--shadow-sm);height:280px}
+@media(min-width:768px){.map-wrap{height:360px}}
+#map{height:100%;width:100%}
+.itin-title{font-size:.875rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:.875rem;display:flex;align-items:center;gap:.5rem}
+.itin-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.timeline{position:relative;padding-left:2.25rem}
+.timeline::before{content:'';position:absolute;left:.75rem;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--primary),var(--primary) 80%,transparent);border-radius:2px}
+.day-card{position:relative;margin-bottom:1rem;animation:slideUp .4s var(--ease) both}
+.day-card:nth-child(1){animation-delay:.05s}.day-card:nth-child(2){animation-delay:.1s}.day-card:nth-child(3){animation-delay:.15s}.day-card:nth-child(4){animation-delay:.2s}.day-card:nth-child(5){animation-delay:.25s}
+.timeline-dot{position:absolute;left:-1.5625rem;top:1.25rem;width:14px;height:14px;border-radius:50%;background:var(--primary);border:2.5px solid var(--bg);box-shadow:0 0 0 2px var(--primary)}
+.day-inner{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow var(--t),transform var(--t)}
+.day-inner:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.day-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem .875rem;border-bottom:1px solid var(--border);gap:.75rem}
+.day-num{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;font-size:.75rem;font-weight:800;flex-shrink:0}
+.day-route-txt{flex:1;font-weight:700;font-size:.95rem;min-width:0;color:var(--text)}
+.day-km-badge{background:var(--primary-lx);color:var(--primary);border-radius:var(--r-full);padding:.3rem .75rem;font-size:.8rem;font-weight:800;white-space:nowrap}
+.day-meta{padding:.625rem 1.25rem;background:var(--surface-2);font-size:.8rem;color:var(--text-2);border-bottom:1px solid var(--border);display:flex;gap:1rem;flex-wrap:wrap}
+.day-stops{padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}
+.stop-row{display:flex;align-items:flex-start;gap:.75rem}
+.stop-icon{font-size:.95rem;flex-shrink:0;width:20px;text-align:center;margin-top:.1rem}
+.stop-name{font-size:.875rem;font-weight:600;color:var(--text)}
+.stop-pill{display:inline-block;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:.15rem .45rem;border-radius:var(--r-sm);margin-left:.375rem}
+.pill-fuel{background:#e8f5e9;color:#2e7d32}.pill-food{background:#fff3e8;color:#e65100}.pill-stay{background:#f3e5f5;color:#6a1b9a}
+@media(prefers-color-scheme:dark){.pill-fuel{background:rgba(46,125,50,.25);color:#81c784}.pill-food{background:rgba(230,81,0,.2);color:#ffb74d}.pill-stay{background:rgba(106,27,154,.25);color:#ce93d8}}
+.bhai-tip{margin:.25rem 1.25rem .875rem;background:var(--primary-lx);border-left:3px solid var(--primary);border-radius:0 var(--r-md) var(--r-md) 0;padding:.625rem .875rem;font-size:.8375rem;color:var(--text-2)}
 
-    /* Trip type pills */
-    .trip-types { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .trip-pill {
-      padding: 0.5rem 1rem;
-      border: 1.5px solid var(--color-border);
-      border-radius: var(--radius-full);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all var(--transition);
-      background: var(--color-surface);
-      color: var(--color-text);
-    }
-    .trip-pill:hover { border-color: var(--color-primary); color: var(--color-primary); }
-    .trip-pill.active {
-      background: var(--color-primary);
-      color: #fff;
-      border-color: var(--color-primary);
-    }
+/* DESKTOP ACTION BAR */
+.results-actions{display:none}
+@media(min-width:640px){
+  .results-actions{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+  .action-btn{padding:.7rem 1.125rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);font-size:.875rem;font-weight:700;color:var(--text);transition:all var(--t);min-height:40px}
+  .action-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-lx)}
+}
 
-    /* Origin section */
-    .origin-section {
-      display: none;
-      margin-top: 1rem;
-      padding: 1rem;
-      background: var(--color-surface-2);
-      border-radius: var(--radius-lg);
-    }
-    .origin-section.visible { display: block; }
-    .origin-auto {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      color: var(--color-text-muted);
-    }
-    .origin-auto .dot {
-      width: 8px; height: 8px;
-      background: var(--color-success);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-    .origin-name { font-weight: 500; color: var(--color-text); }
-    .origin-manual {
-      display: block;
-      margin-top: 0.5rem;
-      font-size: 0.75rem;
-      color: var(--color-primary);
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 0;
-    }
-    .origin-input-wrap { display: none; margin-top: 0.75rem; }
-    .origin-input-wrap.visible { display: block; }
-    .origin-input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      font-size: 0.875rem;
-      background: var(--color-surface);
-      color: var(--color-text);
-      outline: none;
-    }
-    .origin-input:focus { border-color: var(--color-primary); }
+/* MOBILE BOTTOM BAR */
+.bottom-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -8px 32px rgba(0,0,0,.1);padding:.75rem 1rem calc(.75rem + env(safe-area-inset-bottom,0px));gap:.5rem}
+.bottom-bar.visible{display:flex}
+@media(min-width:640px){.bottom-bar{display:none!important}}
+.bb-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:.625rem .25rem;transition:all var(--t);min-height:52px;justify-content:center}
+.bb-btn:hover{background:var(--primary-lx);border-color:var(--primary)}
+.bb-icon{font-size:1.1rem}.bb-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2)}
+.bb-btn:hover .bb-label{color:var(--primary)}
+.bb-btn.bb-primary{background:var(--primary);border-color:var(--primary);flex:1.6}
+.bb-btn.bb-primary .bb-icon,.bb-btn.bb-primary .bb-label{color:#fff}
+.bb-btn.bb-primary:hover{background:var(--primary-h)}
 
-    /* Bike & Details */
-    .details-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-    }
-    .details-grid .full { grid-column: 1 / -1; }
-    .detail-input {
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      font-size: 0.875rem;
-      background: var(--color-surface);
-      color: var(--color-text);
-      outline: none;
-      width: 100%;
-      transition: border-color var(--transition);
-    }
-    .detail-input:focus { border-color: var(--color-primary); }
-    .detail-input::placeholder { color: var(--color-text-faint); }
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:500;display:none;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(min-width:640px){.modal-overlay{align-items:center}}
+.modal-overlay.visible{display:flex}
+.modal{background:var(--surface);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:1.5rem 1.5rem 2rem;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;animation:slideUp .35s var(--ease) both}
+@media(min-width:640px){.modal{border-radius:var(--r-xl);padding:2rem;max-height:70vh}}
 
-    /* Preferences chips (optional) */
-    .prefs-wrap { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-    .pref-chip {
-      padding: 0.375rem 0.75rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all var(--transition);
-      background: var(--color-surface);
-      color: var(--color-text-muted);
-    }
-    .pref-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
-    .pref-chip.active {
-      background: var(--color-primary-light);
-      border-color: var(--color-primary);
-      color: var(--color-primary);
-      font-weight: 500;
-    }
-
-    /* Generate button */
-    .generate-btn {
-      width: 100%;
-      padding: 1rem;
-      margin-top: 1.5rem;
-      background: var(--color-primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-lg);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-    .generate-btn:hover { background: var(--color-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .generate-btn:active { transform: scale(0.98); }
-    .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .generate-btn .spinner {
-      width: 18px; height: 18px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      display: none;
-    }
-    .generate-btn.loading .spinner { display: block; }
-    .generate-btn.loading .btn-text { display: none; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ===== RESULTS ===== */
-    .results {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 0 1.5rem 4rem;
-      display: none;
-    }
-    .results.visible { display: block; }
-
-    .results-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-    .results-header h2 {
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-    .results-actions { display: flex; gap: 0.5rem; }
-    .action-btn {
-      padding: 0.5rem 0.875rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all var(--transition);
-      background: var(--color-surface);
-      color: var(--color-text);
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-    }
-    .action-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
-
-    /* Stats bar */
-    .stats-bar {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-    }
-    .stat {
-      flex: 1;
-      min-width: 120px;
-      padding: 0.75rem 1rem;
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      text-align: center;
-    }
-    .stat-value { font-size: 1.125rem; font-weight: 700; color: var(--color-text); font-variant-numeric: tabular-nums; }
-    .stat-label { font-size: 0.6875rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.125rem; }
-
-    /* Map */
-    .map-container {
-      height: 300px;
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      margin-bottom: 1.5rem;
-      border: 1px solid var(--color-border);
-    }
-    #map { width: 100%; height: 100%; }
-
-    /* Itinerary days */
-    .day-card {
-      padding: 1.25rem;
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      margin-bottom: 0.75rem;
-      transition: box-shadow var(--transition);
-    }
-    .day-card:hover { box-shadow: var(--shadow-sm); }
-    .day-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-    .day-num {
-      font-family: var(--font-display);
-      font-size: 0.8125rem;
-      font-weight: 700;
-      color: var(--color-primary);
-      text-transform: uppercase;
-    }
-    .day-distance { font-size: 0.75rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
-    .day-route {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-    .day-details { font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.7; }
-    .day-details strong { color: var(--color-text); font-weight: 500; }
-    .day-tag {
-      display: inline-block;
-      padding: 0.2rem 0.5rem;
-      background: var(--color-surface-2);
-      border-radius: var(--radius-sm);
-      font-size: 0.6875rem;
-      font-weight: 500;
-      color: var(--color-text-muted);
-      margin-right: 0.25rem;
-      margin-top: 0.375rem;
-    }
-
-    /* AI thinking indicator */
-    .ai-thinking {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      padding: 3rem 1.5rem;
-      text-align: center;
-    }
-    .ai-thinking.visible { display: flex; }
-    .ai-dots { display: flex; gap: 6px; }
-    .ai-dots span {
-      width: 10px; height: 10px;
-      background: var(--color-primary);
-      border-radius: 50%;
-      animation: bounce 1.4s ease-in-out infinite;
-    }
-    .ai-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .ai-dots span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-      40% { transform: scale(1); opacity: 1; }
-    }
-    .ai-thinking p { font-size: 0.875rem; color: var(--color-text-muted); }
-
-    /* ===== ABOUT MODAL ===== */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 10000;
-      background: rgba(0,0,0,0.5);
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-      padding: 1.5rem;
-    }
-    .modal-overlay.visible { opacity: 1; visibility: visible; }
-    .modal {
-      background: var(--color-surface);
-      border-radius: var(--radius-xl);
-      padding: 2rem;
-      max-width: 440px;
-      width: 100%;
-      box-shadow: var(--shadow-lg);
-      position: relative;
-    }
-    .modal-close {
-      position: absolute; top: 1rem; right: 1rem;
-      background: none; border: none; cursor: pointer;
-      color: var(--color-text-muted); font-size: 1.25rem;
-    }
-    .modal h3 { font-family: var(--font-display); font-size: 1.25rem; margin-bottom: 0.75rem; }
-    .modal p { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.7; margin-bottom: 0.75rem; }
-    .modal-links { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
-    .modal-link {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
-      font-size: 0.8125rem;
-      color: var(--color-text);
-      text-decoration: none;
-      transition: all var(--transition);
-    }
-    .modal-link:hover { border-color: var(--color-primary); color: var(--color-primary); }
-
-    /* ===== FOOTER ===== */
-    .footer {
-      text-align: center;
-      padding: 2rem 1.5rem;
-      font-size: 0.75rem;
-      color: var(--color-text-faint);
-      border-top: 1px solid var(--color-divider);
-    }
-
-    /* ===== RECAPTCHA HIDE ===== */
-    .grecaptcha-badge { visibility: hidden !important; }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 600px) {
-      .hero { padding: 2.5rem 1rem 2rem; }
-      .hero h1 { font-size: 1.75rem; }
-      .details-grid { grid-template-columns: 1fr; }
-      .stats-bar { flex-direction: column; }
-      .stat { min-width: unset; }
-      .search-bar { padding: 0.625rem 0.75rem 0.625rem 1rem; }
-    }
-
-    /* PAC container styling */
-    .pac-container {
-      border-radius: var(--radius-md) !important;
-      border: 1px solid var(--color-border) !important;
-      box-shadow: var(--shadow-lg) !important;
-      margin-top: 4px !important;
-      font-family: var(--font-body) !important;
-    }
-    .pac-item { padding: 0.625rem 1rem !important; font-size: 0.875rem !important; }
-    .pac-item:hover { background: var(--color-surface-2) !important; }
-  
-.detail-field{display:flex;flex-direction:column;gap:6px;}
-.detail-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9aa;}
-.detail-field .detail-input{width:100%;}
-.it-hero{background:linear-gradient(135deg,#1b1f24,#2a2f37);border:1px solid #333;border-radius:18px;padding:22px 24px;margin:18px 0;}
-.it-hero h2{margin:0 0 6px;font-size:24px;color:#fff;}
-.it-hero .sub{color:#9aa;font-size:13px;}
-.it-actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 4px;}
-.it-actions .btn{background:#d96b1a;color:#fff;border:0;padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-size:14px;}
-.it-actions .btn.alt{background:#2a2f37;border:1px solid #444;}
-.it-actions .btn:hover{filter:brightness(1.1);}
-.day-card{background:#1b1f24;border:1px solid #2c313a;border-radius:14px;padding:18px 20px;margin:14px 0;}
-.day-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
-.day-title{font-size:18px;font-weight:700;color:#f0c674;}
-.day-meta{color:#9aa;font-size:13px;}
-.day-route{font-size:14px;color:#cfd3d8;margin:6px 0 12px;}
-.timeline{border-left:2px solid #d96b1a;margin:10px 0 12px 6px;padding-left:14px;}
-.tl-item{margin:0 0 8px;font-size:14px;line-height:1.45;color:#e5e7eb;}
-.tl-time{display:inline-block;min-width:56px;font-weight:700;color:#d96b1a;}
-.tl-loc{color:#9aa;font-size:12px;display:block;margin-left:60px;}
-.day-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;}
-.day-pill{background:#0f1216;border:1px solid #2c313a;border-radius:10px;padding:10px 12px;font-size:13px;color:#e5e7eb;}
-.day-pill b{display:block;color:#d96b1a;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
-.budget-card,.tips-card,.attr-card{background:#1b1f24;border:1px solid #2c313a;border-radius:14px;padding:18px 20px;margin:14px 0;}
-.budget-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:10px;}
-.budget-item{background:#0f1216;border:1px solid #2c313a;border-radius:10px;padding:10px 12px;text-align:center;}
-.budget-item .v{font-size:18px;font-weight:700;color:#f0c674;}
-.budget-item .l{font-size:11px;color:#9aa;text-transform:uppercase;letter-spacing:.06em;}
-.budget-total{margin-top:10px;font-size:16px;font-weight:700;color:#d96b1a;}
-.tip{padding:6px 0;border-bottom:1px solid #2c313a;font-size:13px;line-height:1.5;color:#e5e7eb;}
-.tip:last-child{border-bottom:0;}
-.tip b{color:#f0c674;}
-.section-h{font-size:13px;font-weight:700;color:#d96b1a;letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;}
-.attr-list li{margin:4px 0;color:#e5e7eb;font-size:13px;}
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+:focus-visible{outline:2.5px solid var(--primary);outline-offset:2px;border-radius:var(--r-sm)}
+@media(min-width:768px){.hero{padding:4.5rem 2rem 5rem}.search-bar-wrap{padding:0 2rem}}
 </style>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww&libraries=places&callback=initAutocomplete" async defer></script>
 </head>
 <body>
-  <!-- LOGIN GATE -->
-  <div class="login-gate" id="loginGate">
-    <div class="login-card">
-      <svg width="48" height="56" viewBox="0 0 48 56" fill="none" aria-label="Moto Bhai Logo">
-        <path d="M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z" stroke="currentColor" stroke-width="3" fill="none"/>
-        <path d="M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z" fill="currentColor"/>
-        <path d="M28 19 C29 20 30 22 30 24 C30 25 29 26 27 26 C25 26 24 25 24 24 C24 22 25 20 26 19 C27 18.5 27.5 18.5 28 19Z" fill="var(--color-bg, #fff)"/>
-      </svg>
-      <h2>Sign in to Moto Bhai</h2>
-      <p>Enter your Indian mobile number to get started with motorcycle trip planning.</p>
 
-      <div class="phone-section" id="phoneSection">
-        <div class="phone-row">
-          <div class="phone-prefix">🇮🇳 +91</div>
-          <input class="phone-input" id="phoneInput" type="tel" placeholder="99101 00771" maxlength="12" autocomplete="tel">
-        </div>
-        <div class="login-error" id="phoneError" style="display:none;"></div>
-        <button class="btn-primary" id="sendOtpBtn">Send OTP</button>
+<!-- LOGIN GATE -->
+<div class="login-gate" id="loginGate">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 48 56" fill="none"><path d="M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z" stroke="currentColor" stroke-width="3" fill="none"/><path d="M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z" fill="currentColor"/><path d="M28 19 C29 20 30 22 30 24 C30 25 29 26 27 26 C25 26 24 25 24 24 C24 22 25 20 26 19 C27 18.5 27.5 18.5 28 19Z" fill="var(--bg,#fff)"/></svg>
+      <div class="login-logo-txt">Moto<span>Bhai</span></div>
+    </div>
+    <h2>Plan your ride</h2>
+    <p>Sign in with your Indian mobile to save &amp; share trips — or continue as guest.</p>
+    <div id="phoneSection">
+      <div class="phone-row">
+        <div class="phone-prefix">&#127470;&#127475; +91</div>
+        <input class="phone-input" id="phoneInput" type="tel" placeholder="99101 00771" maxlength="12" autocomplete="tel" inputmode="tel">
       </div>
+      <div class="login-error" id="phoneError"></div>
+      <button class="btn-primary" id="sendOtpBtn">Send OTP</button>
+    </div>
+    <div class="otp-section" id="otpSection">
+      <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:.75rem">Enter the 6-digit code sent to your number</p>
+      <div class="otp-row">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="0">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="1">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="2">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="3">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="4">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="5">
+      </div>
+      <div class="login-error" id="otpError"></div>
+      <button class="btn-primary" id="verifyOtpBtn">Verify &amp; Continue</button>
+    </div>
+    <div class="login-divider"><span>or</span></div>
+    <button class="btn-ghost" id="guestBtn">Continue as Guest &#128100;</button>
+    <div class="login-footer">Sign in to save &amp; share trips &#127470;&#127475;</div>
+  </div>
+</div>
 
-      <div class="otp-section" id="otpSection">
-        <p style="font-size:0.8125rem; color:var(--color-text-muted); margin-bottom:1rem;">Enter the 6-digit code sent to your number</p>
-        <div class="otp-row">
-          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="0">
-          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="1">
-          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="2">
-          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="3">
-          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="4">
-          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="5">
-        </div>
-        <div class="login-error" id="otpError" style="display:none;"></div>
-        <button class="btn-primary" id="verifyOtpBtn">Verify & Continue</button>
-      </div>
+<!-- HEADER -->
+<header class="header">
+  <a href="#" class="logo">
+    <svg viewBox="0 0 48 56" fill="none"><path d="M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z" stroke="currentColor" stroke-width="3" fill="none"/><path d="M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z" fill="currentColor"/><path d="M28 19 C29 20 30 22 30 24 C30 25 29 26 27 26 C25 26 24 25 24 24 C24 22 25 20 26 19 C27 18.5 27.5 18.5 28 19Z" fill="var(--bg,#fff)"/></svg>
+    <span class="logo-txt">Moto<span>Bhai</span></span>
+  </a>
+  <div class="header-actions">
+    <button class="header-btn" id="aboutBtn">About</button>
+    <button class="header-btn primary-hb hidden" id="signOutBtn">Sign out</button>
+  </div>
+</header>
 
-      <div class="login-divider" style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;">
-        <div style="flex:1;height:1px;background:var(--color-border,#e5e5e5)"></div>
-        <span style="font-size:0.75rem;color:var(--color-text-muted,#888)">or</span>
-        <div style="flex:1;height:1px;background:var(--color-border,#e5e5e5)"></div>
-      </div>
-      <button id="guestBtn" style="width:100%;background:transparent;border:1.5px solid var(--color-border,#e5e5e5);border-radius:12px;padding:11px;font-size:0.9rem;font-weight:600;cursor:pointer;color:var(--color-text-muted,#666);margin-bottom:4px;transition:all .2s">
-        Continue as Guest 👤
-      </button>
-      <div class="login-footer">Sign in to save and share trips 🇮🇳</div>
+<!-- HERO -->
+<section class="hero">
+  <svg class="hero-bg-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path d="M680 180 C650 140 600 120 550 130 L520 135 L500 100 L460 90 L420 95 L400 120 L380 125 C360 130 340 150 330 175 L320 200 L310 220 C305 235 310 255 325 265 C340 275 360 270 370 258 C380 248 382 232 375 220 L370 210 L440 205 L460 225 C470 240 488 248 508 245 C528 242 542 228 542 208 L542 200 L600 195 L620 215 C630 228 645 235 662 232 C680 228 692 215 692 198 C692 190 688 183 680 180Z M420 95 L450 95 L465 120 L415 125Z M500 100 L510 100 L525 125 L498 127Z" fill="white"/>
+    <circle cx="342" cy="242" r="38" fill="none" stroke="white" stroke-width="6"/>
+    <circle cx="342" cy="242" r="18" fill="none" stroke="white" stroke-width="4"/>
+    <circle cx="666" cy="215" r="38" fill="none" stroke="white" stroke-width="6"/>
+    <circle cx="666" cy="215" r="18" fill="none" stroke="white" stroke-width="4"/>
+  </svg>
+  <div class="hero-tag">&#129349; AI Route Planner</div>
+  <h1>Where are you riding?<span>Fuel &#183; Food &#183; Hotels &#183; Tips</span></h1>
+  <p class="hero-sub">Tell your Bhai the destination &#8212; get a full itinerary for any Indian route in seconds.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">&#127956; Manali &#183; Leh</span>
+    <span class="hero-pill">&#127754; Coastal Karnataka</span>
+    <span class="hero-pill">&#127963; Rajasthan Circuit</span>
+    <span class="hero-pill">&#127807; Northeast Loop</span>
+  </div>
+</section>
+
+<!-- SEARCH BAR -->
+<div class="search-bar-wrap">
+  <div class="search-bar">
+    <span style="font-size:1.1rem">&#128205;</span>
+    <input class="search-input" id="destinationInput" type="text" placeholder="Enter destination city..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="search-btn" id="searchGoBtn">Plan Ride &#8594;</button>
+  </div>
+  <div id="originAuto" style="display:none" class="autocomplete-list"></div>
+</div>
+
+<!-- MAIN -->
+<main class="main-wrap">
+  <div id="selectedDest" style="display:none">
+    <div class="dest-chip">
+      <span id="destName"></span>
+      <button id="removeDest" aria-label="Remove">&#10005;</button>
     </div>
   </div>
 
-  <!-- HEADER -->
-  <header class="header">
-    <a href="#" class="logo">
-      <svg viewBox="0 0 48 56" fill="none" aria-label="Moto Bhai Logo">
-        <!-- Pin shape -->
-        <path d="M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z" stroke="currentColor" stroke-width="3" fill="none"/>
-        <!-- Helmet body -->
-        <path d="M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z" fill="currentColor"/>
-        <!-- Visor -->
-        <path d="M28 19 C29 20 30 22 30 24 C30 25 29 26 27 26 C25 26 24 25 24 24 C24 22 25 20 26 19 C27 18.5 27.5 18.5 28 19Z" fill="var(--color-bg, #fff)"/>
-        <!-- Chin guard line -->
-        <path d="M16 26 C17 27 20 28 24 28" stroke="var(--color-bg, #fff)" stroke-width="0.5" fill="none"/>
-      </svg>
-      <div class="logo-text">Moto<span>Bhai</span></div>
-    </a>
-    <button id="signOutBtn" onclick="localStorage.removeItem('mb_token');location.reload();" style="display:none;background:none;border:1px solid var(--color-border);border-radius:8px;padding:6px 14px;font-size:0.8rem;cursor:pointer;color:var(--color-text-muted)">Sign Out</button>
-    <script>if(localStorage.getItem('mb_token')) document.getElementById('signOutBtn').style.display='block';</script>
-    <div class="header-actions">
-      <button class="header-btn" id="aboutBtn">About</button>
-      <button class="header-btn" data-theme-toggle aria-label="Toggle theme">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- HERO + SEARCH -->
-  <section class="hero">
-    <h1>Where do you want to <span>ride?</span></h1>
-    <p>Search your destination — let Moto Bhai craft a smart motorcycle itinerary with stops, fuel, food, and a shareable route.</p>
-
-    <div class="search-container">
-      <div class="search-bar">
-        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input class="search-input" id="destinationInput" type="text" placeholder="Goa, Manali, Spiti Valley..." autocomplete="off">
-        <button class="search-go" id="searchGoBtn" disabled>Let's Ride</button>
+  <div id="tripConfig" style="display:none">
+    <div class="config-card">
+      <div class="config-section">
+        <div class="config-label">Trip Type</div>
+        <div class="trip-pills">
+          <button class="trip-pill active" data-type="round">&#128260; Round Trip</button>
+          <button class="trip-pill" data-type="oneway">&#10145;&#65039; One Way</button>
+          <button class="trip-pill" data-type="multi">&#128205; Multi-Stop</button>
+        </div>
       </div>
-      <div class="selected-destination" id="selectedDest">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span id="destName"></span>
-        <span class="remove" id="removeDest">✕</span>
+      <div class="config-section" id="originSection">
+        <div class="config-label">Starting From</div>
+        <div class="origin-row" id="originAuto2">
+          <div class="origin-dot"></div>
+          <span class="origin-name" id="originName">Detecting location&#8230;</span>
+          <span class="origin-change">Change</span>
+        </div>
+        <div class="origin-input-wrap" id="originInputWrap">
+          <input class="origin-input" id="originInput" type="text" placeholder="Enter your starting city&#8230;">
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-label">Ride Vibe</div>
+        <div class="vibe-grid" id="vibeGrid">
+          <button class="vibe-chip active" data-vibe="scenic"><div class="vibe-icon">&#127956;&#65039;</div><div class="vibe-label">Scenic</div></button>
+          <button class="vibe-chip" data-vibe="offroad"><div class="vibe-icon">&#129704;</div><div class="vibe-label">Off-Road</div></button>
+          <button class="vibe-chip" data-vibe="express"><div class="vibe-icon">&#9889;</div><div class="vibe-label">Express</div></button>
+          <button class="vibe-chip" data-vibe="adventure"><div class="vibe-icon">&#127957;&#65039;</div><div class="vibe-label">Adventure</div></button>
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-label">Ride Details</div>
+        <div class="details-grid">
+          <div class="detail-field full"><label class="detail-label" for="bikeInput">Motorcycle</label><input class="detail-input" id="bikeInput" type="text" placeholder="e.g. RE Himalayan 450"></div>
+          <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage km/L</label><input class="detail-input" id="mileageInput" type="number" placeholder="35" min="10" max="80"></div>
+          <div class="detail-field"><label class="detail-label" for="daysInput">Days</label><input class="detail-input" id="daysInput" type="number" placeholder="3" min="1" max="30" value="3"></div>
+          <div class="detail-field"><label class="detail-label" for="ridersInput">Riders</label><input class="detail-input" id="ridersInput" type="number" placeholder="2" min="1" max="10" value="2"></div>
+        </div>
       </div>
     </div>
-  </section>
-
-  <!-- TRIP CONFIGURATION -->
-  <div class="trip-config" id="tripConfig">
-    <div class="config-section">
-      <div class="config-label">Trip Type</div>
-      <div class="trip-types">
-        <button class="trip-pill active" data-type="round">🔄 Round Trip</button>
-        <button class="trip-pill" data-type="oneway">➡️ One Way</button>
-        <button class="trip-pill" data-type="multi">📍 Multi-Stop</button>
-      </div>
-    </div>
-
-    <div class="origin-section visible" id="originSection">
-      <div class="origin-auto" id="originAuto">
-        <span class="dot"></span>
-        <span>Starting from: </span>
-        <span class="origin-name" id="originName">Detecting location...</span>
-      </div>
-      <button class="origin-manual" id="originManualBtn">Change starting location</button>
-      <div class="origin-input-wrap" id="originInputWrap">
-        <input class="origin-input" id="originInput" type="text" placeholder="Enter your starting city...">
-      </div>
-    </div>
-
-    <div class="config-section" style="margin-top:1.25rem;">
-      <div class="config-label">Ride Details</div>
-      <div class="details-grid">
-        <div class="detail-field"><label class="detail-label" for="bikeInput">Motorcycle</label><input class="detail-input full" id="bikeInput" type="text" placeholder="Motorcycle (e.g. RE Classic 350)"></div>
-        <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage (km/L)</label><input class="detail-input" id="mileageInput" type="number" placeholder="Mileage (km/l)" min="10" max="80"></div>
-        <div class="detail-field"><label class="detail-label" for="daysInput">Trip Days</label><input class="detail-input" id="daysInput" type="number" placeholder="Days" min="1" max="30" value="3"></div>
-        <div class="detail-field"><label class="detail-label" for="ridersInput">Riders</label><input class="detail-input" id="ridersInput" type="number" placeholder="Riders" min="1" max="10" value="2"></div>
-      </div>
-    </div>
-
-    <div class="config-section">
-      <div class="config-label">Vibes (optional)</div>
-      <div class="prefs-wrap">
-        <button class="pref-chip" data-pref="scenic">🏔️ Scenic</button>
-        <button class="pref-chip" data-pref="offroad">🛤️ Offroad</button>
-        <button class="pref-chip" data-pref="coastal">🏖️ Coastal</button>
-        <button class="pref-chip" data-pref="food">🍛 Food Stops</button>
-        <button class="pref-chip" data-pref="heritage">🏛️ Heritage</button>
-        <button class="pref-chip" data-pref="nightlife">🌃 Nightlife</button>
-        <button class="pref-chip" data-pref="wildlife">🐘 Wildlife</button>
-        <button class="pref-chip" data-pref="budget">💰 Budget</button>
-      </div>
-    </div>
-
     <button class="generate-btn" id="generateBtn">
-      <span class="spinner"></span>
-      <span class="btn-text">✨ Generate Smart Itinerary</span>
+      <span>&#129949;&#65039;</span><span id="generateBtnText">Generate My Itinerary</span>
     </button>
+    <div class="ai-status" id="aiStatus">
+      <div class="ai-status-top">
+        <div class="ai-spinner"></div>
+        <span class="ai-status-text">Your Bhai is planning the route&#8230;</span>
+      </div>
+      <div class="ai-substatus" id="aiThinking">Calculating fuel stops &amp; hotels</div>
+    </div>
   </div>
 
-  <!-- AI THINKING -->
-  <div class="ai-thinking" id="aiThinking">
-    <div class="ai-dots"><span></span><span></span><span></span></div>
-    <p id="aiStatus">Moto Bhai is planning your route...</p>
+  <!-- SKELETON -->
+  <div class="skeleton-wrap" id="skeletonWrap">
+    <div class="sk-hdr"></div>
+    <div class="sk-card"><div class="sk-line h4 w60"></div><div class="sk-line h3 w80"></div><div class="sk-line h3 w40"></div></div>
+    <div class="sk-card"><div class="sk-line h4 w60"></div><div class="sk-line h3 w80"></div></div>
+    <div class="sk-card"><div class="sk-line h4 w60"></div><div class="sk-line h3 w80"></div><div class="sk-line h3 w40"></div></div>
   </div>
 
   <!-- RESULTS -->
-  <div class="results" id="results">
-    <div class="results-header">
-      <h2 id="resultsTitle">Your Ride Plan</h2>
-      <div id="shareCard" style="display:none;background:var(--color-surface,#1e2329);border:1px solid var(--color-border,#2a2f37);border-radius:14px;padding:14px 16px;margin-bottom:16px;"></div>
-      <div class="results-actions">
-        <button class="action-btn" id="shareBtn">📤 Share</button>
-        <button class="action-btn" id="pdfBtn">📄 PDF</button>
-        <button class="action-btn" id="mapsBtn">🗺️ Google Maps</button>
-        <button class="action-btn" id="newTripBtn">+ New Trip</button>
+  <div id="results">
+    <div class="results-banner" id="resultsBanner">
+      <svg class="results-banner-svg" viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <path d="M340 70 C325 52 298 44 275 48 L260 50 L250 33 L230 28 L210 30 L200 46 L190 48 C180 51 170 62 165 78 L160 92 L155 103 C152 111 155 122 163 128 C171 133 181 130 186 122 L188 115 L220 112 L230 124 C235 132 244 137 254 135 C264 132 271 123 271 113 L271 108 L300 105 L310 116 C315 123 323 127 331 125 C340 123 346 115 346 106 C346 93 344 77 340 70Z" fill="white"/>
+      </svg>
+      <div class="results-route" id="resultsTitle">Route</div>
+      <div class="results-stats" id="resultsBadges"></div>
+    </div>
+    <div class="share-card" id="shareCard">
+      <div class="share-card-lbl">Share this trip</div>
+      <div class="share-row">
+        <div class="share-url-txt" id="shareUrlText"></div>
+        <div class="share-actions" id="shareActions"></div>
       </div>
     </div>
     <div class="stats-bar" id="statsBar"></div>
-    <div class="map-container"><div id="map"></div></div>
-    <div id="itineraryCards"></div>
-  </div>
-
-  <!-- ABOUT MODAL -->
-  <div class="modal-overlay" id="aboutModal">
-    <div class="modal">
-      <button class="modal-close" id="closeAbout">✕</button>
-      <h3>About Moto Bhai</h3>
-      <p>Built by <strong>Piyush Verma</strong> — a motorcycle enthusiast, builder, and Indian road trip addict. Moto Bhai generates smart, rideable itineraries based on real Indian roads.</p>
-      <p>Routes are generated using real map data and smart algorithms. Always verify road conditions before riding.</p>
-      <div class="modal-links">
-        <a class="modal-link" href="https://github.com/piyushvrmatom-tech" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a class="modal-link" href="mailto:piyushvrma.tom@gmail.com">Email</a>
-        <a class="modal-link" href="https://www.linkedin.com/in/piyush-verma-motobhai" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      </div>
+    <div class="results-actions" id="resultsActions" style="display:none">
+      <button class="action-btn" id="shareBtn">&#128228; Share</button>
+      <button class="action-btn" id="pdfBtn">&#128196; PDF</button>
+      <button class="action-btn" id="mapsBtn">&#128506;&#65039; Maps</button>
+      <button class="action-btn" id="newTripBtn">+ New Trip</button>
+    </div>
+    <div class="map-wrap"><div id="map"></div></div>
+    <div style="margin-bottom:1rem">
+      <div class="itin-title">Day-by-Day Itinerary</div>
+      <div class="timeline" id="itineraryCards"></div>
     </div>
   </div>
+</main>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <p>Moto Bhai India © 2026 · Built with ❤️ by Piyush Verma · Smart route itineraries</p>
-  </footer>
+<!-- MOBILE BOTTOM BAR -->
+<div class="bottom-bar" id="bottomBar">
+  <button class="bb-btn" id="bbShare"><div class="bb-icon">&#128228;</div><div class="bb-label">Share</div></button>
+  <button class="bb-btn bb-primary" id="bbPdf"><div class="bb-icon">&#128196;</div><div class="bb-label">PDF</div></button>
+  <button class="bb-btn" id="bbMaps"><div class="bb-icon">&#128506;</div><div class="bb-label">Maps</div></button>
+  <button class="bb-btn" id="bbNew"><div class="bb-icon">+</div><div class="bb-label">New</div></button>
+</div>
 
-  <div id="recaptcha-container"></div>
+<!-- ABOUT MODAL -->
+<div class="modal-overlay" id="aboutModal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:1.25rem;font-weight:800">About Moto Bhai</h2>
+      <button id="closeAbout" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--text-2)">&#10005;</button>
+    </div>
+    <p style="color:var(--text-2);font-size:.9rem;line-height:1.7;margin-bottom:1rem">Moto Bhai India is your AI-powered motorcycle trip co-pilot. Powered by Gemini AI, Google Routes API and 112 Indian bikes database. Built for Indian roads.</p>
+    <div style="background:var(--primary-lx);border-radius:var(--r-lg);padding:1rem;font-size:.875rem;color:var(--text-2);line-height:1.6">
+      &#129949; <strong>ATGATT:</strong> All The Gear, All The Time.<br>Helmet &#183; Jacket &#183; Gloves &#183; Boots &#183; Riding Pants. Every ride.
+    </div>
+  </div>
+</div>
 
-  <!-- SCRIPTS -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
+<div id="recaptcha-container" style="display:none"></div>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww&libraries=places&callback=initAutocomplete" async defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
     // ===== FIREBASE CONFIG =====
     const firebaseConfig = {
       apiKey: "AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww",
@@ -1375,7 +917,7 @@
       generateBtn.classList.add('loading');
       generateBtn.disabled = true;
       aiThinking.classList.add('visible');
-      resultsEl.classList.remove('visible');
+      document.getElementById('results').style.display = 'none'; document.getElementById('bottomBar').classList.remove('visible'); document.getElementById('shareCard').style.display = 'none'; document.getElementById('skeletonWrap').classList.remove('visible');
 
       let msgIndex = 0;
       const statusInterval = setInterval(() => {
@@ -1562,88 +1104,86 @@ Rules:
     // ===== RENDER RESULTS =====
     let map = null;
     function renderResults(data, origin, destination) {
-      resultsEl.classList.add('visible');
-      document.getElementById('resultsTitle').textContent = data.title || `${origin} → ${destination}`;
+      document.getElementById('skeletonWrap').classList.remove('visible');
+      const resultsEl = document.getElementById('results');
+      resultsEl.style.display = 'block';
 
-      // Stats
+      document.getElementById('resultsTitle').textContent = data.title || `${origin} -> ${destination}`;
       const fuelPerPerson = data.estimatedFuelCost || 0;
       const totalDays = data.days?.length || 0;
       const avgDaily = data.totalKm ? Math.round(data.totalKm / totalDays) : 0;
-      document.getElementById('statsBar').innerHTML = `
-        <div class="stat"><div class="stat-value">${data.totalKm?.toLocaleString() || '—'} km</div><div class="stat-label">Total Distance</div></div>
-        <div class="stat"><div class="stat-value">₹${fuelPerPerson?.toLocaleString() || '—'}</div><div class="stat-label">Fuel Cost</div></div>
-        <div class="stat"><div class="stat-value">${totalDays} days</div><div class="stat-label">Duration</div></div>
-        <div class="stat"><div class="stat-value">${avgDaily} km</div><div class="stat-label">Daily Avg</div></div>
+      document.getElementById('resultsBadges').innerHTML = `
+        <span class="r-stat">&#128739; ${(data.totalKm||0).toLocaleString()} km</span>
+        <span class="r-stat">&#128197; ${totalDays} days</span>
+        <span class="r-stat">&#9981; &#8377;${fuelPerPerson.toLocaleString()}</span>
+        <span class="r-stat">~${avgDaily} km/day</span>
       `;
 
-      // Share card — shown after trip generates
+      document.getElementById('statsBar').innerHTML = `
+        <div class="stat"><div class="stat-value">${(data.totalKm||0).toLocaleString()}</div><div class="stat-label">Total km</div></div>
+        <div class="stat"><div class="stat-value">&#8377;${fuelPerPerson.toLocaleString()}</div><div class="stat-label">Fuel Est.</div></div>
+        <div class="stat"><div class="stat-value">${totalDays}</div><div class="stat-label">Days</div></div>
+        <div class="stat"><div class="stat-value">${avgDaily}</div><div class="stat-label">km/day</div></div>
+      `;
+
       const shareUrl = window._lastShareUrl || '';
-      const shareCardEl = document.getElementById('shareCard');
-      if (shareUrl && shareCardEl) {
-        shareCardEl.innerHTML = `
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span style="font-size:0.85rem;color:var(--color-text-muted,#888);flex:1;min-width:120px;word-break:break-all">${shareUrl}</span>
-            <button onclick="navigator.clipboard.writeText('${shareUrl}').then(()=>{this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy',2000)})" 
-              style="background:var(--color-primary,#d96b1a);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:0.85rem">🔗 Copy</button>
-            <a href="https://wa.me/?text=${encodeURIComponent('🏍️ Check my Moto Bhai trip! '+shareUrl)}" target="_blank"
-              style="background:#25D366;color:#fff;text-decoration:none;border-radius:8px;padding:8px 14px;font-weight:700;white-space:nowrap;font-size:0.85rem">📲 WhatsApp</a>
-            <a href="${shareUrl}" target="_blank"
-              style="background:transparent;border:1.5px solid var(--color-primary,#d96b1a);color:var(--color-primary,#d96b1a);text-decoration:none;border-radius:8px;padding:8px 14px;font-weight:700;white-space:nowrap;font-size:0.85rem">↗ View</a>
-          </div>`;
-        shareCardEl.style.display = 'block';
+      if (shareUrl) {
+        document.getElementById('shareUrlText').textContent = shareUrl;
+        const safeUrl = shareUrl.replace(/'/g, "\\'");
+        document.getElementById('shareActions').innerHTML =
+          `<button class="share-btn copy" onclick="navigator.clipboard.writeText('${safeUrl}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)})">Copy</button>` +
+          `<a class="share-btn whatsapp" href="https://wa.me/?text=Check+my+trip:+${encodeURIComponent(shareUrl)}" target="_blank">WhatsApp</a>` +
+          `<a class="share-btn view" href="${safeUrl}" target="_blank">View</a>`;
+        document.getElementById('shareCard').style.display = 'block';
       }
 
-      // Map
+      document.getElementById('resultsActions').style.display = 'flex';
+      document.getElementById('bottomBar').classList.add('visible');
+
       const bounds = [];
       if (map) map.remove();
       map = L.map('map').setView([22, 78], 5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '(c) OpenStreetMap'}).addTo(map);
       const coords = [];
-      data.days?.forEach((day, i) => {
+      data.days?.forEach((day) => {
         if (day.lat && day.lng) {
-          const marker = L.marker([day.lat, day.lng]).addTo(map)
-            .bindPopup(`<strong>Day ${day.day}: ${day.to}</strong><br>${day.distanceKm} km`);
+          L.marker([day.lat, day.lng]).addTo(map).bindPopup(`<strong>Day ${day.day}: ${day.to}</strong><br>${day.distanceKm} km`);
           coords.push([day.lat, day.lng]);
           bounds.push([day.lat, day.lng]);
         }
       });
+      if (coords.length > 1) L.polyline(coords, {color:'#d96b1a',weight:3,opacity:.85}).addTo(map);
+      if (bounds.length) map.fitBounds(bounds, {padding:[30,30]});
 
-      if (coords.length > 1) {
-        L.polyline(coords, { color: '#d96b1a', weight: 3, opacity: 0.8 }).addTo(map);
-      }
-      if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
-
-      // Day cards
-      const cardsHTML = data.days?.map(day => `
+      const cardsHTML = (data.days||[]).map((day) => `
         <div class="day-card">
-          <div class="day-header">
-            <span class="day-num">Day ${day.day}</span>
-            <span class="day-distance">${day.distanceKm} km · ~${day.rideHours}h ride</span>
+          <div class="timeline-dot"></div>
+          <div class="day-inner">
+            <div class="day-header">
+              <div class="day-num">${day.day}</div>
+              <div class="day-route-text">${day.from||''} to ${day.to||''}</div>
+              <div class="day-km-badge">${day.distanceKm||0} km</div>
+            </div>
+            <div class="day-meta">
+              <span class="day-meta-item">~${day.rideHours||0}h ride</span>
+              ${day.fuelStop ? `<span class="day-meta-item">Fuel: ${day.fuelStop.split(',')[0]}</span>` : ''}
+            </div>
+            <div class="day-stops">
+              ${day.fuelStop ? `<div class="stop-row"><div class="stop-icon">&#9981;</div><div class="stop-content"><div class="stop-name">${day.fuelStop}<span class="stop-pill pill-fuel">Fuel</span></div></div></div>` : ''}
+              ${day.food ? `<div class="stop-row"><div class="stop-icon">&#127869;</div><div class="stop-content"><div class="stop-name">${day.food}<span class="stop-pill pill-food">Food</span></div></div></div>` : ''}
+              ${day.stay ? `<div class="stop-row"><div class="stop-icon">&#127976;</div><div class="stop-content"><div class="stop-name">${day.stay}<span class="stop-pill pill-stay">Stay</span></div></div></div>` : ''}
+            </div>
+            ${day.highlights ? `<div class="bhai-tip">Tip: ${day.highlights}</div>` : ''}
           </div>
-          <div class="day-route">${day.from} → ${day.to}</div>
-          <div class="day-details">
-            <strong>Highlights:</strong> ${day.highlights}<br>
-            <strong>Fuel:</strong> ${day.fuelStop}<br>
-            <strong>Food:</strong> ${day.food}<br>
-            <strong>Stay:</strong> ${day.stay}
-          </div>
-          ${day.highlights ? '<span class="day-tag">🏍️ Ride</span>' : ''}
         </div>
-      `).join('') || '';
+      `).join('');
       document.getElementById('itineraryCards').innerHTML = cardsHTML;
-
-      // Store for sharing
       window._tripData = data;
       window._tripCoords = coords;
-
-      // Scroll to results
-      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      resultsEl.scrollIntoView({behavior:'smooth',block:'start'});
     }
 
-    // ===== SHARE / MAPS BUTTONS =====
+// ===== SHARE / MAPS BUTTONS =====
     document.getElementById('mapsBtn').addEventListener('click', () => {
       if (!window._tripCoords || !window._tripCoords.length) return;
       const waypoints = window._tripCoords.map(c => `${c[0]},${c[1]}`);
@@ -1685,8 +1225,13 @@ Rules:
       }
     });
 
+    document.getElementById('bbShare').addEventListener('click', () => document.getElementById('shareBtn').click());
+    document.getElementById('bbMaps').addEventListener('click', () => document.getElementById('mapsBtn').click());
+    document.getElementById('bbNew').addEventListener('click', () => document.getElementById('newTripBtn').click());
+    document.getElementById('bbPdf').addEventListener('click', () => document.getElementById('pdfBtn').click());
+
     document.getElementById('newTripBtn').addEventListener('click', () => {
-      resultsEl.classList.remove('visible');
+      document.getElementById('results').style.display = 'none'; document.getElementById('bottomBar').classList.remove('visible'); document.getElementById('shareCard').style.display = 'none'; document.getElementById('skeletonWrap').classList.remove('visible');
       document.getElementById('tripConfig').classList.remove('visible');
       document.getElementById('selectedDest').classList.remove('visible');
       document.querySelector('.search-bar').style.display = 'flex';
@@ -1707,33 +1252,5 @@ Rules:
       if (e.target === e.currentTarget) e.currentTarget.classList.remove('visible');
     });
   </script>
-
-<!-- MOTOBHAI_PATCH_V2 -->
-<script>
-window.MB = window.MB || {};
-MB.DAILY_KM_CAP = 350;
-MB.BUDGET_TIERS = { backpacker:[0,1500], standard:[1500,3500], premium:[3500,8000], luxury:[8000,99999] };
-MB.tierForBudget = function(b){ for(const k in MB.BUDGET_TIERS){ const [lo,hi]=MB.BUDGET_TIERS[k]; if(b>=lo&&b<hi) return k;} return 'standard'; };
-MB.capDailyKm = function(legs){ return (legs||[]).map(l=>({...l, km: Math.min(l.km||0, MB.DAILY_KM_CAP)})); };
-MB.buildShareLink = function(wps){ if(!wps||wps.length<2) return ''; const o=encodeURIComponent(wps[0]); const d=encodeURIComponent(wps[wps.length-1]); const m=wps.slice(1,-1).map(encodeURIComponent).join('|'); return 'https://www.google.com/maps/dir/?api=1&origin='+o+'&destination='+d+(m?'&waypoints='+m:'')+'&travelmode=driving'; };
-MB.downloadPDF = async function(el, fn){ fn = fn || ('MotoBhai_'+Date.now()+'.pdf'); if(!window.html2pdf){ await new Promise((r,j)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'; s.onload=r; s.onerror=j; document.head.appendChild(s); }); } return window.html2pdf().set({margin:10, filename:fn, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:'mm',format:'a4'}}).from(el).save(); };
-MB.logToSheets = async function(p){ try{ const r=await fetch((window.MB_API||'')+'/api/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ts:Date.now(),...p})}); return r.ok;}catch(e){return false;} };
-MB.sendOTP = async function(phone){ const r=await fetch((window.MB_API||'')+'/api/otp/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})}); return r.json(); };
-MB.verifyOTP = async function(phone,code){ const r=await fetch((window.MB_API||'')+'/api/otp/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,code})}); return r.json(); };
-document.addEventListener('DOMContentLoaded',function(){
-  document.body.addEventListener('click',function(ev){
-    const t=ev.target.closest('[data-action]'); if(!t) return;
-    const a=t.getAttribute('data-action');
-    if(a==='download-pdf'){ const el=document.querySelector('#itinerary')||document.body; MB.downloadPDF(el); }
-    if(a==='share-map'){ const wps=(window.MB_WAYPOINTS||[]); const url=MB.buildShareLink(wps); if(url){ try{navigator.clipboard.writeText(url);}catch(_){} window.open(url,'_blank'); } }
-    if(a==='concierge'){ window.open('https://wa.me/919999999999?text='+encodeURIComponent('Concierge ride planning'),'_blank'); }
-    if(a==='guided'){ window.open('https://wa.me/919999999999?text='+encodeURIComponent('Guided ride enquiry'),'_blank'); }
-    if(a==='otp-send'){ const p=document.querySelector('#mb-phone'); if(p&&p.value) MB.sendOTP(p.value).then(r=>alert('OTP sent: '+JSON.stringify(r))); }
-    if(a==='otp-verify'){ const p=document.querySelector('#mb-phone'); const c=document.querySelector('#mb-otp'); if(p&&c) MB.verifyOTP(p.value,c.value).then(r=>{ if(r.token){ localStorage.setItem('mb_token',r.token); alert('Logged in'); } else alert('Failed'); }); }
-  });
-});
-</script>
-<style>.mb-cta{display:inline-block;margin:6px;padding:10px 16px;border-radius:8px;background:#ffb400;color:#111;font-weight:700;cursor:pointer;border:0;font-family:inherit}.mb-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}.mb-otp input{padding:8px;border-radius:6px;border:1px solid #444;background:#1a1a1a;color:#eee;margin:4px}</style>
-<div class="mb-row"><button class="mb-cta" data-action="download-pdf">Download PDF</button><button class="mb-cta" data-action="share-map">Share Map</button><button class="mb-cta" data-action="concierge">Concierge</button><button class="mb-cta" data-action="guided">Guided Ride</button></div><div class="mb-row mb-otp"><input id="mb-phone" placeholder="Phone (+91...)"/><button class="mb-cta" data-action="otp-send">Send OTP</button><input id="mb-otp" placeholder="OTP"/><button class="mb-cta" data-action="otp-verify">Verify</button></div>
 </body>
 </html>
