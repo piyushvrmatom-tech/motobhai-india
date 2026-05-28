@@ -9,6 +9,11 @@
 <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
+<meta property="og:title" content="Moto Bhai India &#129949; - Plan Your Ride">
+<meta property="og:description" content="AI motorcycle trip planner for India. Fuel stops, food, hotels, route map in seconds.">
+<meta property="og:image" content="https://motobhai-india.web.app/og-cover.png">
+<meta property="og:url" content="https://motobhai-india.web.app">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{--bg:#faf9f6;--surface:#fff;--surface-2:#f5f4f1;--surface-3:#eeece8;--border:#e2dfd9;--text:#1a1815;--text-2:#6b6860;--text-3:#a8a49c;--primary:#d96b1a;--primary-h:#c45e15;--primary-a:#a84f10;--primary-lx:rgba(217,107,26,.1);--accent:#1a6b4a;--error:#c4342b;--warn:#92600a;--warn-bg:#fff8e1;--success:#2a7a3e;--shadow-sm:0 1px 3px rgba(0,0,0,.04);--shadow-md:0 4px 16px rgba(0,0,0,.07);--shadow-lg:0 12px 40px rgba(0,0,0,.12);--r-sm:.375rem;--r-md:.625rem;--r-lg:1rem;--r-xl:1.25rem;--r-full:9999px;--font-d:'Cabinet Grotesk',sans-serif;--font-b:'Satoshi',sans-serif;--ease:cubic-bezier(.16,1,.3,1);--t:220ms var(--ease)}
 @media(prefers-color-scheme:dark){:root{--bg:#111009;--surface:#1c1b18;--surface-2:#232220;--surface-3:#2a2926;--border:#3a3835;--text:#e8e6e1;--text-2:#9c9890;--text-3:#5c5a55;--primary:#f0883a;--primary-h:#f79b55;--primary-a:#d97028;--primary-lx:rgba(240,136,58,.12);--shadow-sm:0 1px 3px rgba(0,0,0,.2);--shadow-md:0 4px 20px rgba(0,0,0,.35);--shadow-lg:0 12px 48px rgba(0,0,0,.5);--warn-bg:#2a1f00}}
@@ -228,213 +233,48 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 @keyframes spin{to{transform:rotate(360deg)}}
 :focus-visible{outline:2.5px solid var(--primary);outline-offset:2px;border-radius:var(--r-sm)}
 @media(min-width:768px){.hero{padding:4.5rem 2rem 5rem}.search-bar-wrap{padding:0 2rem}}
-</style>
 
-</head>
-<body>
+/* ══ RUN 4 FIXES ══════════════════════════════════════════════ */
+/* C1/C2: show/hide via classList.add('visible') */
+#tripConfig.visible,
+#selectedDest.visible { display: block }
+/* C3: OTP section — alias .active → show (JS adds 'active', CSS triggers on 'visible') */
+.otp-section.active { display: block }
+/* H2: city-dropdown (dynamically created by initCustomAutocomplete) */
+:root { --card-bg: var(--surface) }
+.city-dropdown {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  z-index: 1000;
+}
+.city-dropdown .city-item,
+.city-dropdown [class*="city"] {
+  padding: .875rem 1.25rem;
+  font-size: .9375rem;
+  cursor: pointer;
+  transition: background var(--t);
+  color: var(--text);
+}
+.city-dropdown .city-item:hover { background: var(--surface-2) }
+/* M3: generate button loading state */
+.generate-btn.loading {
+  opacity: .75;
+  pointer-events: none;
+}
+.generate-btn.loading::after {
+  content: '';
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2.5px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: .5rem;
+}
 
-<!-- LOGIN GATE -->
-<div class="login-gate" id="loginGate">
-  <div class="login-card">
-    <div class="login-logo">
-      <svg viewBox="0 0 48 56" fill="none"><path d="M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z" stroke="currentColor" stroke-width="3" fill="none"/><path d="M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z" fill="currentColor"/><path d="M28 19 C29 20 30 22 30 24 C30 25 29 26 27 26 C25 26 24 25 24 24 C24 22 25 20 26 19 C27 18.5 27.5 18.5 28 19Z" fill="var(--bg,#fff)"/></svg>
-      <div class="login-logo-txt">Moto<span>Bhai</span></div>
-    </div>
-    <h2>Plan your ride</h2>
-    <p>Sign in with your Indian mobile to save &amp; share trips — or continue as guest.</p>
-    <div id="phoneSection">
-      <div class="phone-row">
-        <div class="phone-prefix">&#127470;&#127475; +91</div>
-        <input class="phone-input" id="phoneInput" type="tel" placeholder="99101 00771" maxlength="12" autocomplete="tel" inputmode="tel">
-      </div>
-      <div class="login-error" id="phoneError"></div>
-      <button class="btn-primary" id="sendOtpBtn">Send OTP</button>
-    </div>
-    <div class="otp-section" id="otpSection">
-      <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:.75rem">Enter the 6-digit code sent to your number</p>
-      <div class="otp-row">
-        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="0">
-        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="1">
-        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="2">
-        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="3">
-        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="4">
-        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-index="5">
-      </div>
-      <div class="login-error" id="otpError"></div>
-      <button class="btn-primary" id="verifyOtpBtn">Verify &amp; Continue</button>
-    </div>
-    <div class="login-divider"><span>or</span></div>
-    <button class="btn-ghost" id="guestBtn">Continue as Guest &#128100;</button>
-    <div class="login-footer">Sign in to save &amp; share trips &#127470;&#127475;</div>
-  </div>
-</div>
-
-<!-- HEADER -->
-<header class="header">
-  <a href="#" class="logo">
-    <svg viewBox="0 0 48 56" fill="none"><path d="M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z" stroke="currentColor" stroke-width="3" fill="none"/><path d="M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z" fill="currentColor"/><path d="M28 19 C29 20 30 22 30 24 C30 25 29 26 27 26 C25 26 24 25 24 24 C24 22 25 20 26 19 C27 18.5 27.5 18.5 28 19Z" fill="var(--bg,#fff)"/></svg>
-    <span class="logo-txt">Moto<span>Bhai</span></span>
-  </a>
-  <div class="header-actions">
-    <button class="header-btn" id="aboutBtn">About</button>
-    <button class="header-btn primary-hb hidden" id="signOutBtn">Sign out</button>
-  </div>
-</header>
-
-<!-- HERO -->
-<section class="hero">
-  <svg class="hero-bg-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-    <path d="M680 180 C650 140 600 120 550 130 L520 135 L500 100 L460 90 L420 95 L400 120 L380 125 C360 130 340 150 330 175 L320 200 L310 220 C305 235 310 255 325 265 C340 275 360 270 370 258 C380 248 382 232 375 220 L370 210 L440 205 L460 225 C470 240 488 248 508 245 C528 242 542 228 542 208 L542 200 L600 195 L620 215 C630 228 645 235 662 232 C680 228 692 215 692 198 C692 190 688 183 680 180Z M420 95 L450 95 L465 120 L415 125Z M500 100 L510 100 L525 125 L498 127Z" fill="white"/>
-    <circle cx="342" cy="242" r="38" fill="none" stroke="white" stroke-width="6"/>
-    <circle cx="342" cy="242" r="18" fill="none" stroke="white" stroke-width="4"/>
-    <circle cx="666" cy="215" r="38" fill="none" stroke="white" stroke-width="6"/>
-    <circle cx="666" cy="215" r="18" fill="none" stroke="white" stroke-width="4"/>
-  </svg>
-  <div class="hero-tag">&#129349; AI Route Planner</div>
-  <h1>Where are you riding?<span>Fuel &#183; Food &#183; Hotels &#183; Tips</span></h1>
-  <p class="hero-sub">Tell your Bhai the destination &#8212; get a full itinerary for any Indian route in seconds.</p>
-  <div class="hero-pills">
-    <span class="hero-pill">&#127956; Manali &#183; Leh</span>
-    <span class="hero-pill">&#127754; Coastal Karnataka</span>
-    <span class="hero-pill">&#127963; Rajasthan Circuit</span>
-    <span class="hero-pill">&#127807; Northeast Loop</span>
-  </div>
-</section>
-
-<!-- SEARCH BAR -->
-<div class="search-bar-wrap">
-  <div class="search-bar">
-    <span style="font-size:1.1rem">&#128205;</span>
-    <input class="search-input" id="destinationInput" type="text" placeholder="Enter destination city..." autocomplete="off" autocorrect="off" spellcheck="false">
-    <button class="search-btn" id="searchGoBtn">Plan Ride &#8594;</button>
-  </div>
-  <div id="originAuto" style="display:none" class="autocomplete-list"></div>
-</div>
-
-<!-- MAIN -->
-<main class="main-wrap">
-  <div id="selectedDest" style="display:none">
-    <div class="dest-chip">
-      <span id="destName"></span>
-      <button id="removeDest" aria-label="Remove">&#10005;</button>
-    </div>
-  </div>
-
-  <div id="tripConfig" style="display:none">
-    <div class="config-card">
-      <div class="config-section">
-        <div class="config-label">Trip Type</div>
-        <div class="trip-pills">
-          <button class="trip-pill active" data-type="round">&#128260; Round Trip</button>
-          <button class="trip-pill" data-type="oneway">&#10145;&#65039; One Way</button>
-          <button class="trip-pill" data-type="multi">&#128205; Multi-Stop</button>
-        </div>
-      </div>
-      <div class="config-section" id="originSection">
-        <div class="config-label">Starting From</div>
-        <div class="origin-row" id="originAuto2">
-          <div class="origin-dot"></div>
-          <span class="origin-name" id="originName">Detecting location&#8230;</span>
-          <span class="origin-change">Change</span>
-        </div>
-        <div class="origin-input-wrap" id="originInputWrap">
-          <input class="origin-input" id="originInput" type="text" placeholder="Enter your starting city&#8230;">
-        </div>
-      </div>
-      <div class="config-section">
-        <div class="config-label">Ride Vibe</div>
-        <div class="vibe-grid" id="vibeGrid">
-          <button class="vibe-chip active" data-vibe="scenic"><div class="vibe-icon">&#127956;&#65039;</div><div class="vibe-label">Scenic</div></button>
-          <button class="vibe-chip" data-vibe="offroad"><div class="vibe-icon">&#129704;</div><div class="vibe-label">Off-Road</div></button>
-          <button class="vibe-chip" data-vibe="express"><div class="vibe-icon">&#9889;</div><div class="vibe-label">Express</div></button>
-          <button class="vibe-chip" data-vibe="adventure"><div class="vibe-icon">&#127957;&#65039;</div><div class="vibe-label">Adventure</div></button>
-        </div>
-      </div>
-      <div class="config-section">
-        <div class="config-label">Ride Details</div>
-        <div class="details-grid">
-          <div class="detail-field full"><label class="detail-label" for="bikeInput">Motorcycle</label><input class="detail-input" id="bikeInput" type="text" placeholder="e.g. RE Himalayan 450"></div>
-          <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage km/L</label><input class="detail-input" id="mileageInput" type="number" placeholder="35" min="10" max="80"></div>
-          <div class="detail-field"><label class="detail-label" for="daysInput">Days</label><input class="detail-input" id="daysInput" type="number" placeholder="3" min="1" max="30" value="3"></div>
-          <div class="detail-field"><label class="detail-label" for="ridersInput">Riders</label><input class="detail-input" id="ridersInput" type="number" placeholder="2" min="1" max="10" value="2"></div>
-        </div>
-      </div>
-    </div>
-    <button class="generate-btn" id="generateBtn">
-      <span>&#129949;&#65039;</span><span id="generateBtnText">Generate My Itinerary</span>
-    </button>
-    <div class="ai-status" id="aiStatus">
-      <div class="ai-status-top">
-        <div class="ai-spinner"></div>
-        <span class="ai-status-text">Your Bhai is planning the route&#8230;</span>
-      </div>
-      <div class="ai-substatus" id="aiThinking">Calculating fuel stops &amp; hotels</div>
-    </div>
-  </div>
-
-  <!-- SKELETON -->
-  <div class="skeleton-wrap" id="skeletonWrap">
-    <div class="sk-hdr"></div>
-    <div class="sk-card"><div class="sk-line h4 w60"></div><div class="sk-line h3 w80"></div><div class="sk-line h3 w40"></div></div>
-    <div class="sk-card"><div class="sk-line h4 w60"></div><div class="sk-line h3 w80"></div></div>
-    <div class="sk-card"><div class="sk-line h4 w60"></div><div class="sk-line h3 w80"></div><div class="sk-line h3 w40"></div></div>
-  </div>
-
-  <!-- RESULTS -->
-  <div id="results">
-    <div class="results-banner" id="resultsBanner">
-      <svg class="results-banner-svg" viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <path d="M340 70 C325 52 298 44 275 48 L260 50 L250 33 L230 28 L210 30 L200 46 L190 48 C180 51 170 62 165 78 L160 92 L155 103 C152 111 155 122 163 128 C171 133 181 130 186 122 L188 115 L220 112 L230 124 C235 132 244 137 254 135 C264 132 271 123 271 113 L271 108 L300 105 L310 116 C315 123 323 127 331 125 C340 123 346 115 346 106 C346 93 344 77 340 70Z" fill="white"/>
-      </svg>
-      <div class="results-route" id="resultsTitle">Route</div>
-      <div class="results-stats" id="resultsBadges"></div>
-    </div>
-    <div class="share-card" id="shareCard">
-      <div class="share-card-lbl">Share this trip</div>
-      <div class="share-row">
-        <div class="share-url-txt" id="shareUrlText"></div>
-        <div class="share-actions" id="shareActions"></div>
-      </div>
-    </div>
-    <div class="stats-bar" id="statsBar"></div>
-    <div class="results-actions" id="resultsActions" style="display:none">
-      <button class="action-btn" id="shareBtn">&#128228; Share</button>
-      <button class="action-btn" id="pdfBtn">&#128196; PDF</button>
-      <button class="action-btn" id="mapsBtn">&#128506;&#65039; Maps</button>
-      <button class="action-btn" id="newTripBtn">+ New Trip</button>
-    </div>
-    <div class="map-wrap"><div id="map"></div></div>
-    <div style="margin-bottom:1rem">
-      <div class="itin-title">Day-by-Day Itinerary</div>
-      <div class="timeline" id="itineraryCards"></div>
-    </div>
-  </div>
-</main>
-
-<!-- MOBILE BOTTOM BAR -->
-<div class="bottom-bar" id="bottomBar">
-  <button class="bb-btn" id="bbShare"><div class="bb-icon">&#128228;</div><div class="bb-label">Share</div></button>
-  <button class="bb-btn bb-primary" id="bbPdf"><div class="bb-icon">&#128196;</div><div class="bb-label">PDF</div></button>
-  <button class="bb-btn" id="bbMaps"><div class="bb-icon">&#128506;</div><div class="bb-label">Maps</div></button>
-  <button class="bb-btn" id="bbNew"><div class="bb-icon">+</div><div class="bb-label">New</div></button>
-</div>
-
-<!-- ABOUT MODAL -->
-<div class="modal-overlay" id="aboutModal">
-  <div class="modal">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
-      <h2 style="font-size:1.25rem;font-weight:800">About Moto Bhai</h2>
-      <button id="closeAbout" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--text-2)">&#10005;</button>
-    </div>
-    <p style="color:var(--text-2);font-size:.9rem;line-height:1.7;margin-bottom:1rem">Moto Bhai India is your AI-powered motorcycle trip co-pilot. Powered by Gemini AI, Google Routes API and 112 Indian bikes database. Built for Indian roads.</p>
-    <div style="background:var(--primary-lx);border-radius:var(--r-lg);padding:1rem;font-size:.875rem;color:var(--text-2);line-height:1.6">
-      &#129949; <strong>ATGATT:</strong> All The Gear, All The Time.<br>Helmet &#183; Jacket &#183; Gloves &#183; Boots &#183; Riding Pants. Every ride.
-    </div>
-  </div>
-</div>
-
-<div id="recaptcha-container" style="display:none"></div>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww&libraries=places&callback=initAutocomplete" async defer></script>
+</style><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww&libraries=places&callback=initAutocomplete" async defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -867,6 +707,14 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
     });
 
     // ===== TRIP TYPE PILLS =====
+    // C4 FIX: wire vibe chips
+    document.querySelectorAll('.vibe-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.vibe-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+
     document.querySelectorAll('.trip-pill').forEach(pill => {
       pill.addEventListener('click', () => {
         document.querySelectorAll('.trip-pill').forEach(p => p.classList.remove('active'));
@@ -875,7 +723,8 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
     });
 
     // Origin manual toggle
-    document.getElementById('originManualBtn').addEventListener('click', () => {
+    // H1 FIX: origin row click (new id is originAuto2)
+    document.getElementById('originAuto2').addEventListener('click', () => {
       document.getElementById('originInputWrap').classList.toggle('visible');
     });
 
@@ -906,7 +755,9 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
       const mileage = document.getElementById('mileageInput').value || '35';
       const days = document.getElementById('daysInput').value || '3';
       const riders = document.getElementById('ridersInput').value || '2';
-      const prefs = Array.from(document.querySelectorAll('.pref-chip.active')).map(c => c.dataset.pref).join(', ');
+      // C4 FIX: read vibe from vibe-chip.active (no pref-chip in Run 3 HTML)
+      const activeVibe = document.querySelector('.vibe-chip.active')?.dataset.vibe || 'scenic';
+      const prefs = activeVibe;
 
       if (!destination || origin === 'Detecting location...' || origin === 'Could not detect — enter manually') {
         alert('Please wait for location detection or enter your starting city.');
@@ -916,6 +767,8 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
       // Show thinking state
       generateBtn.classList.add('loading');
       generateBtn.disabled = true;
+      const genTxt = document.getElementById('generateBtnText');
+      if (genTxt) genTxt.textContent = 'Planning your ride…';
       aiThinking.classList.add('visible');
       document.getElementById('results').style.display = 'none'; document.getElementById('bottomBar').classList.remove('visible'); document.getElementById('shareCard').style.display = 'none'; document.getElementById('skeletonWrap').classList.remove('visible');
 
@@ -932,6 +785,8 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
         clearInterval(statusInterval);
         aiThinking.classList.remove('visible');
         renderResults(itinerary, origin, destination);
+      // Log to sheets (fire-and-forget)
+      logToSheets({ origin, destination, bike: params.bike, days: params.days, tripId: window._lastTripId }).catch(() => {});
       } catch (err) {
         clearInterval(statusInterval);
         aiThinking.classList.remove('visible');
@@ -942,6 +797,8 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 
       generateBtn.classList.remove('loading');
       generateBtn.disabled = false;
+      const genTxtDone = document.getElementById('generateBtnText');
+      if (genTxtDone) genTxtDone.textContent = 'Generate My Itinerary';
     });
 
     // ===== GEMINI API CALL =====
@@ -1252,5 +1109,6 @@ Rules:
       if (e.target === e.currentTarget) e.currentTarget.classList.remove('visible');
     });
   </script>
+
 </body>
 </html>

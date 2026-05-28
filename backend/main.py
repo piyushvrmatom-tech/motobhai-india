@@ -1,4 +1,4 @@
-"""Moto Bhai India — FastAPI entry point. v1.0.0 (CTO spec refactor).
+"""Moto Bhai India — FastAPI entry point. v1.1.0 (run4: pdf+share+otp hardened).
 
 This module is intentionally thin: it boots the app, configures middleware,
 optionally initialises Sentry, and mounts the routers from `routes/`. All
