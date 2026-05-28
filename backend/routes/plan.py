@@ -110,7 +110,9 @@ def create_plan(req: PlanRequest) -> PlanResponse:
 
     # 5. Persist + build response.
     trip_id = firestore_client.new_trip_id()
-    share_base = os.getenv("SHARE_BASE_URL", "https://motobhai-india.web.app").rstrip("/")
+    # share_url points at the backend SSR endpoint so social crawlers (no-JS)
+    # see per-trip OG meta. Firebase Hosting redirects legacy web.app/s/* here too.
+    share_base = os.getenv("SHARE_BASE_URL", "https://motobhai-api.onrender.com").rstrip("/")
     share_url = f"{share_base}/s/{trip_id.removeprefix('mb_')}"
 
     summary = TripSummary(

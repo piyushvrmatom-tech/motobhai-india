@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0B0F">
+
+<title>{{ summary["from"] }} → {{ summary["to"] }} · Moto Bhai India</title>
+<meta name="description" content="{{ summary['total_days'] }} day motorcycle ride · {{ summary['total_km']|round|int }} km · {{ bike_label }} · planned with Moto Bhai India">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ summary['from'] }} → {{ summary['to'] }} · Moto Bhai">
+<meta property="og:description" content="{{ summary['total_days'] }} day ride · {{ summary['total_km']|round|int }} km · planned with Moto Bhai India">
+<meta property="og:image" content="{{ og_image_url }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="{{ share_url }}">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ summary['from'] }} → {{ summary['to'] }} · Moto Bhai">
+<meta name="twitter:description" content="{{ summary['total_days'] }} day motorcycle ride">
+<meta name="twitter:image" content="{{ og_image_url }}">
+
+<link rel="icon" type="image/svg+xml" href="{{ asset_base }}/icon.svg">
+<link rel="manifest" href="{{ asset_base }}/manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset_base }}/assets/css/app.css">
+
+<script>
+  // Seed the page with the full trip payload so the JS view renders instantly,
+  // without a second round-trip to /api/share/.
+  window.__MB_TRIP__ = {{ trip_json|safe }};
+</script>
+</head>
+<body>
+  <header class="topbar">
+    <a href="{{ asset_base }}/" class="brand">
+      <span class="brand__logo" aria-hidden="true">▲</span>
+      <span class="brand__name">Moto Bhai</span>
+    </a>
+    <a href="{{ asset_base }}/" class="topnav__link">Plan your own ride →</a>
+  </header>
+
+  <main>
+    <section class="itinerary" id="itinerary">
+      <header class="itinerary__head">
+        <p style="color:var(--accent);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;margin:0">Shared ride</p>
+        <h1 class="itinerary__title" style="margin-top:6px">{{ summary["from"] }} → {{ summary["to"] }}</h1>
+        <p class="itinerary__meta">
+          {{ summary['total_km']|round|int }} km ·
+          {{ summary['total_days'] }} days{% if summary.get('est_fuel_cost_inr') %} ·
+          ₹{{ "{:,}".format(summary['est_fuel_cost_inr']|int) }} fuel{% endif %}
+        </p>
+      </header>
+
+      <div class="day-swiper" id="day-swiper" role="list">
+        {% for day in days_plan %}
+        <article class="day-card" role="listitem">
+          <div class="day-card__day">Day {{ day.day }}</div>
+          <div class="day-card__route">{{ day["from"] }} → {{ day["to"] }}</div>
+          <div class="day-card__map">Route map · {{ day.km|round|int }} km</div>
+          <div class="day-card__stat">
+            <span><strong>{{ day.km|round|int }}</strong> km</span>
+            <span><strong>{{ day.eta_hours or "—" }}</strong> hrs</span>
+          </div>
+          {% if day.hotel_suggestion %}
+          <div class="day-card__hotel">
+            <div class="day-card__hotel-name">{{ day.hotel_suggestion.name }}</div>
+            <div style="color:var(--text-2);font-size:13px">{{ day.hotel_suggestion.area or "" }}</div>
+          </div>
+          {% endif %}
+          {% if day.bhai_tip %}
+          <div class="day-card__tip">{{ day.bhai_tip }}</div>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+
+      <div class="itinerary__actions">
+        <a href="{{ asset_base }}/" class="btn btn--primary" style="max-width:none;width:auto">Plan my own ride</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
