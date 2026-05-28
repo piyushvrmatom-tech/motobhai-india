@@ -299,8 +299,9 @@ function renderResults(data) {
   document.getElementById('shareUrl').href = shareUrl;
   document.getElementById('shareUrl').textContent = shareUrl;
 
-  // Summary strip
-  document.getElementById('sumKm').textContent = s.total_km || '—';
+  // Summary strip — summary uses aliased fields (from/to) but also has total_km etc.
+  const totalKm = s.total_km || 0;
+  document.getElementById('sumKm').textContent = Math.round(totalKm);
   document.getElementById('sumDays').textContent = s.total_days || days.length;
   document.getElementById('sumMaxDay').textContent = s.max_day_km || '—';
 
@@ -314,25 +315,61 @@ function renderResults(data) {
   // Itinerary
   let ih = '';
   days.forEach((day, idx) => {
-    const stops = day.stops || [];
+    const dayNum = day.day || (idx + 1);
+    const fromCity = day.from || day.origin || '';
+    const toCity = day.to || day.destination || '';
+    const km = day.km || day.distance_km || 0;
+    const hrs = day.eta_hours || day.duration_hrs || '—';
+    const fuelStops = day.fuel_stops || [];
+    const hotel = day.hotel_suggestion || null;
+    const foodStops = day.food_stops || [];
+    const tip = day.bhai_tip || '';
+    const dayWarnings = day.warnings || [];
+
     ih += '<div class="day-card">';
-    ih += '<h3>Day ' + (idx + 1) + ': ' + (day.from || '') + ' → ' + (day.to || '') + '</h3>';
-    ih += '<div class="day-meta">📍 ' + (day.distance_km || 0) + ' km · ' + (day.duration_hrs || '—') + ' hrs riding</div>';
-    if (stops.length) {
+    ih += '<h3>Day ' + dayNum + ': ' + fromCity + ' → ' + toCity + '</h3>';
+    ih += '<div class="day-meta">📍 ' + km + ' km · ' + hrs + ' hrs riding · ↑' + (day.elevation_gain_m || 0) + ' m</div>';
+
+    // Fuel stops
+    if (fuelStops.length) {
       ih += '<div class="stops-list">';
-      stops.forEach(stop => {
-        const tc = typeColor(stop.type);
-        ih += '<div class="stop-item">';
-        ih += '<div class="stop-dot"></div>';
-        ih += '<div class="stop-info">';
-        ih += '<div class="name">' + (stop.name || '—') + '</div>';
-        ih += '<span class="badge badge-' + tc + '">' + (stop.type || '') + '</span>';
-        if (stop.description) ih += '<div class="desc">' + stop.description + '</div>';
-        if (stop.stay_name) ih += '<div class="desc">🏨 Stay: ' + stop.stay_name + (stop.stay_cost_approx ? ' (~Rs ' + stop.stay_cost_approx + ')' : '') + '</div>';
+      fuelStops.forEach(stop => {
+        ih += '<div class="stop-item"><div class="stop-dot"></div><div class="stop-info">';
+        ih += '<div class="name">⛽ ' + stop.name + '</div>';
+        ih += '<span class="badge badge-fuel">Fuel</span>';
+        ih += '<div class="desc">At ' + stop.km_from_start + ' km from start</div>';
         ih += '</div></div>';
       });
       ih += '</div>';
     }
+
+    // Food stops
+    if (foodStops.length) {
+      ih += '<div class="stops-list">';
+      foodStops.forEach(place => {
+        ih += '<div class="stop-item"><div class="stop-dot"></div><div class="stop-info">';
+        ih += '<div class="name">🍽️ ' + place + '</div>';
+        ih += '<span class="badge badge-food">Food</span>';
+        ih += '</div></div>';
+      });
+      ih += '</div>';
+    }
+
+    // Hotel
+    if (hotel) {
+      ih += '<div class="stop-item"><div class="stop-dot"></div><div class="stop-info">';
+      ih += '<div class="name">🏨 ' + hotel.name + '</div>';
+      ih += '<span class="badge badge-stay">Stay</span>';
+      ih += '<div class="desc">' + (hotel.area || '') + (hotel.price_range_inr ? ' · Rs ' + hotel.price_range_inr : '') + '</div>';
+      ih += '</div></div>';
+    }
+
+    // Bhai tip
+    if (tip) ih += '<div class="warning-box" style="margin-top:8px">💡 ' + tip + '</div>';
+
+    // Day warnings
+    dayWarnings.forEach(w => ih += '<div class="warning-box">⚠️ ' + w + '</div>');
+
     ih += '</div>';
   });
   document.getElementById('itineraryContent').innerHTML = ih || '<p style="color:#999">No itinerary data returned.</p>';
