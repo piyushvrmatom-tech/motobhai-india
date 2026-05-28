@@ -758,6 +758,8 @@
       </svg>
       <div class="logo-text">Moto<span>Bhai</span></div>
     </a>
+    <button id="signOutBtn" onclick="localStorage.removeItem('mb_token');location.reload();" style="display:none;background:none;border:1px solid var(--color-border);border-radius:8px;padding:6px 14px;font-size:0.8rem;cursor:pointer;color:var(--color-text-muted)">Sign Out</button>
+    <script>if(localStorage.getItem('mb_token')) document.getElementById('signOutBtn').style.display='block';</script>
     <div class="header-actions">
       <button class="header-btn" id="aboutBtn">About</button>
       <button class="header-btn" data-theme-toggle aria-label="Toggle theme">
@@ -1053,45 +1055,52 @@
     const otpInputs = document.querySelectorAll('.otp-input');
     let confirmationResult = null;
 
-    // Check if already signed in
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        loginGate.classList.add('hidden');
-        fetchUserLocation();
-      }
-    });
+    // ── Auth helpers ──────────────────────────────────────────────
+    function getToken() { return localStorage.getItem('mb_token'); }
+    function setToken(t) { localStorage.setItem('mb_token', t); }
+    function clearToken() { localStorage.removeItem('mb_token'); }
 
-    // Send OTP
+    // Check if already signed in (JWT in localStorage)
+    if (getToken()) {
+      loginGate.classList.add('hidden');
+      fetchUserLocation();
+    }
+
+    let otpPhone = '';
+
+    // Send OTP via our backend
     sendOtpBtn.addEventListener('click', async () => {
-      const phone = phoneInput.value.replace(/\s/g, '');
-      if (phone.length < 10) {
-        phoneError.textContent = 'Enter a valid 10-digit number';
+      const digits = phoneInput.value.replace(/\D/g, '').slice(-10);
+      if (digits.length !== 10) {
+        phoneError.textContent = 'Enter a valid 10-digit mobile number';
         phoneError.style.display = 'block';
         return;
       }
       phoneError.style.display = 'none';
       sendOtpBtn.disabled = true;
       sendOtpBtn.textContent = 'Sending...';
+      otpPhone = '+91' + digits;
 
       try {
-        try { window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' }); } catch(e) { console.warn('RecaptchaVerifier init skipped:', e); }
-        confirmationResult = await auth.signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier);
+        const r = await fetch(API_BASE + '/api/otp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: otpPhone })
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || 'Send failed');
         phoneSection.classList.add('hidden');
         otpSection.classList.add('active');
         otpInputs[0].focus();
       } catch (err) {
-        phoneError.textContent = 'Failed to send OTP. Please try again.';
+        phoneError.textContent = err.message || 'Failed to send OTP. Try again.';
         phoneError.style.display = 'block';
         sendOtpBtn.disabled = false;
         sendOtpBtn.textContent = 'Send OTP';
-        if (window.recaptchaVerifier) {
-          window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
-        }
       }
     });
 
-    // OTP input navigation
+    // OTP input navigation — auto-focus next box, auto-submit on last
     otpInputs.forEach((input, i) => {
       input.addEventListener('input', (e) => {
         if (e.target.value && i < 5) otpInputs[i + 1].focus();
@@ -1100,9 +1109,18 @@
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Backspace' && !e.target.value && i > 0) otpInputs[i - 1].focus();
       });
+      // Allow paste of full 6-digit code into first box
+      input.addEventListener('paste', (e) => {
+        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+        if (text.length === 6) {
+          e.preventDefault();
+          otpInputs.forEach((el, j) => el.value = text[j] || '');
+          verifyOtpBtn.click();
+        }
+      });
     });
 
-    // Verify OTP
+    // Verify OTP via our backend → get JWT
     verifyOtpBtn.addEventListener('click', async () => {
       const code = Array.from(otpInputs).map(i => i.value).join('');
       if (code.length < 6) {
@@ -1113,12 +1131,22 @@
       otpError.style.display = 'none';
       verifyOtpBtn.disabled = true;
       verifyOtpBtn.textContent = 'Verifying...';
+
       try {
-        await confirmationResult.confirm(code);
+        const r = await fetch(API_BASE + '/api/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: otpPhone, code })
+        });
+        const d = await r.json();
+        if (!r.ok || !d.token) throw new Error(d.detail || 'Invalid code');
+        setToken(d.token);
         loginGate.classList.add('hidden');
         fetchUserLocation();
       } catch (err) {
-        otpError.textContent = 'Invalid code. Please try again.';
+        otpError.textContent = err.message === 'invalid_or_expired'
+          ? 'Wrong code or expired. Try again.'
+          : (err.message || 'Verification failed.');
         otpError.style.display = 'block';
         verifyOtpBtn.disabled = false;
         verifyOtpBtn.textContent = 'Verify & Continue';
@@ -1416,9 +1444,14 @@ Rules:
         if (match) bike_id = match.bike_id;
       } catch(e) { /* use default */ }
 
+      // Attach JWT if logged in
+      const planHeaders = { 'Content-Type': 'application/json' };
+      const tok = localStorage.getItem('mb_token');
+      if (tok) planHeaders['Authorization'] = 'Bearer ' + tok;
+
       const resp = await fetch(`${API_BASE}/api/plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: planHeaders,
         body: JSON.stringify({
           from: params.origin,
           to: params.destination,
