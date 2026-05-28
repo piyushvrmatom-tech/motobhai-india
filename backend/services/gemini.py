@@ -16,7 +16,7 @@ import google.generativeai as genai
 
 log = logging.getLogger(__name__)
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-2.0-flash"
 PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "itinerary_v3.txt"
 PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8") if PROMPT_PATH.exists() else ""
 
@@ -87,8 +87,10 @@ def generate_itinerary(
 
     last_error: Exception | None = None
     for attempt in range(2):
+        if attempt > 0:
+            import time; time.sleep(3)
         try:
-            resp = model.generate_content(user_msg, request_options={"timeout": 18})
+            resp = model.generate_content(user_msg, request_options={"timeout": 45})
             text = _strip_code_fence(resp.text)
             return json.loads(text)
         except json.JSONDecodeError as exc:
@@ -110,7 +112,7 @@ def ping() -> bool:
         resp = model.generate_content(
             "Reply with the single word: ok",
             generation_config={"temperature": 0, "max_output_tokens": 4},
-            request_options={"timeout": 4},
+            request_options={"timeout": 15},
         )
         return "ok" in (resp.text or "").lower()
     except Exception:
