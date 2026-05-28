@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B0B0F"/>
+      <stop offset="1" stop-color="#1F1F2A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF6A1A"/>
+      <stop offset="1" stop-color="#FFA563"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Logo mark -->
+  <g transform="translate(64, 56)">
+    <rect x="0" y="0" width="84" height="84" rx="20" fill="#0B0B0F" stroke="#FF6A1A" stroke-width="2"/>
+    <path d="M18 60 L28 26 L42 46 L56 26 L66 60" stroke="#FF6A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="26" cy="70" r="4" fill="#FF6A1A"/>
+    <circle cx="58" cy="70" r="4" fill="#FF6A1A"/>
+  </g>
+  <text x="172" y="112" font-family="Inter, sans-serif" font-weight="800" font-size="36" fill="#F5F5F7" letter-spacing="-0.02em">Moto Bhai India</text>
+  <text x="172" y="146" font-family="Inter, sans-serif" font-weight="500" font-size="18" fill="#8A8A99" letter-spacing="0.04em">PLAN. RIDE. SHARE.</text>
+
+  <!-- Headline -->
+  <text x="64" y="320" font-family="Inter, sans-serif" font-weight="800" font-size="100" fill="#F5F5F7" letter-spacing="-0.025em">Plan a ride.</text>
+  <text x="64" y="410" font-family="Inter, sans-serif" font-weight="500" font-size="36" fill="#C4C4CE">Five questions. Eight seconds.</text>
+  <text x="64" y="456" font-family="Inter, sans-serif" font-weight="500" font-size="36" fill="#C4C4CE">One trip you'll actually take.</text>
+
+  <!-- Accent bar -->
+  <rect x="64" y="510" width="200" height="8" rx="4" fill="url(#accent)"/>
+
+  <!-- URL -->
+  <text x="64" y="560" font-family="Inter, sans-serif" font-weight="600" font-size="22" fill="#FF6A1A">motobhai-india.web.app</text>
+
+  <!-- Motorcycle silhouette - simple stylized -->
+  <g transform="translate(700, 280)" opacity="0.92">
+    <!-- Wheels -->
+    <circle cx="60" cy="200" r="58" stroke="#FF6A1A" stroke-width="6" fill="#0B0B0F"/>
+    <circle cx="60" cy="200" r="22" stroke="#FF6A1A" stroke-width="3" fill="none"/>
+    <circle cx="380" cy="200" r="58" stroke="#FF6A1A" stroke-width="6" fill="#0B0B0F"/>
+    <circle cx="380" cy="200" r="22" stroke="#FF6A1A" stroke-width="3" fill="none"/>
+    <!-- Frame -->
+    <path d="M 60 200 L 150 120 L 240 120 L 280 160 L 380 200" stroke="#FF6A1A" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 150 120 L 200 60 L 250 60" stroke="#FF6A1A" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <!-- Tank -->
+    <path d="M 180 130 Q 220 105 280 130 L 280 160 Q 240 145 200 160 Z" fill="#FF6A1A" opacity="0.4"/>
+    <!-- Seat -->
+    <path d="M 250 130 L 310 130 L 320 145 L 240 145 Z" fill="#1F1F2A"/>
+    <!-- Headlight -->
+    <circle cx="160" cy="135" r="14" fill="#FF6A1A"/>
+  </g>
+</svg>

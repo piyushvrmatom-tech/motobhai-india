@@ -218,9 +218,44 @@ function renderDayCard(day) {
 }
 
 els.btnPdf.addEventListener("click", async () => {
-  if (!state.lastTrip) return;
-  // PDF endpoint comes in PR #3. For now redirect to legacy until then.
-  alert("PDF download coming back in the next update — your trip is saved.");
+  if (!state.lastTrip?.trip_id) return;
+  const btn = els.btnPdf;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Preparing PDF…";
+  try {
+    const res = await fetch(`${(window.MB_API_BASE || "https://motobhai-api.onrender.com")}/api/pdf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trip_id: state.lastTrip.trip_id }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      const { pdf_url } = await res.json();
+      if (pdf_url) {
+        window.location.href = pdf_url;
+      } else {
+        throw new Error("no pdf_url in response");
+      }
+    } else if (ct.includes("application/pdf")) {
+      // Streaming fallback — download blob.
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `motobhai_${state.lastTrip.trip_id}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+    api.log("pdf_downloaded", { trip_id: state.lastTrip.trip_id });
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't generate PDF — try again in a minute.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 });
 
 els.btnShare.addEventListener("click", async () => {
@@ -243,11 +278,36 @@ function escape(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+// ─── Offline shell ───────────────────────────────────────────────────────
+// On a cold boot, if we're offline and we have a stashed last_trip,
+// surface a banner so the rider can re-open it without typing.
+function maybeShowOfflineLast() {
+  if (navigator.onLine) return;
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem("mb_last_trip") || "null"); } catch { saved = null; }
+  if (!saved) return;
+  const banner = document.createElement("div");
+  banner.setAttribute("role", "status");
+  banner.style.cssText = "background:var(--accent);color:#110800;padding:12px 16px;text-align:center;font-weight:700;cursor:pointer";
+  banner.textContent = `You're offline — tap to view your last ride: ${saved.summary?.from || ""} → ${saved.summary?.to || ""}`;
+  banner.addEventListener("click", () => {
+    state.lastTrip = saved;
+    renderItinerary(saved);
+    banner.remove();
+  });
+  document.body.prepend(banner);
+}
+
 // ─── Boot ────────────────────────────────────────────────────────────────
 updateDays();
 loadBikes();
+maybeShowOfflineLast();
 
-// PWA registration (manifest only for now — service worker comes in Phase 2 week 2)
+// PWA service worker — caches the app shell so the planner opens above Rohtang.
 if ("serviceWorker" in navigator && location.protocol === "https:") {
-  // Stub: SW shipping in a follow-up PR
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((err) =>
+      console.warn("SW register failed:", err)
+    );
+  });
 }
