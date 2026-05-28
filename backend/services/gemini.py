@@ -80,7 +80,7 @@ def generate_itinerary(
         system_instruction=PROMPT_TEXT,
         generation_config={
             "temperature": 0.4,
-            "max_output_tokens": 4096,
+            "max_output_tokens": 8192,
             "response_mime_type": "application/json",
         },
     )
@@ -96,6 +96,22 @@ def generate_itinerary(
         except json.JSONDecodeError as exc:
             last_error = exc
             log.warning("Gemini JSON parse failed on attempt %d: %s", attempt + 1, exc)
+            # Try truncation recovery: close open brackets
+            try:
+                t2 = text
+                open_braces = t2.count('{') - t2.count('}')
+                open_brackets = t2.count('[') - t2.count(']')
+                if open_braces > 0 or open_brackets > 0:
+                    # Close last open array/object cleanly
+                    # Strip trailing comma/partial token first
+                    t2 = re.sub(r',\s*$', '', t2.rstrip())
+                    t2 = re.sub(r',\s*"[^"]*$', '', t2)  # cut partial key
+                    t2 += ']' * max(0, open_brackets) + '}' * max(0, open_braces)
+                    result = json.loads(t2)
+                    log.warning("Truncation recovery succeeded on attempt %d", attempt + 1)
+                    return result
+            except Exception as rec_exc:
+                log.warning("Truncation recovery also failed: %s", rec_exc)
         except Exception as exc:  # network, quota, content-filter, etc.
             last_error = exc
             log.warning("Gemini call failed on attempt %d: %s", attempt + 1, exc)
