@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Poppins', Arial, sans-serif; color: #1A1A1A; background: #fff; font-size: 11pt; }
+
+  /* COVER */
+  .cover { background: #E8751A; color: #fff; padding: 48px 40px 36px; }
+  .cover .logo { font-size: 22pt; font-weight: 800; margin-bottom: 4px; }
+  .cover .logo span { opacity: .7; }
+  .cover h1 { font-size: 26pt; font-weight: 800; margin: 20px 0 8px; line-height: 1.2; }
+  .cover .sub { font-size: 12pt; opacity: .85; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .badge { background: rgba(255,255,255,.2); border-radius: 20px; padding: 4px 14px; font-size: 9pt; font-weight: 600; }
+
+  /* SUMMARY BAR */
+  .summary-bar { display: flex; background: #FDF8F3; border-bottom: 2px solid #E8751A; }
+  .s-item { flex: 1; padding: 14px 10px; text-align: center; border-right: 1px solid #E5E5E5; }
+  .s-item:last-child { border-right: none; }
+  .s-item .val { font-size: 16pt; font-weight: 800; color: #E8751A; }
+  .s-item .lbl { font-size: 8pt; color: #888; margin-top: 2px; }
+
+  /* SECTIONS */
+  .section { padding: 24px 32px; }
+  .section-title { font-size: 13pt; font-weight: 700; color: #E8751A; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 2px solid #FFF3E8; }
+
+  /* WARNINGS */
+  .warn-box { background: #FFF8E1; border-left: 4px solid #FFC107; padding: 8px 12px; margin-bottom: 8px; font-size: 9.5pt; color: #5D4037; border-radius: 0 6px 6px 0; }
+
+  /* DAY CARDS */
+  .day-card { border: 1px solid #E5E5E5; border-left: 5px solid #E8751A; border-radius: 0 10px 10px 0; padding: 14px 16px; margin-bottom: 14px; background: #FFFAF5; page-break-inside: avoid; }
+  .day-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .day-title { font-weight: 700; font-size: 11.5pt; }
+  .day-meta { font-size: 8.5pt; color: #888; margin-top: 2px; }
+  .day-km { font-size: 14pt; font-weight: 800; color: #E8751A; }
+
+  /* STOP ROWS */
+  .stop-row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; border-bottom: 1px solid #F0EDE8; }
+  .stop-row:last-child { border-bottom: none; }
+  .stop-icon { font-size: 11pt; width: 20px; flex-shrink: 0; margin-top: 1px; }
+  .stop-name { font-weight: 600; font-size: 9.5pt; }
+  .stop-desc { font-size: 8.5pt; color: #888; }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 7.5pt; font-weight: 700; text-transform: uppercase; margin-left: 4px; }
+  .pill-fuel { background: #E8F5E9; color: #2E7D32; }
+  .pill-food { background: #FFF3E8; color: #E65100; }
+  .pill-stay { background: #F3E5F5; color: #6A1B9A; }
+
+  /* TIP */
+  .tip-box { background: #FFF3E8; border-left: 3px solid #E8751A; padding: 7px 10px; margin-top: 8px; font-size: 8.5pt; color: #555; border-radius: 0 6px 6px 0; }
+
+  /* COST */
+  .cost-grid { display: flex; gap: 12px; }
+  .cost-item { flex: 1; background: #FDF8F3; border-radius: 10px; padding: 12px; text-align: center; }
+  .cost-item .val { font-size: 14pt; font-weight: 800; color: #E8751A; }
+  .cost-item .lbl { font-size: 8pt; color: #888; }
+
+  /* SAFETY */
+  .safety { background: #E8751A; color: #fff; padding: 14px 20px; border-radius: 10px; text-align: center; font-weight: 700; font-size: 10pt; margin: 0 32px 24px; }
+
+  /* FOOTER */
+  .pdf-footer { text-align: center; padding: 20px; color: #aaa; font-size: 8pt; border-top: 1px solid #E5E5E5; }
+
+  @page { margin: 0; size: A4; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="logo">🏍️ Moto<span>Bhai</span> India</div>
+  <h1>{{ summary.from }} → {{ summary.to }}</h1>
+  <div class="sub">{{ summary.total_days }}-day motorcycle itinerary · Generated {{ generated_date }}</div>
+  <div class="badges">
+    <span class="badge">🛣️ {{ summary.total_km | round | int }} km total</span>
+    <span class="badge">📅 {{ summary.total_days }} days</span>
+    <span class="badge">⛰️ Max {{ summary.max_day_km }} km/day</span>
+    <span class="badge">🏍️ {{ bike_label }}</span>
+  </div>
+</div>
+
+<!-- SUMMARY BAR -->
+<div class="summary-bar">
+  <div class="s-item"><div class="val">{{ summary.total_km | round | int }}</div><div class="lbl">Total km</div></div>
+  <div class="s-item"><div class="val">{{ summary.total_days }}</div><div class="lbl">Days</div></div>
+  <div class="s-item"><div class="val">{{ summary.max_day_km }}</div><div class="lbl">Max km/day</div></div>
+  <div class="s-item"><div class="val">Rs {{ "{:,}".format(summary.est_fuel_cost_inr) }}</div><div class="lbl">Fuel est.</div></div>
+  <div class="s-item"><div class="val">Rs {{ "{:,}".format(summary.est_hotel_cost_inr) }}</div><div class="lbl">Hotel est.</div></div>
+</div>
+
+<!-- WARNINGS -->
+{% if warnings %}
+<div class="section">
+  <div class="section-title">⚠️ Route Warnings</div>
+  {% for w in warnings %}
+  <div class="warn-box">{{ w }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ITINERARY -->
+<div class="section">
+  <div class="section-title">📅 Day-by-Day Itinerary</div>
+
+  {% for day in days_plan %}
+  <div class="day-card">
+    <div class="day-header">
+      <div>
+        <div class="day-title">Day {{ day.day }}: {{ day.from or day.origin }} → {{ day.to or day.destination }}</div>
+        <div class="day-meta">⏱️ {{ day.eta_hours }}h riding · ↑{{ day.elevation_gain_m }}m elevation</div>
+      </div>
+      <div class="day-km">{{ day.km }}km</div>
+    </div>
+
+    {% for f in day.fuel_stops %}
+    <div class="stop-row">
+      <div class="stop-icon">⛽</div>
+      <div>
+        <div class="stop-name">{{ f.name }}<span class="pill pill-fuel">Fuel</span></div>
+        <div class="stop-desc">@ {{ f.km_from_start }} km from start</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% for r in day.food_stops %}
+    <div class="stop-row">
+      <div class="stop-icon">🍽️</div>
+      <div>
+        <div class="stop-name">{{ r }}<span class="pill pill-food">Food</span></div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if day.hotel_suggestion %}
+    <div class="stop-row">
+      <div class="stop-icon">🏨</div>
+      <div>
+        <div class="stop-name">{{ day.hotel_suggestion.name }}<span class="pill pill-stay">Stay</span></div>
+        <div class="stop-desc">{{ day.hotel_suggestion.area }}{% if day.hotel_suggestion.price_range_inr %} · Rs {{ day.hotel_suggestion.price_range_inr }}{% endif %}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% for w in day.warnings %}
+    <div class="warn-box" style="margin-top:8px">⚠️ {{ w }}</div>
+    {% endfor %}
+
+    {% if day.bhai_tip %}
+    <div class="tip-box">💡 {{ day.bhai_tip }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- COST -->
+<div class="section">
+  <div class="section-title">💰 Cost Estimate</div>
+  <div class="cost-grid">
+    <div class="cost-item"><div class="val">Rs {{ "{:,}".format(summary.est_fuel_cost_inr) }}</div><div class="lbl">Fuel</div></div>
+    <div class="cost-item"><div class="val">Rs {{ "{:,}".format(summary.est_hotel_cost_inr) }}</div><div class="lbl">Hotels</div></div>
+    <div class="cost-item"><div class="val">Rs {{ "{:,}".format(summary.est_fuel_cost_inr + summary.est_hotel_cost_inr) }}</div><div class="lbl">Total Est.</div></div>
+    <div class="cost-item"><div class="val">{{ trip_id }}</div><div class="lbl">Trip ID</div></div>
+  </div>
+</div>
+
+<!-- SAFETY -->
+<div class="safety">
+  🎧 ATGATT — All The Gear, All The Time. Helmet · Jacket · Gloves · Boots · Riding Pants. Every ride.
+</div>
+
+<div class="pdf-footer">
+  Generated by Moto Bhai India · motobhai-india.web.app · {{ generated_date }} · Trip ID: {{ trip_id }}
+</div>
+
+</body>
+</html>

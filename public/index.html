@@ -852,6 +852,7 @@
       <h2 id="resultsTitle">Your Ride Plan</h2>
       <div class="results-actions">
         <button class="action-btn" id="shareBtn">📤 Share</button>
+        <button class="action-btn" id="pdfBtn">📄 PDF</button>
         <button class="action-btn" id="mapsBtn">🗺️ Google Maps</button>
         <button class="action-btn" id="newTripBtn">+ New Trip</button>
       </div>
@@ -1469,6 +1470,7 @@ Rules:
       // Store trip_id for share
       window._lastTripId = data.trip_id;
       window._lastShareUrl = data.share_url;
+      window._lastTripIdFull = data.trip_id;
 
       const s = data.summary || {};
       const mileageVal = parseFloat(params.mileage) || 35;
@@ -1610,6 +1612,21 @@ Rules:
       const mid = waypoints.slice(1, -1).join('|');
       const url = `https://www.google.com/maps/dir/${waypoints.join('/')}`;
       window.open(url, '_blank');
+    });
+
+    document.getElementById('pdfBtn').addEventListener('click', () => {
+      const tripId = window._lastTripIdFull;
+      if (!tripId) { alert('Generate a trip first!'); return; }
+      const btn = document.getElementById('pdfBtn');
+      btn.textContent = '⏳...';
+      btn.disabled = true;
+      const a = document.createElement('a');
+      a.href = `${API_BASE}/api/plan/${tripId}/pdf`;
+      a.download = `motobhai_${tripId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => { btn.textContent = '📄 PDF'; btn.disabled = false; }, 4000);
     });
 
     document.getElementById('shareBtn').addEventListener('click', async () => {

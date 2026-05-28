@@ -134,6 +134,7 @@ footer{text-align:center;padding:24px;color:#aaa;font-size:.8em}
     <div class="action-row">
       <button class="btn btn-whatsapp" onclick="shareWhatsApp()">📲 Share on WhatsApp</button>
       <button class="btn btn-outline" onclick="copyLink()">🔗 Copy Link</button>
+      <button class="btn btn-outline" id="pdfBtn" onclick="downloadPDF()">📄 Download PDF</button>
       <a href="/" class="btn btn-primary">Plan My Own Ride</a>
     </div>
   </div>
@@ -270,6 +271,27 @@ function renderTrip(data) {
     <div style="font-size:1.1em;font-weight:800;color:var(--orange)">${typeof i.val === 'number' ? 'Rs ' + i.val.toLocaleString('en-IN') : i.val}</div>
     <div style="font-size:.75em;color:var(--muted)">${i.label}</div>
   </div>`).join('');
+}
+
+function downloadPDF() {
+  const shortId = getShortId();
+  if (!shortId) return;
+  const tripId = shortId.startsWith('mb_') ? shortId : 'mb_' + shortId;
+  const btn = document.getElementById('pdfBtn');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  const a = document.createElement('a');
+  a.href = `${API}/api/plan/${tripId}/pdf`;
+  a.download = `motobhai_trip_${shortId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  setTimeout(() => {
+    btn.textContent = '📄 Download PDF';
+    btn.disabled = false;
+  }, 4000);
 }
 
 function shareWhatsApp() {
