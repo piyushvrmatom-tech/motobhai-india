@@ -16,4 +16,17 @@ def get_share(short_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="trip not found")
     firestore_client.increment_share_view(trip_id)
-    return doc
+    return _sanitize(doc)
+
+
+def _sanitize(obj):
+    from datetime import datetime, timezone
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize(i) for i in obj]
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if hasattr(obj, "seconds"):
+        return datetime.fromtimestamp(obj.seconds, tz=timezone.utc).isoformat()
+    return obj
