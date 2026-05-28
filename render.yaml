@@ -34,6 +34,12 @@ services:
       - key: FRONTEND_ORIGIN
         value: https://motobhai-india.web.app
       - key: SHARE_BASE_URL
-        value: https://motobhai-india.web.app
+        # Shareable trip URL emitted in plan responses. Points at the backend
+        # SSR so social crawlers see per-trip OG meta. Firebase Hosting
+        # redirects legacy web.app/s/* links here too.
+        value: https://motobhai-api.onrender.com
+      - key: API_BASE_URL
+        # Self-reference — used by the SSR share page to build /api/og URLs.
+        value: https://motobhai-api.onrender.com
       - key: ENV
         value: production

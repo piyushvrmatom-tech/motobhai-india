@@ -48,11 +48,13 @@ def serve_share_page(short_id: str):
 
     firestore_client.increment_share_view(trip_id)
 
-    asset_base = os.getenv("SHARE_BASE_URL", "https://motobhai-india.web.app").rstrip("/")
+    # asset_base hosts the CSS/JS/icons (Firebase Hosting).
+    # api_base hosts the OG endpoint + this share page itself.
+    asset_base = os.getenv("FRONTEND_ORIGIN", "https://motobhai-india.web.app").rstrip("/")
     api_base = os.getenv("API_BASE_URL", "https://motobhai-api.onrender.com").rstrip("/")
 
     og_image_url = trip.get("og_image_url") or f"{api_base}/api/og/{short_id.removeprefix('mb_')}.png"
-    share_url = trip.get("share_url") or f"{asset_base}/s/{short_id.removeprefix('mb_')}"
+    share_url = trip.get("share_url") or f"{api_base}/s/{short_id.removeprefix('mb_')}"
 
     # Escape </script> so a malicious city name can't break out of the seed script tag.
     # Also escape <!-- which would terminate the script block in older parsers.
