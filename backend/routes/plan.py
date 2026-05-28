@@ -35,6 +35,14 @@ def _current_season(now: datetime) -> str:
 
 @router.post("/api/plan", response_model=PlanResponse)
 def create_plan(req: PlanRequest) -> PlanResponse:
+    # Normalise frontend vibe synonyms → canonical 3 Gemini values
+    _VIBE_MAP = {
+        "scenic": "chill", "chill": "chill",
+        "express": "standard", "standard": "standard",
+        "offroad": "hardcore", "adventure": "hardcore", "hardcore": "hardcore",
+    }
+    vibe = _VIBE_MAP.get(req.vibe, "standard")
+
     # 1. Get route distance via Routes API.
     try:
         route = routes_api.compute(req.origin, req.destination)
@@ -72,7 +80,7 @@ def create_plan(req: PlanRequest) -> PlanResponse:
             days=req.days,
             legs=legs_payload,
             bike_label=bike_label,
-            vibe=req.vibe,
+            vibe=vibe,
             budget_tier=req.budget_tier,
             season=season,
         )
@@ -145,7 +153,7 @@ def create_plan(req: PlanRequest) -> PlanResponse:
         destination=req.destination,
         days=req.days,
         total_km=plan.total_km,
-        vibe=req.vibe,
+        vibe=vibe,
         bike_id=req.bike_id or "custom",
     )
 

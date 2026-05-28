@@ -7,7 +7,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-Vibe = Literal["chill", "standard", "hardcore"]
+Vibe = Literal["chill", "standard", "hardcore", "scenic", "offroad", "express", "adventure"]
 BudgetTier = Literal["economy", "standard", "premium", "luxury"]
 
 
