@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loading your ride · Moto Bhai</title>
+<meta name="robots" content="noindex">
+<!-- Crawlers that DO land here (legacy links) will see the meta refresh and follow it,
+     but for the OG-preview path we want links to go directly to the backend. Backend
+     issues `share_url` pointing at api.onrender.com for new trips. -->
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;background:#0B0B0F;color:#F5F5F7;margin:0;padding:40vh 20px 0;text-align:center;min-height:100vh}
+  .ring{width:36px;height:36px;border:3px solid #2A2A38;border-top-color:#FF6A1A;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+  p{color:#8A8A99;margin:0}
+  a{color:#FF6A1A;text-decoration:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+  <div class="ring" aria-hidden="true"></div>
+  <p>Loading your ride…</p>
+  <p style="margin-top:24px"><a href="/">Plan a new ride</a></p>
+  <script>
+    // Extract short id from /s/{id} and redirect to backend share page.
+    const m = location.pathname.match(/\/s\/([a-z0-9_]+)$/i);
+    const apiBase = "https://motobhai-api.onrender.com";
+    if (m) {
+      location.replace(`${apiBase}/s/${m[1]}`);
+    } else {
+      location.replace("/");
+    }
+  </script>
+  <noscript>
+    <p style="margin-top:24px">
+      JavaScript is required to load this shared ride.
+      <a href="/">Plan a new ride</a> instead.
+    </p>
+  </noscript>
+</body>
+</html>

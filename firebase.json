@@ -3,7 +3,10 @@
     "public": "public",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "/s/**", "destination": "/share.html" }
+      {
+        "source": "/s/**",
+        "destination": "/share-redirect.html"
+      }
     ],
     "headers": [
       {
