@@ -15,7 +15,7 @@ from backend.models.trip import (
     PlanResponse,
     TripSummary,
 )
-from backend.services import bikes, firestore_client, gemini, routes_api, sheets_logger
+from backend.services import bikes, firestore_client, gemini, og_image, routes_api, sheets_logger
 from backend.services.splitter import SplitterRejection, split
 
 log = logging.getLogger(__name__)
