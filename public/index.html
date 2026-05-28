@@ -1399,7 +1399,7 @@ Rules:
 
 
       // Map vibe from prefs/tripType
-      const vibeMap = { 'scenic': 'scenic', 'offroad': 'adventure', 'express': 'express' };
+      const vibeMap = { 'scenic': 'chill', 'offroad': 'hardcore', 'express': 'standard', 'adventure': 'hardcore' };
       const vibeKey = (params.prefs || '').split(',').map(p => p.trim()).find(p => vibeMap[p]) || 'standard';
       const vibe = vibeMap[vibeKey] || 'standard';
 
