@@ -15,7 +15,7 @@ from backend.models.trip import (
     PlanResponse,
     TripSummary,
 )
-from backend.services import bikes, firestore_client, gemini, routes_api, sheets_logger
+from backend.services import bikes, firestore_client, gemini, og_image, routes_api, sheets_logger
 from backend.services.splitter import SplitterRejection, split
 
 log = logging.getLogger(__name__)
@@ -133,8 +133,26 @@ def create_plan(req: PlanRequest) -> PlanResponse:
         pdf_url=None,
     )
 
+    # Generate per-trip OG image (best-effort) and upload — share page uses it.
+    og_url: str | None = None
+    try:
+        png = og_image.render_trip_og(
+            origin=req.origin,
+            destination=req.destination,
+            days=req.days,
+            total_km=plan.total_km,
+            bike_label=bike_label,
+        )
+        if png:
+            og_url = og_image.upload_og(trip_id, png)
+    except Exception:
+        log.exception("OG image generation/upload failed for %s", trip_id)
+
     # Persist (best-effort) + log (fire-and-forget).
-    firestore_client.save_trip(trip_id, response.model_dump(mode="json", by_alias=True))
+    persisted = response.model_dump(mode="json", by_alias=True)
+    if og_url:
+        persisted["og_image_url"] = og_url
+    firestore_client.save_trip(trip_id, persisted)
     sheets_logger.log_event_sync(
         "plan_created",
         trip_id=trip_id,
