@@ -2,11 +2,38 @@ services:
   - type: web
     name: motobhai-api
     runtime: python
-    rootDir: backend
+    pythonVersion: "3.11.9"
+    rootDir: .
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    region: singapore
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
     envVars:
+      - key: GEMINI_API_KEY
+        sync: false
       - key: GMAPS_API_KEY
         sync: false
-    autoDeploy: true
+      - key: GOOGLE_ROUTES_API_KEY
+        sync: false
+      - key: SHEETS_WEBHOOK_URL
+        sync: false
+      - key: OTP_SECRET
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_TEMPLATE_ID
+        sync: false
+      - key: FIRESTORE_CREDENTIALS_B64
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: FRONTEND_ORIGIN
+        value: https://motobhai-india.web.app
+      - key: SHARE_BASE_URL
+        value: https://motobhai-india.web.app
+      - key: ENV
+        value: production
