@@ -67,16 +67,20 @@ def send(phone: str) -> Tuple[bool, str]:
     code = _generate_code()
     expires = datetime.now(tz=timezone.utc) + timedelta(minutes=OTP_TTL_MIN)
 
-    db.collection("otp_codes").document(phash).set(
-        {
-            "phone_hash": phash,
-            "code_hash": _code_hash(code),
-            "expires_at": expires,
-            "attempts": 0,
-            "used": False,
-            "created_at": datetime.now(tz=timezone.utc),
-        }
-    )
+    try:
+        db.collection("otp_codes").document(phash).set(
+            {
+                "phone_hash": phash,
+                "code_hash": _code_hash(code),
+                "expires_at": expires,
+                "attempts": 0,
+                "used": False,
+                "created_at": datetime.now(tz=timezone.utc),
+            }
+        )
+    except Exception as exc:
+        log.exception("OTP Firestore write failed for %s", phash[:8])
+        raise OtpError(f"otp_store_failed: {exc}") from exc
 
     auth_key = os.getenv("MSG91_AUTH_KEY", "").strip()
     if not auth_key or not DLT_TEMPLATE_ID:
@@ -116,8 +120,13 @@ def verify(phone: str, code: str) -> bool:
         raise OtpError("Firestore unavailable")
 
     phash = _phone_hash(phone)
-    ref = db.collection("otp_codes").document(phash)
-    snap = ref.get()
+    try:
+        ref = db.collection("otp_codes").document(phash)
+        snap = ref.get()
+    except Exception as exc:
+        log.exception("OTP Firestore read failed")
+        raise OtpError(f"otp_read_failed: {exc}") from exc
+
     if not snap.exists:
         return False
     rec = snap.to_dict() or {}
@@ -135,8 +144,11 @@ def verify(phone: str, code: str) -> bool:
     ok = hmac.compare_digest(expected, actual)
 
     # Atomic-ish update: read-then-write is racy but acceptable here.
-    if ok:
-        ref.update({"used": True, "verified_at": datetime.now(tz=timezone.utc)})
-    else:
-        ref.update({"attempts": rec.get("attempts", 0) + 1})
+    try:
+        if ok:
+            ref.update({"used": True, "verified_at": datetime.now(tz=timezone.utc)})
+        else:
+            ref.update({"attempts": rec.get("attempts", 0) + 1})
+    except Exception:
+        log.warning("OTP Firestore update failed (non-fatal)")
     return ok

@@ -105,8 +105,12 @@ def load_trip(trip_id: str) -> Optional[dict[str, Any]]:
     db = get_db()
     if db is None:
         return None
-    snap = db.collection("trips").document(trip_id).get()
-    return snap.to_dict() if snap.exists else None
+    try:
+        snap = db.collection("trips").document(trip_id).get()
+        return snap.to_dict() if snap.exists else None
+    except Exception:
+        log.exception("load_trip failed for %s", trip_id)
+        return None
 
 
 def increment_share_view(trip_id: str) -> None:

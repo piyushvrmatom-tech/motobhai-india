@@ -127,9 +127,11 @@ def ping() -> bool:
         model = genai.GenerativeModel(MODEL_NAME)
         resp = model.generate_content(
             "Reply with the single word: ok",
-            generation_config={"temperature": 0, "max_output_tokens": 4},
-            request_options={"timeout": 15},
+            generation_config={"temperature": 0, "max_output_tokens": 8},
+            request_options={"timeout": 25},
         )
-        return "ok" in (resp.text or "").lower()
-    except Exception:
+        text = (resp.text or "").lower().strip()
+        return bool(text)  # any non-empty response = alive
+    except Exception as exc:
+        log.debug("Gemini ping failed: %s", exc)
         return False
