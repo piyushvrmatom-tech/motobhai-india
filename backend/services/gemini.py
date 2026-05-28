@@ -1,7 +1,10 @@
 """Gemini 2.5 Flash wrapper — versioned prompt, JSON mode, single retry.
 
+Migrated to the `google-genai` SDK (the `google-generativeai` package reached
+EOL in November 2025). Uses ``genai.Client`` with ``api_key`` from env.
+
 Loads `prompts/itinerary_v3.txt` once at module import. Temperature 0.4 per
-CTO §4.4. Output token cap 4096. Hard wall-clock timeout 18s.
+CTO §4.4. Output token cap 8192. Hard wall-clock timeout 45s.
 """
 from __future__ import annotations
 
@@ -12,27 +15,30 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List
 
-import google.generativeai as genai
-
 log = logging.getLogger(__name__)
 
 MODEL_NAME = "gemini-2.5-flash"
 PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "itinerary_v3.txt"
 PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8") if PROMPT_PATH.exists() else ""
 
-_configured = False
+_client = None
 
 
-def _configure() -> bool:
-    global _configured
-    if _configured:
-        return True
+def _get_client():
+    """Lazily create the genai client. Returns None if no API key."""
+    global _client
+    if _client is not None:
+        return _client
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
-        return False
-    genai.configure(api_key=api_key)
-    _configured = True
-    return True
+        return None
+    try:
+        from google import genai
+        _client = genai.Client(api_key=api_key)
+        return _client
+    except Exception as exc:
+        log.warning("Failed to initialise google-genai Client: %s", exc)
+        return None
 
 
 def _strip_code_fence(text: str) -> str:
@@ -56,10 +62,13 @@ def generate_itinerary(
 ) -> Dict[str, Any]:
     """Call Gemini and return the parsed itinerary dict.
 
-    Raises `RuntimeError` if Gemini is not configured or both attempts fail.
+    Raises ``RuntimeError`` if Gemini is not configured or both attempts fail.
     """
-    if not _configure():
+    client = _get_client()
+    if client is None:
         raise RuntimeError("GEMINI_API_KEY not set")
+
+    from google.genai import types
 
     user_msg = json.dumps(
         {
@@ -75,22 +84,24 @@ def generate_itinerary(
         ensure_ascii=False,
     )
 
-    model = genai.GenerativeModel(
-        MODEL_NAME,
+    config = types.GenerateContentConfig(
         system_instruction=PROMPT_TEXT,
-        generation_config={
-            "temperature": 0.4,
-            "max_output_tokens": 8192,
-            "response_mime_type": "application/json",
-        },
+        temperature=0.4,
+        max_output_tokens=8192,
+        response_mime_type="application/json",
     )
 
     last_error: Exception | None = None
+    text = ""
     for attempt in range(2):
         if attempt > 0:
             import time; time.sleep(3)
         try:
-            resp = model.generate_content(user_msg, request_options={"timeout": 45})
+            resp = client.models.generate_content(
+                model=MODEL_NAME,
+                contents=user_msg,
+                config=config,
+            )
             text = _strip_code_fence(resp.text)
             return json.loads(text)
         except json.JSONDecodeError as exc:
@@ -102,7 +113,6 @@ def generate_itinerary(
                 open_braces = t2.count('{') - t2.count('}')
                 open_brackets = t2.count('[') - t2.count(']')
                 if open_braces > 0 or open_brackets > 0:
-                    # Close last open array/object cleanly
                     # Strip trailing comma/partial token first
                     t2 = re.sub(r',\s*$', '', t2.rstrip())
                     t2 = re.sub(r',\s*"[^"]*$', '', t2)  # cut partial key
@@ -121,17 +131,20 @@ def generate_itinerary(
 
 def ping() -> bool:
     """Liveness check used by /healthz. Cheap one-token call."""
-    if not _configure():
+    client = _get_client()
+    if client is None:
         return False
     try:
-        model = genai.GenerativeModel(MODEL_NAME)
-        resp = model.generate_content(
-            "Reply with the single word: ok",
-            generation_config={"temperature": 0, "max_output_tokens": 8},
-            request_options={"timeout": 25},
+        resp = client.models.generate_content(
+            model=MODEL_NAME,
+            contents="Reply with the single word: ok",
+            config={
+                "temperature": 0,
+                "max_output_tokens": 8,
+            },
         )
         text = (resp.text or "").lower().strip()
         return bool(text)  # any non-empty response = alive
     except Exception as exc:
-        log.debug("Gemini ping failed: %s", exc)
+        log.warning("Gemini ping failed: %s — %s", type(exc).__name__, exc)
         return False
