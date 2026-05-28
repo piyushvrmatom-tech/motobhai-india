@@ -1398,44 +1398,77 @@ Rules:
 - Fuel cost = (totalKm / ${mileage}) * 105 / ${riders} per person`;
 
 
-      const resp = await fetch(`${API_BASE}/api/generate-itinerary`, {
+      // Map vibe from prefs/tripType
+      const vibeMap = { 'scenic': 'scenic', 'offroad': 'adventure', 'express': 'express' };
+      const vibeKey = (params.prefs || '').split(',').map(p => p.trim()).find(p => vibeMap[p]) || 'standard';
+      const vibe = vibeMap[vibeKey] || 'standard';
+
+      // Resolve bike_id from bike name
+      let bike_id = 're_himalayan_450';
+      try {
+        const bikesResp = await fetch(`${API_BASE}/api/motorcycles`);
+        const bikesData = await bikesResp.json();
+        const bikes = bikesData.motorcycles || [];
+        const match = bikes.find(b => {
+          const label = (b.make + ' ' + b.model).toLowerCase();
+          return label.includes((params.bike || '').toLowerCase().split(' ')[0]);
+        });
+        if (match) bike_id = match.bike_id;
+      } catch(e) { /* use default */ }
+
+      const resp = await fetch(`${API_BASE}/api/plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            origin: params.origin,
-            destination: params.destination,
-            days: parseInt(params.days) || 3,
-            motorcycle: params.bike || "Royal Enfield Classic 350",
-            mileage_override: parseFloat(params.mileage) || null,
-            trip_type: params.tripType === "round" ? "round_trip" : params.tripType === "oneway" ? "one_way" : "round_trip",
-            preferences: params.prefs || ["scenic"]
+          from: params.origin,
+          to: params.destination,
+          days: parseInt(params.days) || 3,
+          bike_id: bike_id,
+          vibe: vibe,
+          budget_tier: 'standard',
+          loop: params.tripType === 'round'
         })
       });
 
       const data = await resp.json();
-        if (!data || data.detail) throw new Error(data?.detail || "No response");
-        // Transform backend response to frontend format
-        const it = data.itinerary || data;
-        return {
-          title: it.trip_name || data.trip_name || `${origin} to ${destination}`,
-          totalKm: it.total_distance_km || data.fuel?.distance_km || 0,
-          estimatedFuelCost: it.estimated_budget?.fuel || data.fuel?.cost_inr || 0,
-          fuelPerPerson: (it.estimated_budget?.fuel || data.fuel?.cost_inr || 0),
-          maps_url: data.maps_url || '',
-          days: (it.days || []).map((d, idx) => ({
+      if (!data || data.detail) throw new Error(data?.detail || "No response");
+
+      // Store trip_id for share
+      window._lastTripId = data.trip_id;
+      window._lastShareUrl = data.share_url;
+
+      const s = data.summary || {};
+      const mileageVal = parseFloat(params.mileage) || 35;
+      const fuelCost = data.days_plan
+        ? Math.round((s.total_km || 0) / mileageVal * 105)
+        : (s.est_fuel_cost_inr || 0);
+
+      return {
+        title: `${params.origin} → ${params.destination}`,
+        totalKm: Math.round(s.total_km || 0),
+        estimatedFuelCost: fuelCost,
+        fuelPerPerson: fuelCost,
+        maps_url: '',
+        share_url: data.share_url || '',
+        days: (data.days_plan || []).map((d, idx) => {
+          const fuelStops = d.fuel_stops || [];
+          const food = d.food_stops || [];
+          const hotel = d.hotel_suggestion || {};
+          return {
             day: d.day || idx + 1,
-            from: d.from || '',
-            to: d.to || '',
-            distanceKm: d.distance_km || 0,
-            rideHours: Math.round((d.distance_km || 0) / 60),
-            highlights: (d.highlights || []).join(', '),
-            fuelStop: d.fuel_stop?.location || '',
-            food: (d.meals || []).map(m => m.place || m.cuisine).join(', '),
-            stay: d.stay?.name ? `${d.stay.name} (${d.stay.type || ''})` : '',
+            from: d.from || d.origin || '',
+            to: d.to || d.destination || '',
+            distanceKm: d.km || 0,
+            rideHours: d.eta_hours || Math.round((d.km || 0) / 60),
+            highlights: d.bhai_tip || '',
+            fuelStop: fuelStops.map(f => f.name).join(', '),
+            food: food.slice(0, 3).join(', '),
+            stay: hotel.name ? `${hotel.name}${hotel.price_range_inr ? ' (Rs ' + hotel.price_range_inr + ')' : ''}` : '',
             lat: 0,
             lng: 0
-          }))
-        };
+          };
+        })
+      };
 
     }
 
