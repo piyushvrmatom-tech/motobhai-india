@@ -1,0 +1,14 @@
+{
+  "name": "Moto Bhai India",
+  "short_name": "Moto Bhai",
+  "description": "AI motorcycle touring planner for Indian riders.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0F",
+  "theme_color": "#0B0B0F",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
