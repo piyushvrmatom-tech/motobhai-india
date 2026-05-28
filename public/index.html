@@ -739,7 +739,15 @@
         <button class="btn-primary" id="verifyOtpBtn">Verify & Continue</button>
       </div>
 
-      <div class="login-footer">Available for Indian mobile numbers only 🇮🇳</div>
+      <div class="login-divider" style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;">
+        <div style="flex:1;height:1px;background:var(--color-border,#e5e5e5)"></div>
+        <span style="font-size:0.75rem;color:var(--color-text-muted,#888)">or</span>
+        <div style="flex:1;height:1px;background:var(--color-border,#e5e5e5)"></div>
+      </div>
+      <button id="guestBtn" style="width:100%;background:transparent;border:1.5px solid var(--color-border,#e5e5e5);border-radius:12px;padding:11px;font-size:0.9rem;font-weight:600;cursor:pointer;color:var(--color-text-muted,#666);margin-bottom:4px;transition:all .2s">
+        Continue as Guest 👤
+      </button>
+      <div class="login-footer">Sign in to save and share trips 🇮🇳</div>
     </div>
   </div>
 
@@ -850,6 +858,7 @@
   <div class="results" id="results">
     <div class="results-header">
       <h2 id="resultsTitle">Your Ride Plan</h2>
+      <div id="shareCard" style="display:none;background:var(--color-surface,#1e2329);border:1px solid var(--color-border,#2a2f37);border-radius:14px;padding:14px 16px;margin-bottom:16px;"></div>
       <div class="results-actions">
         <button class="action-btn" id="shareBtn">📤 Share</button>
         <button class="action-btn" id="pdfBtn">📄 PDF</button>
@@ -1066,6 +1075,12 @@
       loginGate.classList.add('hidden');
       fetchUserLocation();
     }
+
+    // Guest mode — skip login, plan without saving
+    document.getElementById('guestBtn').addEventListener('click', () => {
+      loginGate.classList.add('hidden');
+      fetchUserLocation();
+    });
 
     let otpPhone = '';
 
@@ -1432,17 +1447,25 @@ Rules:
       const vibeKey = (params.prefs || '').split(',').map(p => p.trim()).find(p => vibeMap[p]) || 'standard';
       const vibe = vibeMap[vibeKey] || 'standard';
 
-      // Resolve bike_id from bike name
-      let bike_id = 're_himalayan_450';
+      // multi-stop has no backend support — treat as one-way
+      const resolvedTripType = params.tripType === 'multi' ? 'oneway' : params.tripType;
+
+      // Resolve bike_id from bike name — fuzzy multi-word match
+      let bike_id = 'royal_enfield_himalayan_450_2026'; // valid default
       try {
         const bikesResp = await fetch(`${API_BASE}/api/motorcycles`);
         const bikesData = await bikesResp.json();
         const bikes = bikesData.motorcycles || [];
-        const match = bikes.find(b => {
-          const label = (b.make + ' ' + b.model).toLowerCase();
-          return label.includes((params.bike || '').toLowerCase().split(' ')[0]);
-        });
-        if (match) bike_id = match.bike_id;
+        const query = (params.bike || '').toLowerCase().trim();
+        if (query) {
+          const words = query.split(/\s+/).filter(w => w.length > 2);
+          const scored = bikes.map(b => {
+            const label = (b.make + ' ' + b.model + ' ' + b.year).toLowerCase();
+            const score = words.filter(w => label.includes(w)).length;
+            return { bike_id: b.bike_id, score };
+          }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
+          if (scored.length) bike_id = scored[0].bike_id;
+        }
       } catch(e) { /* use default */ }
 
       // Attach JWT if logged in
@@ -1460,7 +1483,7 @@ Rules:
           bike_id: bike_id,
           vibe: vibe,
           budget_tier: 'standard',
-          loop: params.tripType === 'round'
+          loop: resolvedTripType === 'round'
         })
       });
 
@@ -1552,6 +1575,23 @@ Rules:
         <div class="stat"><div class="stat-value">${totalDays} days</div><div class="stat-label">Duration</div></div>
         <div class="stat"><div class="stat-value">${avgDaily} km</div><div class="stat-label">Daily Avg</div></div>
       `;
+
+      // Share card — shown after trip generates
+      const shareUrl = window._lastShareUrl || '';
+      const shareCardEl = document.getElementById('shareCard');
+      if (shareUrl && shareCardEl) {
+        shareCardEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:0.85rem;color:var(--color-text-muted,#888);flex:1;min-width:120px;word-break:break-all">${shareUrl}</span>
+            <button onclick="navigator.clipboard.writeText('${shareUrl}').then(()=>{this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy',2000)})" 
+              style="background:var(--color-primary,#d96b1a);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:0.85rem">🔗 Copy</button>
+            <a href="https://wa.me/?text=${encodeURIComponent('🏍️ Check my Moto Bhai trip! '+shareUrl)}" target="_blank"
+              style="background:#25D366;color:#fff;text-decoration:none;border-radius:8px;padding:8px 14px;font-weight:700;white-space:nowrap;font-size:0.85rem">📲 WhatsApp</a>
+            <a href="${shareUrl}" target="_blank"
+              style="background:transparent;border:1.5px solid var(--color-primary,#d96b1a);color:var(--color-primary,#d96b1a);text-decoration:none;border-radius:8px;padding:8px 14px;font-weight:700;white-space:nowrap;font-size:0.85rem">↗ View</a>
+          </div>`;
+        shareCardEl.style.display = 'block';
+      }
 
       // Map
       const bounds = [];
