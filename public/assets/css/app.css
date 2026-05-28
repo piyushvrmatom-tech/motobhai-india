@@ -408,3 +408,76 @@ button { background: none; border: none; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ─── My Rides drawer ───────────────────────────────────────────────── */
+.drawer {
+  position: fixed; inset: 0; z-index: 80;
+  display: flex; justify-content: flex-end;
+}
+.drawer[hidden] { display: none; }
+.drawer__scrim {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.6);
+  animation: scrimIn 200ms ease both;
+}
+.drawer__panel {
+  position: relative;
+  width: min(420px, 92vw);
+  max-width: 100%;
+  background: var(--bg-0);
+  border-left: 1px solid var(--line);
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto;
+  animation: panelIn 240ms cubic-bezier(.2,.7,.2,1) both;
+}
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes panelIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.drawer__head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.drawer__title { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+.drawer__close {
+  width: 44px; height: 44px;
+  border-radius: 99px;
+  font-size: 28px; line-height: 1;
+  color: var(--text-1);
+  background: var(--bg-2);
+}
+.drawer__close:hover { background: var(--bg-3); color: var(--text-0); }
+.drawer__sub { color: var(--text-2); font-size: 14px; margin: 0 0 8px; }
+.drawer__hint {
+  color: var(--text-2); font-size: 12px; line-height: 1.4;
+  margin: auto 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.rides-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ride-row {
+  display: block;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text-0);
+  transition: border-color var(--t), background var(--t);
+  min-height: var(--tap);
+}
+.ride-row:hover { border-color: var(--text-2); }
+.ride-row__route { font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+.ride-row__meta { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+.ride-row__when { color: var(--text-2); font-size: 12px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.rides-empty {
+  text-align: center; color: var(--text-2);
+  padding: 40px 20px;
+  background: var(--bg-1);
+  border-radius: var(--radius-m);
+  font-size: 14px;
+}

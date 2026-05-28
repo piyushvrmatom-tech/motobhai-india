@@ -172,6 +172,20 @@
     </section>
   </main>
 
+  <!-- My Rides drawer -->
+  <div class="drawer" id="my-rides-drawer" role="dialog" aria-label="My rides" aria-modal="true" hidden>
+    <div class="drawer__scrim" data-dismiss></div>
+    <aside class="drawer__panel">
+      <header class="drawer__head">
+        <h2 class="drawer__title">My Rides</h2>
+        <button type="button" class="drawer__close" data-dismiss aria-label="Close">×</button>
+      </header>
+      <p class="drawer__sub" id="my-rides-sub">—</p>
+      <ul class="rides-list" id="rides-list"></ul>
+      <p class="drawer__hint">Saved on this device. Sign in with your phone to sync rides across devices (coming soon).</p>
+    </aside>
+  </div>
+
   <!-- Sticky bottom CTA -->
   <div class="sticky-cta">
     <button type="submit" form="plan-form" class="btn btn--primary" id="cta">
