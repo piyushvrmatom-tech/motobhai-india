@@ -9,7 +9,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Poppins',sans-serif;background:#FDF8F3;color:#333;min-height:100vh}
 :root{--orange:#E8751A;--dark:#222;--light:#FDF8F3;--card:#FFF;--border:#E5E5E5}
-.nav{display:flex;justify-content:space-between;align-items:center;padding:16px 32px;background:#FFF;border-bottom:1px solid var(--border)}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:16px 32px;background:#FFF;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .nav .logo{display:flex;align-items:center;gap:8px;font-size:1.4em;font-weight:800}
 .nav .logo span{color:var(--orange)}
 .hero{text-align:center;padding:48px 16px 24px}
@@ -18,374 +18,359 @@ body{font-family:'Poppins',sans-serif;background:#FDF8F3;color:#333;min-height:1
 .hero p{color:#666;margin-top:8px;font-size:1.05em}
 .container{max-width:900px;margin:0 auto;padding:0 16px 60px}
 .card{background:var(--card);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-.card h2{color:var(--orange);font-size:1.3em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h2{color:var(--orange);font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 label{font-weight:600;display:block;margin-bottom:4px;font-size:.9em}
-input,select,textarea{width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:1em;margin-bottom:12px;transition:border .2s}
+input,select{width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:1em;margin-bottom:12px;transition:border .2s;background:#fff}
 input:focus,select:focus{outline:none;border-color:var(--orange)}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .btn{background:var(--orange);color:#FFF;border:none;padding:14px 32px;border-radius:12px;font-size:1.1em;font-weight:700;cursor:pointer;width:100%;transition:transform .15s,box-shadow .15s}
 .btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,117,26,.35)}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
 .btn-outline{background:transparent;color:var(--orange);border:2px solid var(--orange)}
 .btn-sm{padding:8px 16px;font-size:.9em;width:auto}
-.stops-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.stop-row{display:flex;gap:8px;align-items:center}
-.stop-row input{margin-bottom:0;flex:1}
-.stop-row button{background:#e74c3c;color:#FFF;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700}
-.budget-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.budget-chips label{display:flex;align-items:center;gap:6px;background:var(--light);border:2px solid var(--border);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;transition:all .2s}
-.budget-chips input{display:none}
-.budget-chips input:checked+label,.budget-chips label.active{border-color:var(--orange);background:#FFF3E8;color:var(--orange)}
+.vibe-chips,.budget-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.vibe-chips label,.budget-chips label{display:flex;align-items:center;gap:6px;background:var(--light);border:2px solid var(--border);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;transition:all .2s;user-select:none}
+.vibe-chips input,.budget-chips input{display:none}
+.vibe-chips input:checked+label,.budget-chips input:checked+label{border-color:var(--orange);background:#FFF3E8;color:var(--orange)}
 .slider-container{margin-bottom:12px}
-.slider-container input[type=range]{-webkit-appearance:none;width:100%;height:8px;border-radius:4px;background:#E5E5E5;outline:none;margin:8px 0}
+.slider-container input[type=range]{-webkit-appearance:none;width:100%;height:8px;border-radius:4px;background:#E5E5E5;outline:none;margin:8px 0 0}
 .slider-container input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--orange);cursor:pointer}
 .slider-val{font-size:1.2em;font-weight:700;color:var(--orange)}
-.wiki-card{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
-.wiki-card img{width:120px;height:90px;object-fit:cover;border-radius:10px}
-.wiki-card .info{flex:1}
-.wiki-card .info h3{font-size:1.1em;margin-bottom:4px}
-.wiki-card .info p{font-size:.88em;color:#555;line-height:1.5}
-.checklist{list-style:none}
-.checklist li{padding:6px 0;display:flex;align-items:center;gap:8px;font-size:.95em}
-.checklist li::before{content:'\2713';color:var(--orange);font-weight:700}
-.gear-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.gear-grid a{display:block;padding:12px;background:var(--light);border:2px solid var(--border);border-radius:10px;text-decoration:none;color:var(--dark);font-weight:600;font-size:.88em;text-align:center;transition:all .2s}
-.gear-grid a:hover{border-color:var(--orange);background:#FFF3E8;color:var(--orange)}
-.day-card{border-left:4px solid var(--orange);padding-left:16px;margin-bottom:20px}
-.day-card h3{color:var(--orange);margin-bottom:6px}
-.schedule-table{width:100%;border-collapse:collapse;font-size:.88em;margin:8px 0}
-.schedule-table th{background:var(--orange);color:#FFF;padding:8px;text-align:left}
-.schedule-table td{padding:8px;border-bottom:1px solid var(--border)}
-.budget-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
-.budget-item{background:var(--light);border-radius:10px;padding:12px;text-align:center}
-.budget-item .amount{font-size:1.3em;font-weight:700;color:var(--orange)}
-.budget-item .label{font-size:.8em;color:#666}
 .fuel-display{background:#FFF3E8;border-radius:12px;padding:16px;text-align:center;margin:12px 0}
 .fuel-display .big{font-size:2em;font-weight:800;color:var(--orange)}
 .hidden{display:none}
 .loading{text-align:center;padding:40px}
 .loading .spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+.loading p{color:#666;font-size:1em}
 @keyframes spin{to{transform:rotate(360deg)}}
-.safety-banner{background:var(--orange);color:#FFF;padding:16px;border-radius:12px;text-align:center;font-weight:700;font-size:1.05em;margin-bottom:20px}
-footer{text-align:center;padding:24px;color:#999;font-size:.85em}
-@media(max-width:600px){.row{grid-template-columns:1fr}.hero h1{font-size:1.6em}.gear-grid{grid-template-columns:1fr 1fr}}
+.safety-banner{background:var(--orange);color:#FFF;padding:16px;border-radius:12px;text-align:center;font-weight:700;font-size:1em;margin-bottom:20px}
+.day-card{border-left:4px solid var(--orange);padding:16px;background:#FFFAF5;border-radius:0 12px 12px 0;margin-bottom:16px}
+.day-card h3{color:var(--orange);margin-bottom:6px;font-size:1.1em}
+.day-meta{font-size:.85em;color:#888;margin-bottom:10px}
+.stops-list{margin:10px 0}
+.stop-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.stop-item:last-child{border-bottom:none}
+.stop-dot{width:10px;height:10px;border-radius:50%;background:var(--orange);margin-top:5px;flex-shrink:0}
+.stop-info .name{font-weight:700;font-size:.95em}
+.stop-info .type{font-size:.78em;color:#E8751A;text-transform:uppercase;font-weight:600;background:#FFF3E8;padding:2px 8px;border-radius:20px;display:inline-block;margin:2px 0}
+.stop-info .desc{font-size:.85em;color:#666;margin-top:2px}
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.summary-item{background:var(--card);border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.summary-item .val{font-size:1.5em;font-weight:800;color:var(--orange)}
+.summary-item .lbl{font-size:.75em;color:#888;margin-top:2px}
+.share-box{background:#F0FFF4;border:2px solid #4CAF50;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.share-box a{color:#2e7d32;font-weight:700;word-break:break-all;font-size:.9em}
+.warning-box{background:#FFF3E8;border:2px solid var(--orange);border-radius:10px;padding:12px;margin:8px 0;font-size:.88em;color:#555}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75em;font-weight:700;text-transform:uppercase}
+.badge-scenic{background:#E3F2FD;color:#1565C0}
+.badge-food{background:#FFF3E8;color:#E65100}
+.badge-fuel{background:#E8F5E9;color:#2E7D32}
+.badge-stay{background:#F3E5F5;color:#6A1B9A}
+.badge-cultural{background:#FCE4EC;color:#AD1457}
+.badge-landmark{background:#F1F8E9;color:#33691E}
+footer{text-align:center;padding:24px;color:#999;font-size:.85em;border-top:1px solid var(--border);margin-top:40px}
+@media(max-width:600px){.row{grid-template-columns:1fr}.hero h1{font-size:1.6em}.summary-strip{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<nav class="nav"><div class="logo">⌖ Moto<span>Bhai</span></div><div>India's Motorcycle Trip Planner</div></nav>
-<div class="hero"><h1>Plan your next <span>ride!</span></h1><p>Search any destination in India — get a full itinerary with stops, fuel, food, gear &amp; more.</p></div>
+<nav class="nav">
+  <div class="logo">🏍️ Moto<span>Bhai</span></div>
+  <div style="font-size:.85em;color:#888">India's AI Motorcycle Trip Planner</div>
+</nav>
+
+<div class="hero">
+  <h1>Plan your next <span>epic ride!</span></h1>
+  <p>AI-powered itineraries for Indian motorcycle tourers — stops, fuel, food, stays & more.</p>
+</div>
+
 <div class="container">
 
-<!-- STEP 1: Destination Discovery -->
-<div class="card" id="step1">
-<h2>📍 Explore Destination</h2>
-<label>Search any place in India</label>
-<input type="text" id="placeSearch" placeholder="e.g. Manali, Leh, Goa, Spiti Valley...">
-<div id="wikiResult" class="hidden"></div>
+<!-- TRIP BUILDER -->
+<div class="card">
+  <h2>🛣️ Plan Your Route</h2>
+  <div class="row">
+    <div><label>Starting Point</label><input type="text" id="origin" placeholder="e.g. Gurugram"></div>
+    <div><label>Destination</label><input type="text" id="destination" placeholder="e.g. Manali"></div>
+  </div>
+  <div class="row">
+    <div><label>Number of Days</label><input type="number" id="days" value="3" min="1" max="30"></div>
+    <div><label>Trip Type</label>
+      <select id="loop">
+        <option value="false">One-Way</option>
+        <option value="true">Round Trip (loop)</option>
+      </select>
+    </div>
+  </div>
+
+  <label>Ride Vibe</label>
+  <div class="vibe-chips">
+    <div><input type="radio" name="vibe" value="scenic" id="v1"><label for="v1">🌄 Scenic</label></div>
+    <div><input type="radio" name="vibe" value="standard" id="v2" checked><label for="v2">🛣️ Standard</label></div>
+    <div><input type="radio" name="vibe" value="adventure" id="v3"><label for="v3">⛺ Adventure</label></div>
+    <div><input type="radio" name="vibe" value="express" id="v4"><label for="v4">⚡ Express</label></div>
+  </div>
+
+  <label>Budget</label>
+  <div class="budget-chips">
+    <div><input type="radio" name="budget" value="economy" id="b1"><label for="b1">🪙 Economy</label></div>
+    <div><input type="radio" name="budget" value="standard" id="b2" checked><label for="b2">💳 Standard</label></div>
+    <div><input type="radio" name="budget" value="premium" id="b3"><label for="b3">⭐ Premium</label></div>
+    <div><input type="radio" name="budget" value="luxury" id="b4"><label for="b4">💎 Luxury</label></div>
+  </div>
 </div>
 
-<!-- STEP 2: Trip Builder -->
-<div class="card" id="step2">
-<h2>🛣️ Plan Your Route</h2>
-<div class="row">
-<div><label>Starting Point</label><input type="text" id="origin" placeholder="e.g. Gurugram"></div>
-<div><label>Destination</label><input type="text" id="destination" placeholder="e.g. Manali"></div>
-</div>
-<label>Add Stops (optional)</label>
-<div class="stops-list" id="stopsList"></div>
-<button class="btn btn-outline btn-sm" onclick="addStop()" type="button">+ Add Stop</button>
-<div class="row" style="margin-top:12px">
-<div><label>End Point</label><input type="text" id="endPoint" placeholder="Same as start (round trip)"></div>
-<div><label>Number of Days</label><input type="number" id="days" value="3" min="1" max="30"></div>
-</div>
-<label>Budget</label>
-<div class="budget-chips" id="budgetChips">
-<div><input type="radio" name="budget" value="economy" id="b1"><label for="b1" onclick="setBudget('economy')">Economy</label></div>
-<div><input type="radio" name="budget" value="standard" id="b2" checked><label for="b2" class="active" onclick="setBudget('standard')">Standard</label></div>
-<div><input type="radio" name="budget" value="premium" id="b3"><label for="b3" onclick="setBudget('premium')">Premium</label></div>
-<div><input type="radio" name="budget" value="luxury" id="b4"><label for="b4" onclick="setBudget('luxury')">Luxury</label></div>
-</div>
-</div>
-
-<!-- STEP 3: Motorcycle & Fuel -->
-<div class="card" id="step3">
-<h2>🏍️ Motorcycle &amp; Fuel</h2>
-<div class="row">
-<div><label>Select Motorcycle</label><select id="motorcycle" onchange="updateMileage()"></select></div>
-<div><label>Fuel Price (Rs/L)</label><input type="number" id="fuelPrice" value="105" step="1"></div>
-</div>
-<div class="slider-container">
-<label>Mileage: <span class="slider-val" id="mileageVal">30</span> kmpl</label>
-<input type="range" id="mileageSlider" min="15" max="50" value="30" oninput="document.getElementById('mileageVal').textContent=this.value;calcFuel()">
-</div>
-<div class="fuel-display" id="fuelDisplay">
-<div>Estimated fuel cost</div>
-<div class="big" id="fuelCost">Calculating...</div>
-<div id="fuelDetails"></div>
-</div>
+<!-- MOTORCYCLE & FUEL -->
+<div class="card">
+  <h2>🏍️ Your Motorcycle</h2>
+  <div class="row">
+    <div>
+      <label>Select Motorcycle</label>
+      <select id="motorcycle" onchange="updateMileage()">
+        <option value="">Loading bikes...</option>
+      </select>
+    </div>
+    <div><label>Fuel Price (Rs/L)</label><input type="number" id="fuelPrice" value="105" step="1" oninput="calcFuel()"></div>
+  </div>
+  <div class="slider-container">
+    <label>Mileage: <span class="slider-val" id="mileageVal">30</span> kmpl (adjust for your riding style)</label>
+    <input type="range" id="mileageSlider" min="10" max="60" value="30" oninput="document.getElementById('mileageVal').textContent=this.value;calcFuel()">
+  </div>
+  <div class="fuel-display">
+    <div style="font-size:.85em;color:#888">Estimated fuel cost (500 km base)</div>
+    <div class="big" id="fuelCost">Rs —</div>
+    <div id="fuelDetails" style="font-size:.85em;color:#888"></div>
+  </div>
 </div>
 
-<!-- Generate Button -->
-<div class="safety-banner">🎧 ATGATT — All The Gear, All The Time. Always wear helmet, jacket, gloves, boots &amp; pants on every ride.</div>
-<button class="btn" id="generateBtn" onclick="generateTrip()">🚀 Generate My Trip Itinerary</button>
+<!-- CTA -->
+<div class="safety-banner">🎧 ATGATT — All The Gear, All The Time. Helmet · Jacket · Gloves · Boots · Riding Pants. Every ride.</div>
+<button class="btn" id="generateBtn" onclick="generateTrip()">🚀 Generate My Itinerary</button>
 
-<!-- Loading -->
-<div id="loading" class="loading hidden"><div class="spinner"></div><p>Moto Bhai is planning your epic ride...</p></div>
+<!-- LOADING -->
+<div id="loading" class="loading hidden">
+  <div class="spinner"></div>
+  <p>Moto Bhai is planning your epic ride with AI...</p>
+  <p style="font-size:.8em;color:#aaa;margin-top:8px">This takes 15–30 seconds ✨</p>
+</div>
+
+<!-- ERROR -->
+<div id="errorBox" class="hidden" style="background:#FFF0F0;border:2px solid #e74c3c;border-radius:12px;padding:16px;margin-top:16px;color:#c0392b;font-weight:600"></div>
 
 <!-- RESULTS -->
 <div id="results" class="hidden">
 
-<!-- Weather Checklist -->
-<div class="card" id="checklistCard">
-<h2>✅ Packing Checklist</h2>
-<div id="checklistContent"></div>
-</div>
+  <!-- Share URL -->
+  <div class="share-box" id="shareBox">
+    <span>🔗 Share your trip:</span>
+    <a id="shareUrl" href="#" target="_blank">#</a>
+    <button class="btn btn-outline btn-sm" onclick="copyShare()">Copy Link</button>
+  </div>
 
-<!-- Gear Links -->
-<div class="card">
-<h2>🛡️ Gear &amp; Accessories</h2>
-<p style="margin-bottom:12px;color:#666">Essential riding gear — click to buy on Amazon.in</p>
-<div class="gear-grid" id="gearGrid"></div>
-</div>
+  <!-- Summary strip -->
+  <div class="summary-strip">
+    <div class="summary-item"><div class="val" id="sumKm">—</div><div class="lbl">Total km</div></div>
+    <div class="summary-item"><div class="val" id="sumDays">—</div><div class="lbl">Days</div></div>
+    <div class="summary-item"><div class="val" id="sumMaxDay">—</div><div class="lbl">Max km/day</div></div>
+    <div class="summary-item"><div class="val" id="sumFuel">—</div><div class="lbl">Fuel cost (est.)</div></div>
+  </div>
 
-<!-- Itinerary -->
-<div class="card">
-<h2>📅 Your Itinerary</h2>
-<div id="itineraryContent"></div>
-</div>
+  <!-- Itinerary days -->
+  <div class="card">
+    <h2>📅 Day-by-Day Itinerary</h2>
+    <div id="itineraryContent"></div>
+  </div>
 
-<!-- Budget Summary -->
-<div class="card">
-<h2>💰 Budget Summary</h2>
-<div class="budget-summary" id="budgetSummary"></div>
-</div>
+  <!-- Actions -->
+  <div class="row">
+    <button class="btn btn-outline" onclick="generateTrip()">🔄 Regenerate</button>
+    <button class="btn" onclick="downloadPDF()">📄 Download PDF</button>
+  </div>
 
-<!-- Tips -->
-<div class="card">
-<h2>💡 Tips &amp; Tricks</h2>
-<ul class="checklist" id="tipsList"></ul>
-</div>
-
-<!-- Actions -->
-<div class="row" style="margin-top:16px">
-<a id="mapsLink" href="#" target="_blank" class="btn btn-outline" style="text-align:center;text-decoration:none">🗺️ Open in Google Maps</a>
-<button class="btn" onclick="downloadPDF()">📄 Download PDF Itinerary</button>
-</div>
 </div><!-- /results -->
 
 </div><!-- /container -->
-<footer>Moto Bhai India &copy; 2026 &middot; Built with ❤️ by Piyush Verma &middot; AI-powered itineraries</footer>
+<footer>Moto Bhai India © 2026 · Built with ❤️ by Piyush Verma · AI-powered by Gemini</footer>
 
 <script>
 const API = 'https://motobhai-api.onrender.com';
-let currentBudget = 'standard';
-let tripData = null;
-let motorcycles = {};
+let bikeData = [];
+let lastTripId = null;
 
+// ── Init ──────────────────────────────────────────────
 async function init() {
   try {
     const r = await fetch(API + '/api/motorcycles');
     const d = await r.json();
-    motorcycles = d.motorcycles;
+    bikeData = d.motorcycles || [];
     const sel = document.getElementById('motorcycle');
-    Object.keys(motorcycles).forEach(name => {
+    sel.innerHTML = '';
+    bikeData.forEach(b => {
       const o = document.createElement('option');
-      o.value = name; o.textContent = name + ' (' + motorcycles[name].mileage + ' kmpl)';
+      o.value = b.bike_id;
+      o.textContent = b.make + ' ' + b.model + ' ' + b.year + ' (' + b.mileage_kmpl + ' kmpl)';
       sel.appendChild(o);
     });
+    // Default to RE Himalayan 450 if available
+    const himalayan = bikeData.find(b => b.bike_id === 're_himalayan_450');
+    if (himalayan) sel.value = 're_himalayan_450';
     updateMileage();
-  } catch(e) { console.error('Init error:', e); }
-}
-
-function updateMileage() {
-  const name = document.getElementById('motorcycle').value;
-  const m = motorcycles[name];
-  if (m) {
-    document.getElementById('mileageSlider').value = m.mileage;
-    document.getElementById('mileageVal').textContent = m.mileage;
+  } catch(e) {
+    console.error('Init error:', e);
+    document.getElementById('motorcycle').innerHTML = '<option value="re_himalayan_450">Royal Enfield Himalayan 450 2026 (30 kmpl)</option>';
     calcFuel();
   }
 }
 
+function updateMileage() {
+  const id = document.getElementById('motorcycle').value;
+  const bike = bikeData.find(b => b.bike_id === id);
+  if (bike) {
+    document.getElementById('mileageSlider').value = bike.mileage_kmpl;
+    document.getElementById('mileageVal').textContent = bike.mileage_kmpl;
+  }
+  calcFuel();
+}
+
 function calcFuel() {
-  const mileage = parseInt(document.getElementById('mileageSlider').value);
+  const mileage = parseInt(document.getElementById('mileageSlider').value) || 30;
   const price = parseFloat(document.getElementById('fuelPrice').value) || 105;
   const dist = 500;
   const litres = (dist / mileage).toFixed(1);
   const cost = Math.round(litres * price);
-  document.getElementById('fuelCost').textContent = 'Rs ' + cost;
-  document.getElementById('fuelDetails').textContent = dist + ' km | ' + litres + ' litres | Rs ' + price + '/L';
+  document.getElementById('fuelCost').textContent = 'Rs ' + cost.toLocaleString('en-IN');
+  document.getElementById('fuelDetails').textContent = dist + ' km · ' + litres + ' L · Rs ' + price + '/L';
 }
 
-function addStop() {
-  const list = document.getElementById('stopsList');
-  const idx = list.children.length;
-  const div = document.createElement('div');
-  div.className = 'stop-row';
-  div.innerHTML = '<input type="text" placeholder="Stop ' + (idx+1) + ' (e.g. Chandigarh)" class="stop-input"><button onclick="this.parentElement.remove()">X</button>';
-  list.appendChild(div);
-}
-
-function setBudget(val) {
-  currentBudget = val;
-  document.querySelectorAll('.budget-chips label').forEach(l => l.classList.remove('active'));
-  event.target.classList.add('active');
-}
-
-let debounceTimer;
-document.getElementById('placeSearch').addEventListener('input', function() {
-  clearTimeout(debounceTimer);
-  const q = this.value.trim();
-  if (q.length < 3) { document.getElementById('wikiResult').classList.add('hidden'); return; }
-  debounceTimer = setTimeout(() => fetchPlaceInfo(q), 500);
-});
-
-async function fetchPlaceInfo(q) {
-  try {
-    const r = await fetch(API + '/api/place-info?q=' + encodeURIComponent(q));
-    const d = await r.json();
-    const div = document.getElementById('wikiResult');
-    if (d.wikipedia && d.wikipedia.extract) {
-      let html = '<div class="wiki-card">';
-      if (d.wikipedia.thumbnail) html += '<img src="' + d.wikipedia.thumbnail + '" alt="' + q + '">';
-      html += '<div class="info"><h3>' + (d.wikipedia.title || q) + '</h3>';
-      html += '<p>' + d.wikipedia.extract.substring(0, 300) + '...</p>';
-      if (d.wikipedia.page_url) html += '<a href="' + d.wikipedia.page_url + '" target="_blank" style="color:var(--orange);font-weight:600">Read more on Wikipedia</a>';
-      html += '</div></div>';
-      if (d.formatted_address) html += '<p style="font-size:.85em;color:#888;margin-top:4px">' + d.formatted_address + '</p>';
-      div.innerHTML = html;
-      div.classList.remove('hidden');
-      document.getElementById('destination').value = q;
-    } else {
-      div.classList.add('hidden');
-    }
-  } catch(e) { console.error(e); }
-}
-
+// ── Generate ──────────────────────────────────────────
 async function generateTrip() {
-  const origin = document.getElementById('origin').value.trim();
-  const dest = document.getElementById('destination').value.trim();
-  if (!origin || !dest) { alert('Please enter both starting point and destination'); return; }
-  const stops = Array.from(document.querySelectorAll('.stop-input')).map(i => i.value.trim()).filter(Boolean);
+  const from = document.getElementById('origin').value.trim();
+  const to = document.getElementById('destination').value.trim();
+  if (!from || !to) { alert('Please enter both starting point and destination'); return; }
+
   const days = parseInt(document.getElementById('days').value) || 3;
-  const mileage = parseInt(document.getElementById('mileageSlider').value);
-  const fuelPrice = parseFloat(document.getElementById('fuelPrice').value) || 105;
-  const motorcycle = document.getElementById('motorcycle').value;
-  const endPoint = document.getElementById('endPoint').value.trim();
+  const loop = document.getElementById('loop').value === 'true';
+  const vibe = document.querySelector('input[name="vibe"]:checked')?.value || 'standard';
+  const budget_tier = document.querySelector('input[name="budget"]:checked')?.value || 'standard';
+  const bike_id = document.getElementById('motorcycle').value || 're_himalayan_450';
 
   document.getElementById('generateBtn').disabled = true;
   document.getElementById('loading').classList.remove('hidden');
   document.getElementById('results').classList.add('hidden');
+  document.getElementById('errorBox').classList.add('hidden');
 
   try {
-    const [tripRes, weatherRes] = await Promise.all([
-      fetch(API + '/api/generate-itinerary', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ origin, destination: dest, stops, end_point: endPoint, days, budget: currentBudget, motorcycle, mileage_override: mileage, fuel_price: fuelPrice, preferences: ['scenic','food','culture'], trip_type: endPoint ? 'one_way' : 'round_trip' })
-      }),
-      fetch(API + '/api/weather?place=' + encodeURIComponent(dest))
-    ]);
-    tripData = await tripRes.json();
-    const weather = await weatherRes.json();
-    renderResults(tripData, weather);
+    const r = await fetch(API + '/api/plan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ from, to, days, loop, vibe, budget_tier, bike_id })
+    });
+
+    const data = await r.json();
+
+    if (!r.ok || data.detail) {
+      throw new Error(data.detail || 'Server error ' + r.status);
+    }
+
+    lastTripId = data.trip_id;
+    renderResults(data);
+
   } catch(e) {
-    alert('Error generating itinerary: ' + e.message);
+    const box = document.getElementById('errorBox');
+    box.textContent = '❌ ' + (e.message || 'Something went wrong. Please try again.');
+    box.classList.remove('hidden');
   } finally {
     document.getElementById('generateBtn').disabled = false;
     document.getElementById('loading').classList.add('hidden');
   }
 }
 
-function renderResults(data, weather) {
-  // Checklist
-  let cl = '<h3 style="margin-bottom:8px">Season: ' + (weather.season || 'Unknown').toUpperCase() + '</h3>';
-  if (weather.temp_c) cl += '<p style="color:#666;margin-bottom:8px">Temperature: ' + weather.temp_c + ' C - ' + (weather.description || '') + '</p>';
-  cl += '<h4 style="margin:12px 0 6px">Always Carry:</h4><ul class="checklist">';
-  (weather.always || []).forEach(i => cl += '<li>' + i + '</li>');
-  cl += '</ul><h4 style="margin:12px 0 6px">Seasonal Items:</h4><ul class="checklist">';
-  (weather.seasonal || []).forEach(i => cl += '<li>' + i + '</li>');
-  cl += '</ul>';
-  document.getElementById('checklistContent').innerHTML = cl;
+// ── Render ────────────────────────────────────────────
+function typeColor(t) {
+  const map = {fuel:'fuel',food:'food',stay:'stay',scenic:'scenic',cultural:'cultural',landmark:'landmark',town:'scenic',rest:'food'};
+  return map[t] || 'scenic';
+}
 
-  // Gear
-  const gearLinks = data.gear_links || {};
-  let gh = '';
-  Object.entries(gearLinks).forEach(([name, url]) => {
-    gh += '<a href="' + url + '" target="_blank">' + name + '</a>';
-  });
-  document.getElementById('gearGrid').innerHTML = gh;
+function renderResults(data) {
+  const s = data.summary || {};
+  const days = data.days_plan || [];
 
-  // Itinerary days
-  const itin = data.itinerary || {};
-  const days = itin.days || [];
+  // Share
+  const shareUrl = data.share_url || (API + '/share/' + data.trip_id);
+  document.getElementById('shareUrl').href = shareUrl;
+  document.getElementById('shareUrl').textContent = shareUrl;
+
+  // Summary strip
+  document.getElementById('sumKm').textContent = s.total_km || '—';
+  document.getElementById('sumDays').textContent = s.total_days || days.length;
+  document.getElementById('sumMaxDay').textContent = s.max_day_km || '—';
+
+  // Fuel cost estimate
+  const mileage = parseInt(document.getElementById('mileageSlider').value) || 30;
+  const price = parseFloat(document.getElementById('fuelPrice').value) || 105;
+  const totalKm = s.total_km || 0;
+  const fuelCost = totalKm ? 'Rs ' + Math.round((totalKm / mileage) * price).toLocaleString('en-IN') : '—';
+  document.getElementById('sumFuel').textContent = fuelCost;
+
+  // Itinerary
   let ih = '';
-  days.forEach(day => {
+  days.forEach((day, idx) => {
+    const stops = day.stops || [];
     ih += '<div class="day-card">';
-    ih += '<h3>Day ' + day.day + ': ' + (day.title || '') + '</h3>';
-    ih += '<p style="color:#666;margin-bottom:8px">' + (day.from || '') + ' to ' + (day.to || '') + ' | ' + (day.distance_km || 0) + ' km</p>';
-    const sched = day.schedule || [];
-    if (sched.length) {
-      ih += '<table class="schedule-table"><tr><th>Time</th><th>Activity</th><th>Location</th><th>Tip</th></tr>';
-      sched.forEach(s => ih += '<tr><td>' + (s.time||'') + '</td><td>' + (s.activity||'') + '</td><td>' + (s.location||'') + '</td><td>' + (s.tip||'') + '</td></tr>');
-      ih += '</table>';
+    ih += '<h3>Day ' + (idx + 1) + ': ' + (day.from || '') + ' → ' + (day.to || '') + '</h3>';
+    ih += '<div class="day-meta">📍 ' + (day.distance_km || 0) + ' km · ' + (day.duration_hrs || '—') + ' hrs riding</div>';
+    if (stops.length) {
+      ih += '<div class="stops-list">';
+      stops.forEach(stop => {
+        const tc = typeColor(stop.type);
+        ih += '<div class="stop-item">';
+        ih += '<div class="stop-dot"></div>';
+        ih += '<div class="stop-info">';
+        ih += '<div class="name">' + (stop.name || '—') + '</div>';
+        ih += '<span class="badge badge-' + tc + '">' + (stop.type || '') + '</span>';
+        if (stop.description) ih += '<div class="desc">' + stop.description + '</div>';
+        if (stop.stay_name) ih += '<div class="desc">🏨 Stay: ' + stop.stay_name + (stop.stay_cost_approx ? ' (~Rs ' + stop.stay_cost_approx + ')' : '') + '</div>';
+        ih += '</div></div>';
+      });
+      ih += '</div>';
     }
-    const meals = day.meals || [];
-    if (meals.length) {
-      ih += '<p style="margin-top:8px;font-weight:600">Meals:</p>';
-      meals.forEach(m => ih += '<p style="font-size:.9em;color:#555"> ' + (m.type||'') + ': ' + (m.place||'') + ' (' + (m.cuisine||'') + ') ~Rs ' + (m.cost_approx||0) + '</p>');
-    }
-    if (day.stay) ih += '<p style="margin-top:6px;font-weight:600">Stay: ' + (day.stay.name||'') + ' (' + (day.stay.type||'') + ') ~Rs ' + (day.stay.cost_approx||0) + '</p>';
-    if (day.fuel_stop) ih += '<p style="font-size:.9em;color:#888">Fuel: ' + (day.fuel_stop.location||'') + ' (' + (day.fuel_stop.km_from_start||0) + ' km)</p>';
     ih += '</div>';
   });
-  document.getElementById('itineraryContent').innerHTML = ih || '<p>Itinerary generation in progress...</p>';
+  document.getElementById('itineraryContent').innerHTML = ih || '<p style="color:#999">No itinerary data returned.</p>';
 
-  // Budget
-  const budget = itin.estimated_budget || {};
-  let bh = '';
-  Object.entries(budget).forEach(([k, v]) => {
-    bh += '<div class="budget-item"><div class="amount">Rs ' + v + '</div><div class="label">' + k.charAt(0).toUpperCase() + k.slice(1) + '</div></div>';
-  });
-  document.getElementById('budgetSummary').innerHTML = bh;
-
-  // Tips
-  const tips = itin.tips || [];
-  document.getElementById('tipsList').innerHTML = tips.map(t => '<li>' + t + '</li>').join('');
-
-  // Maps link
-  document.getElementById('mapsLink').href = data.maps_url || '#';
-
-  // Update fuel display
-  if (data.fuel) {
-    document.getElementById('fuelCost').textContent = 'Rs ' + data.fuel.cost_inr;
-    document.getElementById('fuelDetails').textContent = data.fuel.distance_km + ' km | ' + data.fuel.litres + ' L | Rs ' + (document.getElementById('fuelPrice').value || 105) + '/L';
+  // Warnings
+  const warnings = data.warnings || [];
+  if (warnings.length) {
+    warnings.forEach(w => {
+      ih = '<div class="warning-box">⚠️ ' + w + '</div>' + document.getElementById('itineraryContent').innerHTML;
+    });
+    document.getElementById('itineraryContent').innerHTML = ih;
   }
 
   document.getElementById('results').classList.remove('hidden');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 }
 
+// ── Share / PDF ───────────────────────────────────────
+function copyShare() {
+  const url = document.getElementById('shareUrl').textContent;
+  navigator.clipboard.writeText(url).then(() => alert('Link copied!')).catch(() => prompt('Copy this link:', url));
+}
+
 async function downloadPDF() {
-  if (!tripData) { alert('Generate an itinerary first'); return; }
-  const origin = document.getElementById('origin').value.trim();
-  const dest = document.getElementById('destination').value.trim();
-  const stops = Array.from(document.querySelectorAll('.stop-input')).map(i => i.value.trim()).filter(Boolean);
-  const days = parseInt(document.getElementById('days').value) || 3;
-  const mileage = parseInt(document.getElementById('mileageSlider').value);
-  const fuelPrice = parseFloat(document.getElementById('fuelPrice').value) || 105;
-  const motorcycle = document.getElementById('motorcycle').value;
-  const endPoint = document.getElementById('endPoint').value.trim();
+  if (!lastTripId) { alert('Generate an itinerary first'); return; }
   try {
-    const r = await fetch(API + '/api/itinerary/pdf', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ origin, destination: dest, stops, end_point: endPoint, days, budget: currentBudget, motorcycle, mileage_override: mileage, fuel_price: fuelPrice, preferences: ['scenic','food','culture'], trip_type: endPoint ? 'one_way' : 'round_trip' })
-    });
+    const r = await fetch(API + '/api/plan/' + lastTripId + '/pdf');
+    if (!r.ok) throw new Error('PDF not available yet');
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'motobhai_' + origin + '_' + dest + '_' + days + 'days.pdf';
-    a.click(); URL.revokeObjectURL(url);
-  } catch(e) { alert('PDF download error: ' + e.message); }
+    a.href = url;
+    a.download = 'motobhai_' + lastTripId + '.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('PDF: ' + e.message);
+  }
 }
 
 init();
