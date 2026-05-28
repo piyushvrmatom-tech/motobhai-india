@@ -134,7 +134,10 @@ def create_plan(req: PlanRequest) -> PlanResponse:
     )
 
     # Persist (best-effort) + log (fire-and-forget).
-    firestore_client.save_trip(trip_id, response.model_dump(mode="json", by_alias=True))
+    try:
+        firestore_client.save_trip(trip_id, response.model_dump(mode="json", by_alias=True))
+    except Exception as _fs_err:
+        log.warning("Firestore save_trip failed (non-fatal): %s", _fs_err)
     sheets_logger.log_event_sync(
         "plan_created",
         trip_id=trip_id,
