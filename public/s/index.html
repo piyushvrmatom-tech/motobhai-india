@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moto Bhai — Trip Plan</title>
+<meta name="description" content="Motorcycle trip itinerary powered by Moto Bhai India">
+
+<!-- Open Graph for WhatsApp/Twitter share previews -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Moto Bhai India">
+<meta property="og:image" content="https://motobhai-india.web.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--orange:#E8751A;--dark:#1A1A1A;--light:#FDF8F3;--card:#FFFFFF;--border:#E5E5E5;--muted:#777}
+body{font-family:'Poppins',sans-serif;background:var(--light);color:var(--dark);min-height:100vh}
+
+/* NAV */
+.nav{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav .logo{font-size:1.3em;font-weight:800;text-decoration:none;color:var(--dark)}
+.nav .logo span{color:var(--orange)}
+.nav a.btn-sm{background:var(--orange);color:#fff;text-decoration:none;padding:8px 18px;border-radius:10px;font-weight:700;font-size:.85em}
+
+/* HERO STRIP */
+.hero-strip{background:linear-gradient(135deg,#E8751A 0%,#c45e0e 100%);color:#fff;padding:28px 24px 24px;text-align:center}
+.hero-strip h1{font-size:1.6em;font-weight:800;margin-bottom:4px}
+.hero-strip .sub{font-size:.9em;opacity:.85}
+.hero-strip .badges{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.badge{background:rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:.8em;font-weight:600}
+
+/* CONTAINER */
+.container{max-width:800px;margin:0 auto;padding:20px 16px 60px}
+
+/* CARDS */
+.card{background:var(--card);border-radius:16px;padding:22px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.card-title{font-size:1.1em;font-weight:700;color:var(--orange);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* SUMMARY GRID */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.s-item{background:var(--card);border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.s-item .val{font-size:1.6em;font-weight:800;color:var(--orange)}
+.s-item .lbl{font-size:.72em;color:var(--muted);margin-top:2px}
+
+/* DAY CARDS */
+.day-card{border-left:4px solid var(--orange);background:#FFFAF5;border-radius:0 12px 12px 0;padding:16px;margin-bottom:14px}
+.day-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.day-title{font-weight:700;font-size:1em}
+.day-meta{font-size:.78em;color:var(--muted);margin-top:2px}
+.day-km{font-size:1.1em;font-weight:800;color:var(--orange)}
+
+/* STOP ITEMS */
+.stop-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.stop-item{display:flex;align-items:flex-start;gap:8px}
+.stop-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);margin-top:6px;flex-shrink:0}
+.stop-name{font-weight:600;font-size:.88em}
+.stop-desc{font-size:.78em;color:var(--muted);margin-top:1px}
+.badge-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7em;font-weight:700;text-transform:uppercase;margin-left:4px}
+.pill-fuel{background:#E8F5E9;color:#2E7D32}
+.pill-food{background:#FFF3E8;color:#E65100}
+.pill-stay{background:#F3E5F5;color:#6A1B9A}
+
+/* TIP BOX */
+.tip-box{background:#FFF3E8;border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;font-size:.84em;color:#555}
+
+/* WARNING BOX */
+.warn-box{background:#FFF8E1;border-left:3px solid #FFC107;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:12px;font-size:.84em;color:#795548}
+
+/* ACTIONS */
+.action-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.btn{display:inline-block;padding:12px 24px;border-radius:12px;font-weight:700;font-size:.95em;cursor:pointer;border:none;text-decoration:none;text-align:center;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,117,26,.3)}
+.btn-primary{background:var(--orange);color:#fff;flex:1}
+.btn-outline{background:transparent;color:var(--orange);border:2px solid var(--orange);flex:1}
+.btn-whatsapp{background:#25D366;color:#fff;flex:1}
+
+/* LOADING / ERROR */
+.loading{text-align:center;padding:60px 20px}
+.spinner{width:44px;height:44px;border:4px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{text-align:center;padding:60px 20px;color:#c0392b}
+.error-box h2{font-size:1.4em;margin-bottom:8px}
+
+/* SHARE TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:10px 20px;border-radius:10px;font-size:.88em;transition:transform .3s;z-index:999}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:24px;color:#aaa;font-size:.8em}
+@media(max-width:600px){.summary-grid{grid-template-columns:repeat(2,1fr)}.action-row{flex-direction:column}.btn{flex:none}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="logo">🏍️ Moto<span>Bhai</span></a>
+  <a href="/" class="btn-sm">Plan Your Ride →</a>
+</nav>
+
+<div id="loadingState" class="loading">
+  <div class="spinner"></div>
+  <p style="color:var(--muted)">Loading your trip...</p>
+</div>
+
+<div id="errorState" class="error-box" style="display:none">
+  <h2>Trip not found 😕</h2>
+  <p style="color:var(--muted);margin-bottom:20px">This trip may have expired or the link is incorrect.</p>
+  <a href="/" class="btn btn-primary" style="display:inline-block;text-decoration:none">Plan a New Trip</a>
+</div>
+
+<div id="tripContent" style="display:none">
+  <div class="hero-strip">
+    <h1 id="heroTitle">Loading...</h1>
+    <div class="sub" id="heroSub"></div>
+    <div class="badges" id="heroBadges"></div>
+  </div>
+
+  <div class="container">
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <div id="warningsBlock"></div>
+
+    <div class="card">
+      <div class="card-title">📅 Day-by-Day Itinerary</div>
+      <div id="itineraryBlock"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 Cost Estimate</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="costBlock"></div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-whatsapp" onclick="shareWhatsApp()">📲 Share on WhatsApp</button>
+      <button class="btn btn-outline" onclick="copyLink()">🔗 Copy Link</button>
+      <a href="/" class="btn btn-primary">Plan My Own Ride</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Link copied!</div>
+<footer>Moto Bhai India © 2026 · AI-powered motorcycle trip planning</footer>
+
+<script>
+const API = 'https://motobhai-api.onrender.com';
+
+// Extract short_id from URL: /s/abc123 or /s/?id=abc123
+function getShortId() {
+  const path = window.location.pathname; // /s/abc123
+  const parts = path.split('/').filter(Boolean); // ['s','abc123']
+  if (parts.length >= 2) return parts[parts.length - 1];
+  return new URLSearchParams(window.location.search).get('id') || '';
+}
+
+async function loadTrip() {
+  const shortId = getShortId();
+  if (!shortId) { showError(); return; }
+
+  try {
+    const r = await fetch(`${API}/api/share/${shortId}`, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) throw new Error('not found');
+    const data = await r.json();
+    renderTrip(data);
+  } catch(e) {
+    showError();
+  }
+}
+
+function showError() {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorState').style.display = 'block';
+}
+
+function renderTrip(data) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('tripContent').style.display = 'block';
+
+  const s = data.summary || {};
+  const days = data.days_plan || [];
+  const warnings = data.warnings || [];
+
+  // Hero
+  document.getElementById('heroTitle').textContent = `${s.from || '?'} → ${s.to || '?'}`;
+  document.getElementById('heroSub').textContent = `${s.total_days || days.length}-day motorcycle adventure`;
+  document.title = `Moto Bhai — ${s.from} to ${s.to}`;
+
+  // Update OG meta for share
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', `${s.from} → ${s.to} | Moto Bhai`);
+  document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', `${s.from} → ${s.to} | Moto Bhai`);
+
+  const badges = [
+    `🛣️ ${Math.round(s.total_km || 0)} km total`,
+    `📅 ${s.total_days || days.length} days`,
+    `⛰️ Max ${s.max_day_km || '—'} km/day`
+  ];
+  document.getElementById('heroBadges').innerHTML = badges.map(b => `<span class="badge">${b}</span>`).join('');
+
+  // Summary grid
+  document.getElementById('summaryGrid').innerHTML = [
+    { val: Math.round(s.total_km || 0), lbl: 'Total km' },
+    { val: s.total_days || days.length, lbl: 'Days' },
+    { val: s.max_day_km || '—', lbl: 'Max km/day' },
+    { val: `Rs ${(s.est_fuel_cost_inr || 0).toLocaleString('en-IN')}`, lbl: 'Fuel est.' }
+  ].map(i => `<div class="s-item"><div class="val">${i.val}</div><div class="lbl">${i.lbl}</div></div>`).join('');
+
+  // Warnings
+  if (warnings.length) {
+    document.getElementById('warningsBlock').innerHTML =
+      warnings.map(w => `<div class="warn-box">⚠️ ${w}</div>`).join('');
+  }
+
+  // Itinerary
+  let ih = '';
+  days.forEach((day, idx) => {
+    const from = day.from || day.origin || '';
+    const to = day.to || day.destination || '';
+    const km = day.km || 0;
+    const hrs = day.eta_hours || '—';
+    const elev = day.elevation_gain_m || 0;
+    const fuelStops = day.fuel_stops || [];
+    const foodStops = day.food_stops || [];
+    const hotel = day.hotel_suggestion || {};
+    const tip = day.bhai_tip || '';
+    const dayWarnings = day.warnings || [];
+
+    ih += `<div class="day-card">
+      <div class="day-header">
+        <div>
+          <div class="day-title">Day ${idx + 1}: ${from} → ${to}</div>
+          <div class="day-meta">⏱️ ${hrs}h riding · ↑${elev}m elevation</div>
+        </div>
+        <div class="day-km">${km}km</div>
+      </div>`;
+
+    ih += '<div class="stop-list">';
+    fuelStops.forEach(f => {
+      ih += `<div class="stop-item"><div class="stop-dot"></div><div>
+        <div class="stop-name">⛽ ${f.name}<span class="badge-pill pill-fuel">Fuel</span></div>
+        <div class="stop-desc">@ ${f.km_from_start} km from start</div>
+      </div></div>`;
+    });
+    foodStops.forEach(r => {
+      ih += `<div class="stop-item"><div class="stop-dot"></div><div>
+        <div class="stop-name">🍽️ ${r}<span class="badge-pill pill-food">Food</span></div>
+      </div></div>`;
+    });
+    if (hotel.name) {
+      ih += `<div class="stop-item"><div class="stop-dot"></div><div>
+        <div class="stop-name">🏨 ${hotel.name}<span class="badge-pill pill-stay">Stay</span></div>
+        <div class="stop-desc">${hotel.area || ''}${hotel.price_range_inr ? ' · Rs ' + hotel.price_range_inr : ''}</div>
+      </div></div>`;
+    }
+    ih += '</div>';
+
+    dayWarnings.forEach(w => ih += `<div class="warn-box" style="margin-top:8px">⚠️ ${w}</div>`);
+    if (tip) ih += `<div class="tip-box">💡 ${tip}</div>`;
+    ih += '</div>';
+  });
+  document.getElementById('itineraryBlock').innerHTML = ih;
+
+  // Cost
+  document.getElementById('costBlock').innerHTML = [
+    { icon: '⛽', label: 'Fuel', val: s.est_fuel_cost_inr },
+    { icon: '🏨', label: 'Stays', val: s.est_hotel_cost_inr },
+    { icon: '🧾', label: 'Total est.', val: (s.est_fuel_cost_inr || 0) + (s.est_hotel_cost_inr || 0) },
+    { icon: '🏍️', label: 'Trip ID', val: data.trip_id || '—' }
+  ].map(i => `<div style="background:#FDF8F3;border-radius:10px;padding:14px;text-align:center">
+    <div style="font-size:1.4em">${i.icon}</div>
+    <div style="font-size:1.1em;font-weight:800;color:var(--orange)">${typeof i.val === 'number' ? 'Rs ' + i.val.toLocaleString('en-IN') : i.val}</div>
+    <div style="font-size:.75em;color:var(--muted)">${i.label}</div>
+  </div>`).join('');
+}
+
+function shareWhatsApp() {
+  const url = encodeURIComponent(window.location.href);
+  const title = document.getElementById('heroTitle')?.textContent || 'Check out my Moto Bhai trip!';
+  const text = encodeURIComponent(`🏍️ Check out my motorcycle trip: ${title}\n${window.location.href}`);
+  window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }).catch(() => prompt('Copy this link:', window.location.href));
+}
+
+loadTrip();
+</script>
+</body>
+</html>
