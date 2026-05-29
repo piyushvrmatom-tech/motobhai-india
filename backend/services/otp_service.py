@@ -61,22 +61,27 @@ def send(phone: str) -> Tuple[bool, str]:
     else:
         raise OtpError("invalid_phone_format")
 
-    # Call MSG91 OTP API — it generates and sends the OTP
+    # Call MSG91 OTP API
+    # Per MSG91 docs: template_id, mobile, authkey go as URL query params
     headers = {
-        "authkey": auth_key,
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    body = {
+    params = {
         "template_id": template_id,
         "mobile": mobile,
-        "otp_length": OTP_LENGTH,
-        "otp_expiry": OTP_TTL_MIN,
+        "authkey": auth_key,
+        "otp_length": str(OTP_LENGTH),
+        "otp_expiry": str(OTP_TTL_MIN),
     }
 
     try:
-        r = requests.post(MSG91_OTP_SEND, json=body, headers=headers, timeout=10)
-        resp = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+        r = requests.post(MSG91_OTP_SEND, params=params, headers=headers, timeout=10)
+        resp = {}
+        try:
+            resp = r.json()
+        except Exception:
+            pass
         log.info("MSG91 OTP send response [%s]: %s", r.status_code, r.text[:300])
 
         if r.status_code >= 400:
@@ -122,19 +127,20 @@ def verify(phone: str, code: str) -> bool:
     else:
         return False
 
-    headers = {
-        "authkey": auth_key,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    }
-    body = {
+    # MSG91 docs: mobile, otp, authkey as query params
+    params = {
         "mobile": mobile,
         "otp": code,
+        "authkey": auth_key,
     }
 
     try:
-        r = requests.post(MSG91_OTP_VERIFY, json=body, headers=headers, timeout=10)
-        resp = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+        r = requests.get(MSG91_OTP_VERIFY, params=params, timeout=10)
+        resp = {}
+        try:
+            resp = r.json()
+        except Exception:
+            pass
         log.info("MSG91 OTP verify response [%s]: %s", r.status_code, r.text[:300])
 
         if r.status_code == 200 and resp.get("type") == "success":
