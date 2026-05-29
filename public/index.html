@@ -22,6 +22,12 @@
 <meta name="twitter:title" content="Moto Bhai – Ride Planner for India">
 <meta name="twitter:description" content="Plan your next India ride in seconds with Motobhai. Get fuel stops, dhabas, hotels, and a clean route map tailored to your motorcycle trip.">
 <meta name="twitter:image" content="https://motobhai.app/og-cover.png">
+
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MotoBhai">
 <style>
 /* ═══ PREMIUM AESTHETIC OVERHAUL ═══ */
 :root{--bg:#faf9f6;--surface:#fff;--surface-2:#f5f4f1;--surface-3:#eeece8;--border:#e2dfd9;--text:#1a1815;--text-2:#6b6860;--text-3:#a8a49c;--primary:#d96b1a;--primary-h:#c45e15;--primary-a:#a84f10;--primary-lx:rgba(217,107,26,.1);--accent:#1a6b4a;--error:#c4342b;--warn:#92600a;--warn-bg:#fff8e1;--success:#2a7a3e;--shadow-xs:0 1px 2px rgba(0,0,0,.03);--shadow-sm:0 1px 3px rgba(0,0,0,.04);--shadow-md:0 4px 16px rgba(0,0,0,.07);--shadow-lg:0 12px 40px rgba(0,0,0,.12);--shadow-xl:0 24px 64px rgba(0,0,0,.18);--shadow-glow:0 0 24px rgba(217,107,26,.25);--r-sm:.375rem;--r-md:.625rem;--r-lg:1rem;--r-xl:1.25rem;--r-full:9999px;--font-d:'Cabinet Grotesk',sans-serif;--font-b:'Satoshi',sans-serif;--ease:cubic-bezier(.16,1,.3,1);--bounce:cubic-bezier(.34,1.56,.64,1);--t:220ms var(--ease)}
@@ -2695,6 +2701,120 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
     // Show saved trips if any
     renderSavedTrips();
   </script>
+
+<!-- PWA Install Banner -->
+<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:2500;padding:0 1rem 1.5rem;pointer-events:none">
+  <div style="max-width:420px;margin:0 auto;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:1.25rem;box-shadow:0 -4px 32px rgba(0,0,0,0.12);pointer-events:auto;position:relative">
+    <button id="pwaInstallClose" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-3);padding:4px;line-height:1">✕</button>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
+      <div style="width:48px;height:48px;border-radius:12px;background:#d96b1a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🏍️</div>
+      <div>
+        <div style="font-weight:800;font-size:.95rem;color:var(--text)">Install MotoBhai</div>
+        <div style="font-size:.75rem;color:var(--text-3);margin-top:2px">Add to home screen for quick access</div>
+      </div>
+    </div>
+    <div id="pwaInstallContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== PWA: Service Worker Registration =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+// ===== PWA: Install Prompt =====
+(function() {
+  const DISMISS_KEY = 'mb_pwa_dismissed';
+  const dismissed = localStorage.getItem(DISMISS_KEY);
+  if (dismissed && (Date.now() - parseInt(dismissed)) < 7 * 24 * 60 * 60 * 1000) return; // Don't show for 7 days after dismiss
+
+  // Check if already installed (standalone mode)
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (window.navigator.standalone === true) return; // iOS standalone
+
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
+
+  if (!isMobile) return; // Only show on mobile
+
+  let deferredPrompt = null;
+
+  // Android: Capture beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner('android');
+  });
+
+  // iOS: Show after a short delay (no native prompt)
+  if (isIOS) {
+    setTimeout(() => showInstallBanner('ios'), 3000);
+  }
+
+  function showInstallBanner(platform) {
+    const banner = document.getElementById('pwaInstallBanner');
+    const content = document.getElementById('pwaInstallContent');
+    if (!banner || !content) return;
+
+    if (platform === 'ios') {
+      content.innerHTML = `
+        <div style="background:var(--surface-2);border-radius:14px;padding:1rem;font-size:.8rem;color:var(--text-2);line-height:1.7">
+          <div style="font-weight:700;color:var(--text);margin-bottom:.5rem;font-size:.85rem">How to install:</div>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
+            <span style="font-size:1.1rem">1.</span> Tap the <strong>Share</strong> button <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:.8rem">⬆️</span> in Safari
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
+            <span style="font-size:1.1rem">2.</span> Scroll down and tap <strong>"Add to Home Screen"</strong> <span style="font-size:.9rem">➕</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:1.1rem">3.</span> Tap <strong>"Add"</strong> — done!
+          </div>
+        </div>
+      `;
+    } else {
+      content.innerHTML = `
+        <button id="pwaInstallBtn" style="width:100%;padding:.85rem;border-radius:14px;background:var(--primary);color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:48px;display:flex;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 16px rgba(217,107,26,0.25);transition:all .2s">
+          ⬇️ Install MotoBhai App
+        </button>
+        <div style="text-align:center;font-size:.7rem;color:var(--text-3);margin-top:.5rem">Free · No app store needed · Works offline</div>
+      `;
+      document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            banner.style.display = 'none';
+            localStorage.setItem(DISMISS_KEY, Date.now().toString());
+          }
+          deferredPrompt = null;
+        }
+      });
+    }
+
+    banner.style.display = 'block';
+    banner.style.animation = 'slideUp .4s cubic-bezier(.16,1,.3,1) forwards';
+
+    // Close button
+    document.getElementById('pwaInstallClose').addEventListener('click', () => {
+      banner.style.display = 'none';
+      localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    });
+  }
+
+  // Listen for successful install
+  window.addEventListener('appinstalled', () => {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'none';
+    localStorage.setItem(DISMISS_KEY, Date.now().toString());
+  });
+})();
+</script>
+
+<style>
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
 
 </body>
 </html>

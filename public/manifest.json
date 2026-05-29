@@ -1,0 +1,28 @@
+{
+  "name": "Moto Bhai – Ride Planner for India",
+  "short_name": "MotoBhai",
+  "description": "Plan your next India ride in seconds. Get fuel stops, dhabas, hotels, and a clean route map tailored to your motorcycle trip.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf9f6",
+  "theme_color": "#d96b1a",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "navigation"],
+  "lang": "en",
+  "dir": "ltr"
+}
