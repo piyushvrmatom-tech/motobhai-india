@@ -114,6 +114,8 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 .config-section:last-child{border-bottom:none}
 .config-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.75rem}
 .req{color:#e53e3e;font-weight:400}
+.menu-item{display:flex;align-items:center;gap:.75rem;width:100%;padding:.875rem 1.25rem;background:none;border:none;font-size:.9rem;font-weight:600;color:var(--text);cursor:pointer;transition:background .15s;text-align:left;min-height:48px}
+.menu-item:hover,.menu-item:active{background:var(--surface-2)}
 .trip-pills{display:flex;gap:.375rem;flex-wrap:wrap}
 .trip-pill{flex:1;min-width:80px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.625rem .5rem;font-size:.8125rem;font-weight:700;color:var(--text-2);transition:all var(--t);text-align:center;min-height:44px}
 .trip-pill:hover,.trip-pill.active{background:var(--primary-lx);border-color:var(--primary);color:var(--primary)}
@@ -375,12 +377,99 @@ button:active:not(:disabled){transform:scale(.97)}
     <svg viewBox="0 0 48 56" fill="none"><path d="M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z" stroke="currentColor" stroke-width="3" fill="none"/><path d="M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z" fill="currentColor"/><path d="M28 19 C29 20 30 22 30 24 C30 25 29 26 27 26 C25 26 24 25 24 24 C24 22 25 20 26 19 C27 18.5 27.5 18.5 28 19Z" fill="var(--bg,#fff)"/></svg>
     <span class="logo-txt">Moto<span>Bhai</span></span>
   </a>
-  <div class="header-actions">
-    <button class="header-btn" id="disclaimerBtn"><span>&#9888;&#65039;</span><span class="btn-label"> Disclaimer</span></button>
-    <button class="header-btn" id="aboutBtn"><span>&#8505;&#65039;</span><span class="btn-label"> About</span></button>
-    <button class="header-btn primary-hb hidden" id="signOutBtn">Sign out</button>
-  </div>
+  <button id="hamburgerBtn" style="width:44px;height:44px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0" aria-label="Menu">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect y="3" width="20" height="2" rx="1" fill="var(--text)"/><rect y="9" width="20" height="2" rx="1" fill="var(--text)"/><rect y="15" width="20" height="2" rx="1" fill="var(--text)"/></svg>
+  </button>
 </header>
+
+<!-- HAMBURGER MENU PANEL -->
+<div id="hamburgerPanel" style="position:fixed;inset:0;z-index:2000;display:none">
+  <div id="hamburgerOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)"></div>
+  <div id="hamburgerDrawer" style="position:absolute;right:0;top:0;bottom:0;width:min(320px,85vw);background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,0.15);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <!-- Close button -->
+    <div style="display:flex;justify-content:flex-end;padding:1rem 1rem .5rem">
+      <button id="closeHamburger" style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--text-2);cursor:pointer">&#10005;</button>
+    </div>
+    <!-- Profile section -->
+    <div id="menuProfile" style="padding:0 1.25rem 1rem;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+        <div id="menuAvatar" style="width:48px;height:48px;border-radius:50%;background:var(--primary-lx);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:var(--primary);flex-shrink:0;overflow:hidden">👤</div>
+        <div>
+          <div id="menuName" style="font-weight:700;font-size:1rem;color:var(--text)">Guest</div>
+          <div id="menuBike" style="font-size:.8rem;color:var(--text-3)">Not set</div>
+        </div>
+      </div>
+    </div>
+    <!-- Menu items -->
+    <nav style="padding:.75rem 0;flex:1">
+      <button class="menu-item" id="menuEditProfile">
+        <span style="font-size:1.1rem;width:28px;text-align:center">👤</span>
+        <span>Edit Profile</span>
+      </button>
+      <button class="menu-item" id="menuMyTrips">
+        <span style="font-size:1.1rem;width:28px;text-align:center">🏍️</span>
+        <span>My Trips</span>
+      </button>
+      <button class="menu-item" id="menuDisclaimer">
+        <span style="font-size:1.1rem;width:28px;text-align:center">⚠️</span>
+        <span>Disclaimer</span>
+      </button>
+      <button class="menu-item" id="menuAbout">
+        <span style="font-size:1.1rem;width:28px;text-align:center">ℹ️</span>
+        <span>About</span>
+      </button>
+    </nav>
+    <!-- Sign out at bottom -->
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--border)">
+      <button id="menuSignOut" style="width:100%;padding:.75rem;border-radius:var(--r-md);background:rgba(229,62,62,0.08);color:#e53e3e;font-weight:700;font-size:.875rem;border:1px solid rgba(229,62,62,0.2);cursor:pointer;transition:all .2s;min-height:44px">🚪 Sign Out</button>
+    </div>
+    <!-- Saved Trips Panel (inside drawer, hidden by default) -->
+    <div id="savedTripsPanel" style="display:none;position:absolute;inset:0;background:var(--surface);z-index:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem">
+        <button id="backFromTrips" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;color:var(--text)">←</button>
+        <span style="font-weight:700;font-size:1rem">My Trips</span>
+      </div>
+      <div id="savedTripsList" style="padding:1rem 1.25rem"></div>
+    </div>
+    <!-- Edit Profile Panel (inside drawer, hidden by default) -->
+    <div id="editProfilePanel" style="display:none;position:absolute;inset:0;background:var(--surface);z-index:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem">
+        <button id="backFromProfile" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;color:var(--text)">←</button>
+        <span style="font-weight:700;font-size:1rem">Edit Profile</span>
+      </div>
+      <div style="padding:1.25rem">
+        <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.375rem;display:block">Name</label>
+        <input id="profileNameInput" type="text" placeholder="Your name" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.9rem;background:var(--surface);color:var(--text);outline:none;margin-bottom:1rem">
+        <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.375rem;display:block">Motorcycle</label>
+        <div style="position:relative;margin-bottom:1rem">
+          <input id="profileBikeInput" type="text" placeholder="e.g. RE Himalayan 450" autocomplete="off" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.9rem;background:var(--surface);color:var(--text);outline:none">
+        </div>
+        <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.375rem;display:block">Kilometers Completed</label>
+        <input id="profileKmInput" type="number" placeholder="e.g. 25000" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.9rem;background:var(--surface);color:var(--text);outline:none;margin-bottom:1.5rem">
+        <button id="saveProfileBtn" style="width:100%;padding:.75rem;border-radius:var(--r-md);background:var(--primary);color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:44px;transition:all .2s">💾 Save Profile</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ONBOARDING MODAL (first-time after OTP) -->
+<div id="onboardingModal" style="position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1.5rem">
+  <div style="background:var(--surface);border-radius:20px;padding:2rem 1.5rem;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:.5rem">🏍️</div>
+    <h2 style="font-size:1.25rem;font-weight:800;margin-bottom:.25rem;color:var(--text)">Welcome to MotoBhai!</h2>
+    <p style="font-size:.85rem;color:var(--text-3);margin-bottom:1.5rem">Tell us a bit about yourself</p>
+    <div style="text-align:left">
+      <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.375rem;display:block">Your Name *</label>
+      <input id="onboardName" type="text" placeholder="What should we call you?" style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.95rem;background:var(--surface);color:var(--text);outline:none;margin-bottom:1rem;box-sizing:border-box">
+      <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.375rem;display:block">Your Motorcycle *</label>
+      <div style="position:relative;margin-bottom:1.5rem">
+        <input id="onboardBike" type="text" placeholder="e.g. RE Himalayan 450" autocomplete="off" style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.95rem;background:var(--surface);color:var(--text);outline:none;box-sizing:border-box">
+      </div>
+    </div>
+    <div id="onboardError" style="display:none;color:#e53e3e;font-size:.8rem;font-weight:600;margin-bottom:.75rem"></div>
+    <button id="onboardSubmit" style="width:100%;padding:.875rem;border-radius:var(--r-lg);background:var(--primary);color:#fff;font-weight:700;font-size:1rem;border:none;cursor:pointer;min-height:48px;transition:all .2s">🚀 Let's Ride!</button>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -391,7 +480,7 @@ button:active:not(:disabled){transform:scale(.97)}
     <circle cx="666" cy="215" r="38" fill="none" stroke="white" stroke-width="6"/>
     <circle cx="666" cy="215" r="18" fill="none" stroke="white" stroke-width="4"/>
   </svg>
-  <h1>Where are you riding?<span>Fuel &#183; Food &#183; Hotels &#183; Tips</span></h1>
+  <h1 id="heroHeading">Where are you riding?<span>Fuel &#183; Food &#183; Hotels &#183; Tips</span></h1>
   <p class="hero-sub">Tell your Bhai the destination &#8212; full itinerary in seconds.</p>
   <div class="hero-pills">
     <button class="hero-pill" data-dest="Manali">&#127956; Manali &#183; Leh</button>
@@ -420,11 +509,9 @@ button:active:not(:disabled){transform:scale(.97)}
     </div>
   </div>
 
-  <div id="selectedDest" style="display:none">
-    <div class="dest-chip">
-      <span id="destName"></span>
-      <button id="removeDest" aria-label="Remove">&#10005;</button>
-    </div>
+  <div id="selectedDest" class="selected-dest" style="display:none">
+    <span id="destName"></span>
+    <button id="removeDest" class="remove-dest">&#10005;</button>
   </div>
 
   <div id="tripConfig" style="display:none">
@@ -484,6 +571,13 @@ button:active:not(:disabled){transform:scale(.97)}
     <button class="generate-btn" id="generateBtn">
       <span>&#129949;&#65039;</span><span id="generateBtnText">Generate My Itinerary</span>
     </button>
+    
+    <!-- TOP SEARCHED TRIPS -->
+    <div id="topTripsSection" style="margin-top:1.5rem;margin-bottom:1.5rem">
+      <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.75rem">🔥 Popular Routes</div>
+      <div id="topTripsList" style="display:flex;flex-direction:column;gap:.375rem"></div>
+    </div>
+
     <div class="ai-status" id="aiStatus">
       <div class="ai-status-top">
         <div class="ai-spinner"></div>
@@ -752,17 +846,223 @@ button:active:not(:disabled){transform:scale(.97)}
     function setToken(t) { localStorage.setItem('mb_token', t); }
     function clearToken() { localStorage.removeItem('mb_token'); }
 
-    // Check if already signed in
+    // ── Profile helpers ──────────────────────────────────────────
+    function getProfile() {
+      try { return JSON.parse(localStorage.getItem('mb_profile')) || null; } catch { return null; }
+    }
+    function saveProfile(p) { localStorage.setItem('mb_profile', JSON.stringify(p)); applyProfile(); }
+    function applyProfile() {
+      const p = getProfile();
+      const heroH = document.getElementById('heroHeading');
+      if (p && p.name) {
+        heroH.innerHTML = `Hi ${p.name}, where are you riding?<span>Fuel &#183; Food &#183; Hotels &#183; Tips</span>`;
+        document.getElementById('menuName').textContent = p.name;
+        document.getElementById('menuAvatar').textContent = p.name.charAt(0).toUpperCase();
+        // Pre-fill bike if set
+        if (p.bike) {
+          document.getElementById('menuBike').textContent = p.bike;
+          const bikeInput = document.getElementById('bikeInput');
+          if (bikeInput && !bikeInput.value) bikeInput.value = p.bike;
+          if (p.mileage) {
+            const mInput = document.getElementById('mileageInput');
+            if (mInput && !mInput.value) mInput.value = p.mileage;
+          }
+        }
+      } else {
+        heroH.innerHTML = 'Where are you riding?<span>Fuel &#183; Food &#183; Hotels &#183; Tips</span>';
+        document.getElementById('menuName').textContent = 'Guest';
+        document.getElementById('menuBike').textContent = 'Not set';
+        document.getElementById('menuAvatar').textContent = '👤';
+      }
+    }
+
+    // ── Hamburger Menu ──────────────────────────────────────────
+    const hPanel = document.getElementById('hamburgerPanel');
+    const hDrawer = document.getElementById('hamburgerDrawer');
+    function openHamburger() {
+      hPanel.style.display = 'block';
+      requestAnimationFrame(() => { hDrawer.style.transform = 'translateX(0)'; });
+      document.getElementById('savedTripsPanel').style.display = 'none';
+      document.getElementById('editProfilePanel').style.display = 'none';
+      // Update profile info
+      const p = getProfile();
+      if (p) {
+        document.getElementById('profileNameInput').value = p.name || '';
+        document.getElementById('profileBikeInput').value = p.bike || '';
+        document.getElementById('profileKmInput').value = p.km || '';
+      }
+    }
+    function closeHamburger() {
+      hDrawer.style.transform = 'translateX(100%)';
+      setTimeout(() => { hPanel.style.display = 'none'; }, 300);
+    }
+    document.getElementById('hamburgerBtn').addEventListener('click', openHamburger);
+    document.getElementById('closeHamburger').addEventListener('click', closeHamburger);
+    document.getElementById('hamburgerOverlay').addEventListener('click', closeHamburger);
+
+    // Menu items
+    document.getElementById('menuDisclaimer').addEventListener('click', () => { closeHamburger(); document.getElementById('disclaimerModal').classList.add('visible'); });
+    document.getElementById('menuAbout').addEventListener('click', () => { closeHamburger(); document.getElementById('aboutModal').classList.add('visible'); });
+    document.getElementById('menuSignOut').addEventListener('click', () => {
+      closeHamburger();
+      auth.signOut(); clearToken(); localStorage.removeItem('mb_profile');
+      applyProfile(); location.reload();
+    });
+    // My Trips
+    document.getElementById('menuMyTrips').addEventListener('click', () => {
+      document.getElementById('savedTripsPanel').style.display = 'block';
+      renderSavedTrips();
+    });
+    document.getElementById('backFromTrips').addEventListener('click', () => {
+      document.getElementById('savedTripsPanel').style.display = 'none';
+    });
+    // Edit Profile
+    document.getElementById('menuEditProfile').addEventListener('click', () => {
+      document.getElementById('editProfilePanel').style.display = 'block';
+    });
+    document.getElementById('backFromProfile').addEventListener('click', () => {
+      document.getElementById('editProfilePanel').style.display = 'none';
+    });
+    document.getElementById('saveProfileBtn').addEventListener('click', () => {
+      const name = document.getElementById('profileNameInput').value.trim();
+      const bike = document.getElementById('profileBikeInput').value.trim();
+      const km = document.getElementById('profileKmInput').value;
+      if (!name) return;
+      const p = getProfile() || {};
+      p.name = name; p.bike = bike; p.km = km;
+      // Find mileage from BIKES_DB
+      const found = typeof BIKES_DB !== 'undefined' && BIKES_DB.find(b => b.n.toLowerCase() === bike.toLowerCase());
+      if (found) p.mileage = found.m;
+      saveProfile(p);
+      document.getElementById('editProfilePanel').style.display = 'none';
+    });
+
+    // ── Saved trips rendering ────────────────────────────────────
+    function renderSavedTrips() {
+      const trips = JSON.parse(localStorage.getItem('mb_trips') || '[]');
+      const list = document.getElementById('savedTripsList');
+      if (!trips.length) {
+        list.innerHTML = '<div style="text-align:center;padding:2rem 1rem;color:var(--text-3);font-size:.85rem">No saved trips yet.<br>Plan your first ride! 🏍️</div>';
+        return;
+      }
+      list.innerHTML = trips.map((t, i) => `
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1px solid var(--border);border-radius:12px;margin-bottom:.5rem;background:var(--surface-2)">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:.875rem;color:var(--text)">${t.dest || t.destination || 'Trip'}</div>
+            <div style="font-size:.7rem;color:var(--text-3)">${t.type || ''} · ${t.days || '?'} days · ${new Date(t.ts || Date.now()).toLocaleDateString()}</div>
+          </div>
+          <button data-idx="${i}" class="del-trip-btn" style="width:28px;height:28px;border-radius:50%;background:rgba(229,62,62,0.08);color:#e53e3e;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('.del-trip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          trips.splice(idx, 1);
+          localStorage.setItem('mb_trips', JSON.stringify(trips));
+          renderSavedTrips();
+        });
+      });
+    }
+
+    // ── Onboarding (first-time after OTP) ────────────────────────
+    function showOnboarding() {
+      const modal = document.getElementById('onboardingModal');
+      modal.style.display = 'flex';
+      // Attach bike autocomplete to onboarding bike input
+      if (typeof initBikeDropdown === 'function') initBikeDropdown('onboardBike');
+    }
+    document.getElementById('onboardSubmit').addEventListener('click', () => {
+      const name = document.getElementById('onboardName').value.trim();
+      const bike = document.getElementById('onboardBike').value.trim();
+      const errEl = document.getElementById('onboardError');
+      if (!name) { errEl.textContent = 'Please enter your name'; errEl.style.display = 'block'; return; }
+      if (!bike) { errEl.textContent = 'Please enter your motorcycle'; errEl.style.display = 'block'; return; }
+      errEl.style.display = 'none';
+      const p = { name, bike };
+      // Find mileage from BIKES_DB
+      if (typeof BIKES_DB !== 'undefined') {
+        const found = BIKES_DB.find(b => b.n.toLowerCase() === bike.toLowerCase());
+        if (found) p.mileage = found.m;
+      }
+      saveProfile(p);
+      document.getElementById('onboardingModal').style.display = 'none';
+    });
+
+    // ── Top Searched Trips ───────────────────────────────────────
+    const TOP_TRIPS = [
+      { icon: '🏔️', from: 'Delhi', to: 'Manali → Leh → Nubra Valley', days: 7 },
+      { icon: '🌊', from: 'Mumbai', to: 'Goa (Coastal Route)', days: 3 },
+      { icon: '🏜️', from: 'Jaipur', to: 'Jodhpur → Jaisalmer', days: 4 },
+      { icon: '☕', from: 'Bangalore', to: 'Coorg → Wayanad', days: 3 },
+      { icon: '🌲', from: 'Delhi', to: 'Rishikesh → Mussoorie', days: 2 },
+      { icon: '🏖️', from: 'Chennai', to: 'Pondicherry → Mahabalipuram', days: 2 },
+      { icon: '🍃', from: 'Siliguri', to: 'Gangtok → Nathula Pass', days: 4 },
+      { icon: '🏞️', from: 'Pune', to: 'Lonavala → Mahabaleshwar', days: 2 }
+    ];
+    function renderTopTrips() {
+      const list = document.getElementById('topTripsList');
+      if (!list) return;
+      list.innerHTML = TOP_TRIPS.map((t, i) => `
+        <div class="top-trip-item" data-idx="${i}" style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s;min-height:48px">
+          <span style="font-size:1.2rem;flex-shrink:0">${t.icon}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:.85rem;color:var(--text)">${t.from} → ${t.to}</div>
+            <div style="font-size:.7rem;color:var(--text-3)">${t.days} days recommended</div>
+          </div>
+          <div style="display:flex;gap:.25rem;flex-shrink:0">
+            <button class="top-trip-plan" data-idx="${i}" style="padding:6px 12px;border-radius:8px;background:var(--primary);color:#fff;font-size:.7rem;font-weight:700;border:none;cursor:pointer;min-height:32px">Plan</button>
+            <button class="top-trip-fav" data-idx="${i}" style="padding:6px 8px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);font-size:.8rem;cursor:pointer;min-height:32px" title="Save to favorites">♡</button>
+          </div>
+        </div>
+      `).join('');
+      // Plan button
+      list.querySelectorAll('.top-trip-plan').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const t = TOP_TRIPS[parseInt(btn.dataset.idx)];
+          // Fill in origin & destination
+          document.getElementById('originInput').value = t.from;
+          const dest = t.to.split('→')[0].trim().split('(')[0].trim();
+          document.getElementById('destConfigInput').value = t.to;
+          document.getElementById('destName').textContent = dest;
+          document.getElementById('selectedDest').classList.add('visible');
+          document.querySelector('.search-bar').style.display = 'none';
+          document.getElementById('tripConfig').classList.add('visible');
+          document.getElementById('daysInput').value = t.days;
+          document.getElementById('tripConfig').scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+      // Favorite button
+      list.querySelectorAll('.top-trip-fav').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const t = TOP_TRIPS[parseInt(btn.dataset.idx)];
+          const trips = JSON.parse(localStorage.getItem('mb_trips') || '[]');
+          trips.unshift({ dest: `${t.from} → ${t.to}`, type: 'Favorite', days: t.days, ts: Date.now(), fav: true });
+          localStorage.setItem('mb_trips', JSON.stringify(trips));
+          btn.textContent = '❤️';
+          btn.style.background = 'rgba(229,62,62,0.08)';
+          btn.style.borderColor = 'rgba(229,62,62,0.2)';
+          setTimeout(() => { btn.textContent = '♡'; btn.style.background = ''; btn.style.borderColor = ''; }, 2000);
+        });
+      });
+    }
+
+    // ── Auth state handler (updated) ─────────────────────────────
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         const token = await user.getIdToken();
         setToken(token);
         loginGate.classList.add('hidden');
-        document.getElementById('signOutBtn').classList.add('show');
         loadTripHistory();
         fetchUserLocation();
+        // Check if first-time user (no profile)
+        if (!getProfile()) {
+          showOnboarding();
+        } else {
+          applyProfile();
+        }
       } else {
-        document.getElementById('signOutBtn').classList.remove('show');
         document.getElementById('tripHistory').style.display = 'none';
       }
     });
@@ -771,7 +1071,11 @@ button:active:not(:disabled){transform:scale(.97)}
     if (getToken()) {
       loginGate.classList.add('hidden');
       fetchUserLocation();
+      applyProfile();
     }
+    // Apply profile for returning users & render top trips
+    applyProfile();
+    renderTopTrips();
 
     // Guest mode — skip login, plan without saving
     document.getElementById('guestBtn').addEventListener('click', () => {
@@ -862,9 +1166,14 @@ button:active:not(:disabled){transform:scale(.97)}
         const token = await result.user.getIdToken();
         setToken(token);
         loginGate.classList.add('hidden');
-        document.getElementById('signOutBtn').classList.add('show');
         loadTripHistory();
         fetchUserLocation();
+        // Show onboarding for first-time users
+        if (!getProfile()) {
+          showOnboarding();
+        } else {
+          applyProfile();
+        }
       } catch (err) {
         console.error('Firebase verify error:', err);
         let msg = 'Verification failed.';
