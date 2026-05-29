@@ -2459,27 +2459,42 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       btn.disabled = true;
 
       try {
-        // Save to Firestore
+        // Save to Firestore (matching rules schema)
         const uid = auth.currentUser.uid;
+        const originCity = data.days?.[0]?.from || '';
+        const destCity = data.days?.[data.days.length - 1]?.to || '';
         await db.collection('trips').add({
           uid: uid,
-          title: data.title,
-          totalKm: data.totalKm,
-          estimatedFuelCost: data.estimatedFuelCost,
-          days: data.days,
+          origin: originCity,
+          destination: destCity,
+          tripType: 'saved',
+          bike: '',
+          days: data.days?.length || 0,
+          totalKm: data.totalKm || 0,
+          fuelCost: data.estimatedFuelCost || 0,
+          estimatedFuelCost: data.estimatedFuelCost || 0,
+          title: data.title || '',
+          dayCount: data.days?.length || 0,
+          itinerary: JSON.stringify(data.days || []),
+          ts: firebase.firestore.FieldValue.serverTimestamp(),
           savedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         // Also save to localStorage
-        const savedTrips = JSON.parse(localStorage.getItem('mb_saved_trips') || '[]');
+        const savedTrips = JSON.parse(localStorage.getItem('mb_trips') || '[]');
         savedTrips.unshift({
           title: data.title,
+          dest: destCity,
+          origin: originCity,
           totalKm: data.totalKm,
-          estimatedFuelCost: data.estimatedFuelCost,
-          days: data.days,
-          savedAt: new Date().toISOString()
+          fuelCost: data.estimatedFuelCost,
+          itinerary: JSON.stringify(data.days || []),
+          type: 'saved',
+          days: data.days?.length || 0,
+          ts: Date.now()
         });
-        localStorage.setItem('mb_saved_trips', JSON.stringify(savedTrips.slice(0, 50)));
+        localStorage.setItem('mb_trips', JSON.stringify(savedTrips.slice(0, 50)));
+        renderSavedTrips();
 
         btn.innerHTML = '&#10003; Saved!';
         btn.style.background = '#38a169';
