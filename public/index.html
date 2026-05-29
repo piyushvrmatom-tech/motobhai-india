@@ -715,7 +715,19 @@ button:active:not(:disabled){transform:scale(.97)}
     function setToken(t) { localStorage.setItem('mb_token', t); }
     function clearToken() { localStorage.removeItem('mb_token'); }
 
-    // Check if already signed in (JWT in localStorage)
+    // Check if already signed in
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const token = await user.getIdToken();
+        setToken(token);
+        loginGate.classList.add('hidden');
+        document.getElementById('signOutBtn').style.display = '';
+        document.getElementById('signOutBtn').classList.remove('hidden');
+        fetchUserLocation();
+      }
+    });
+
+    // Also check localStorage token on load
     if (getToken()) {
       loginGate.classList.add('hidden');
       fetchUserLocation();
@@ -727,9 +739,18 @@ button:active:not(:disabled){transform:scale(.97)}
       fetchUserLocation();
     });
 
-    let otpPhone = '';
+    // ── Firebase Phone Auth ──────────────────────────────────────
+    // Setup invisible reCAPTCHA
+    let recaptchaVerifier = null;
+    function setupRecaptcha() {
+      if (recaptchaVerifier) return;
+      recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        size: 'invisible',
+        callback: () => { /* reCAPTCHA solved */ }
+      });
+    }
 
-    // Send OTP via our backend
+    // Send OTP via Firebase
     sendOtpBtn.addEventListener('click', async () => {
       const digits = phoneInput.value.replace(/\D/g, '').slice(-10);
       if (digits.length !== 10) {
@@ -740,24 +761,26 @@ button:active:not(:disabled){transform:scale(.97)}
       phoneError.style.display = 'none';
       sendOtpBtn.disabled = true;
       sendOtpBtn.textContent = 'Sending...';
-      otpPhone = '+91' + digits;
+      const phoneNumber = '+91' + digits;
 
       try {
-        const r = await fetch(API_BASE + '/api/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: otpPhone })
-        });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.detail || 'Send failed');
+        setupRecaptcha();
+        confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, recaptchaVerifier);
         phoneSection.classList.add('hidden');
         otpSection.classList.add('active');
         otpInputs[0].focus();
       } catch (err) {
-        phoneError.textContent = err.message || 'Failed to send OTP. Try again.';
+        console.error('Firebase Phone Auth error:', err);
+        let msg = 'Failed to send OTP. Try again.';
+        if (err.code === 'auth/invalid-phone-number') msg = 'Invalid phone number format.';
+        else if (err.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
+        else if (err.code === 'auth/captcha-check-failed') msg = 'Captcha verification failed. Refresh and try again.';
+        phoneError.textContent = msg;
         phoneError.style.display = 'block';
         sendOtpBtn.disabled = false;
         sendOtpBtn.textContent = 'Send OTP';
+        // Reset reCAPTCHA on error
+        if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
       }
     });
 
@@ -781,7 +804,7 @@ button:active:not(:disabled){transform:scale(.97)}
       });
     });
 
-    // Verify OTP via our backend → get JWT
+    // Verify OTP via Firebase
     verifyOtpBtn.addEventListener('click', async () => {
       const code = Array.from(otpInputs).map(i => i.value).join('');
       if (code.length < 6) {
@@ -794,20 +817,21 @@ button:active:not(:disabled){transform:scale(.97)}
       verifyOtpBtn.textContent = 'Verifying...';
 
       try {
-        const r = await fetch(API_BASE + '/api/otp/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: otpPhone, code })
-        });
-        const d = await r.json();
-        if (!r.ok || !d.token) throw new Error(d.detail || 'Invalid code');
-        setToken(d.token);
+        if (!confirmationResult) throw new Error('Session expired. Resend OTP.');
+        const result = await confirmationResult.confirm(code);
+        const token = await result.user.getIdToken();
+        setToken(token);
         loginGate.classList.add('hidden');
+        document.getElementById('signOutBtn').style.display = '';
+        document.getElementById('signOutBtn').classList.remove('hidden');
         fetchUserLocation();
       } catch (err) {
-        otpError.textContent = err.message === 'invalid_or_expired'
-          ? 'Wrong code or expired. Try again.'
-          : (err.message || 'Verification failed.');
+        console.error('Firebase verify error:', err);
+        let msg = 'Verification failed.';
+        if (err.code === 'auth/invalid-verification-code') msg = 'Wrong code. Check and try again.';
+        else if (err.code === 'auth/code-expired') msg = 'Code expired. Resend OTP.';
+        else if (err.message) msg = err.message;
+        otpError.textContent = msg;
         otpError.style.display = 'block';
         verifyOtpBtn.disabled = false;
         verifyOtpBtn.textContent = 'Verify & Continue';
@@ -1368,6 +1392,14 @@ Rules:
     });
     document.getElementById('aboutModal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) e.currentTarget.classList.remove('visible');
+    });
+
+    // ===== SIGN OUT =====
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      try { await auth.signOut(); } catch(e) { console.error(e); }
+      clearToken();
+      document.getElementById('signOutBtn').style.display = 'none';
+      window.location.reload();
     });
 
     // ===== DISCLAIMER MODAL =====
