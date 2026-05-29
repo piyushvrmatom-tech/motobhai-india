@@ -739,6 +739,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 <script src="/gemini-config.js"></script>
 
 
@@ -755,6 +756,93 @@ button:active:not(:disabled){transform:scale(.97)}
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+
+    // ===== PUSH NOTIFICATIONS (FCM) =====
+    let messaging = null;
+    try {
+      if (firebase.messaging.isSupported()) {
+        messaging = firebase.messaging();
+      }
+    } catch(e) { /* messaging not supported in this browser */ }
+
+    // Request notification permission and save FCM token
+    async function requestNotificationPermission() {
+      if (!messaging) return;
+      if (Notification.permission === 'granted') {
+        await saveFcmToken();
+        return;
+      }
+      if (Notification.permission === 'denied') return;
+
+      // Show custom prompt before browser prompt
+      const shouldAsk = await showNotificationPrompt();
+      if (!shouldAsk) return;
+
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        await saveFcmToken();
+      }
+    }
+
+    async function saveFcmToken() {
+      if (!messaging || !auth.currentUser) return;
+      try {
+        const token = await messaging.getToken({
+          vapidKey: 'BDwbEpjhKqAvlfsmIApVqK9wJEJA7mdW7q2IlEwv5BjvG0XFWz21XtGkcAiupyfwPI7rIc-tuJ0QSbSPeK-HU5c'
+        });
+        if (token) {
+          await db.collection('fcmTokens').doc(auth.currentUser.uid).set({
+            token: token,
+            uid: auth.currentUser.uid,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            platform: /iPhone|iPad/.test(navigator.userAgent) ? 'ios' : /Android/.test(navigator.userAgent) ? 'android' : 'web'
+          }, { merge: true });
+        }
+      } catch(e) { console.warn('[FCM] Token error:', e); }
+    }
+
+    function showNotificationPrompt() {
+      return new Promise((resolve) => {
+        let modal = document.getElementById('notifPromptModal');
+        if (modal) { modal.style.display = 'flex'; return; }
+        modal = document.createElement('div');
+        modal.id = 'notifPromptModal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:3100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1.5rem';
+        modal.innerHTML = `
+          <div style="background:var(--surface);border-radius:22px;padding:2rem 1.5rem;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center;position:relative">
+            <div style="font-size:2.5rem;margin-bottom:.75rem">🔔</div>
+            <h2 style="font-size:1.1rem;font-weight:800;margin-bottom:.5rem;color:var(--text)">Stay in the Loop, Bhai!</h2>
+            <p style="font-size:.82rem;color:var(--text-2);line-height:1.6;margin-bottom:1.25rem">Get weekend ride reminders, festival trip ideas, and riders meet alerts. We promise — no spam, only ride vibes! 🏍️</p>
+            <button id="notifAllow" style="width:100%;padding:.85rem;border-radius:12px;background:var(--primary);color:#fff;font-weight:700;font-size:.95rem;border:none;cursor:pointer;min-height:48px;margin-bottom:.5rem;transition:all .2s">🔔 Yes, Notify Me!</button>
+            <button id="notifSkip" style="width:100%;padding:.65rem;border-radius:10px;background:transparent;color:var(--text-3);font-weight:600;font-size:.8rem;border:none;cursor:pointer">Maybe Later</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('notifAllow').addEventListener('click', () => {
+          modal.style.display = 'none';
+          localStorage.setItem('mb_notif_asked', 'yes');
+          resolve(true);
+        });
+        document.getElementById('notifSkip').addEventListener('click', () => {
+          modal.style.display = 'none';
+          localStorage.setItem('mb_notif_asked', 'skipped');
+          resolve(false);
+        });
+      });
+    }
+
+    // Handle foreground notifications
+    if (messaging) {
+      messaging.onMessage((payload) => {
+        const { title, body } = payload.notification || {};
+        if (Notification.permission === 'granted') {
+          new Notification(title || '🏍️ MotoBhai', {
+            body: body || 'Chal bhai, ride pe chalte hain!',
+            icon: '/icons/icon-192.png'
+          });
+        }
+      });
+    }
 
     // ===== GEMINI API (Free tier — replace with your key from aistudio.google.com/apikey) =====
     const API_BASE = 'https://motobhai-api.onrender.com';
@@ -1266,6 +1354,14 @@ button:active:not(:disabled){transform:scale(.97)}
           showOnboarding();
         } else {
           applyProfile();
+        }
+        // Ask for notification permission (delayed, non-intrusive)
+        const notifAsked = localStorage.getItem('mb_notif_asked');
+        if (!notifAsked || notifAsked === 'skipped') {
+          setTimeout(() => requestNotificationPermission(), 5000);
+        } else if (notifAsked === 'yes') {
+          // Already consented — just refresh the token silently
+          saveFcmToken();
         }
       } else {
         document.getElementById('tripHistory').style.display = 'none';

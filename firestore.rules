@@ -110,6 +110,16 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fav']);
     }
 
+    // ── FCM Tokens Collection (push notifications) ──────────────
+    match /fcmTokens/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['token', 'uid', 'updatedAt', 'platform'])
+        && request.resource.data.token is string
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if isOwner(userId);
+    }
+
     // Default: deny everything else
     match /{document=**} {
       allow read, write: if false;
