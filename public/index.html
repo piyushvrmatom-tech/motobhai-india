@@ -1850,133 +1850,116 @@ button:active:not(:disabled){transform:scale(.97)}
       if (genTxtDone) genTxtDone.textContent = 'Generate My Itinerary';
     });
 
-    // ===== GEMINI API CALL =====
+    // ===== GEMINI API CALL (Direct) =====
+    const GEMINI_API_KEY = 'AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww';
+
     async function generateWithGemini(params) {
       const { origin, destination, tripType, bike, mileage, days, riders, prefs } = params;
 
-      const prompt = `You are Moto Bhai, an expert Indian motorcycle trip planner. Generate a ${days}-day ${tripType === 'round' ? 'round trip' : tripType === 'oneway' ? 'one-way' : 'multi-stop'} motorcycle itinerary from ${origin} to ${destination}.
+      const tripTypeLabel = tripType === 'round' ? 'round trip (include return journey)' :
+                            tripType === 'oneway' ? 'one-way trip' : 'multi-stop trip';
 
-Bike: ${bike} (${mileage} km/l). Riders: ${riders}. ${prefs ? 'Preferences: ' + prefs : ''}
+      const vibeDesc = {
+        'scenic': 'scenic routes, mountain passes, riverside roads',
+        'offroad': 'offroad trails, dirt tracks, adventure paths',
+        'sightseeing': 'tourist spots, historical places, viewpoints',
+        'highway': 'highway riding, fastest routes, expressways'
+      };
+      const vibeHint = vibeDesc[prefs] || 'balanced mix of highway and scenic routes';
 
-Return ONLY valid JSON (no markdown, no backticks) in this exact format:
+      const prompt = `You are Moto Bhai, an expert Indian motorcycle trip planner. Generate a DETAILED ${days}-day ${tripTypeLabel} motorcycle itinerary from ${origin} to ${destination}.
+
+Motorcycle: ${bike} (${mileage} km/l). Ride vibe: ${vibeHint}.
+
+CRITICAL INSTRUCTIONS:
+1. Use ONLY REAL places that exist in India
+2. Suggest REAL, NAMED fuel stations (e.g. "Indian Oil, NH-48 Dharuhera" or "HP Petrol Pump, Udaipur Bypass")
+3. Suggest REAL, NAMED restaurants/dhabas (e.g. "Amrik Sukhdev Dhaba, Murthal" or "Chotiwala Restaurant, Rishikesh")
+4. Suggest REAL, NAMED hotels with approximate price (e.g. "Hotel Padmini Palace, Udaipur (~₹1,800/night)" or "Zostel Manali (~₹600/bed)")
+5. Use REAL highway numbers (NH-48, NH-44, SH-17, etc.)
+6. Each day should have 200-350km MAX riding distance
+7. Include specific landmarks, temples, forts, viewpoints as highlights
+8. Mention the specific distance in km between each day's from and to city
+
+Return ONLY valid JSON (no markdown, no backticks, no explanation) in this EXACT format:
 {
-  "title": "Trip title",
-  "totalKm": number,
-  "estimatedFuelCost": number (in INR, petrol at 105/l),
+  "title": "Trip Title with Route",
+  "totalKm": total_distance_number,
+  "estimatedFuelCost": total_fuel_cost_in_INR,
   "days": [
     {
       "day": 1,
-      "from": "City A",
-      "to": "City B",
-      "distanceKm": number,
-      "rideHours": number,
-      "highlights": "Brief description of route highlights, must-visit spots",
-      "fuelStop": "Recommended fuel station area",
-      "food": "Must-try local food/restaurant",
-      "stay": "Hotel/hostel recommendation with approx price",
-      "lat": latitude of destination,
-      "lng": longitude of destination
+      "from": "City Name",
+      "to": "City Name",
+      "distanceKm": distance_number,
+      "rideHours": hours_number,
+      "highlights": "Real landmarks, viewpoints, temples to visit en route",
+      "fuelStop": "Real Named Fuel Station, Location",
+      "food": "Real Named Restaurant/Dhaba — Signature Dish",
+      "stay": "Real Named Hotel/Hostel (~₹price/night)"
     }
   ]
 }
 
-Rules:
-- Use real Indian cities, roads, and NH/SH numbers
-- Include actual distances (realistic for riding)
-- Max 350-400km per day riding
-- Suggest actual food items and local specialties
-- Include interesting pit stops
-- For round trips, include the return journey
-- Fuel cost = (totalKm / ${mileage}) * 105 / ${riders} per person`;
+Fuel cost calculation: (totalKm / ${mileage}) × 105 INR per liter.
+${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days back to ' + origin + '.' : ''}`;
 
+      // Call Gemini API directly
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-      // Map vibe from prefs/tripType
-      const vibeMap = { 'scenic': 'chill', 'offroad': 'hardcore', 'express': 'standard', 'adventure': 'hardcore' };
-      const vibeKey = (params.prefs || '').split(',').map(p => p.trim()).find(p => vibeMap[p]) || 'standard';
-      const vibe = vibeMap[vibeKey] || 'standard';
-
-      // multi-stop has no backend support — treat as one-way
-      const resolvedTripType = params.tripType === 'multi' ? 'oneway' : params.tripType;
-
-      // Resolve bike_id from bike name — fuzzy multi-word match
-      let bike_id = 'royal_enfield_himalayan_450_2026'; // valid default
-      try {
-        const bikesResp = await fetch(`${API_BASE}/api/motorcycles`);
-        const bikesData = await bikesResp.json();
-        const bikes = bikesData.motorcycles || [];
-        const query = (params.bike || '').toLowerCase().trim();
-        if (query) {
-          const words = query.split(/\s+/).filter(w => w.length > 2);
-          const scored = bikes.map(b => {
-            const label = (b.make + ' ' + b.model + ' ' + b.year).toLowerCase();
-            const score = words.filter(w => label.includes(w)).length;
-            return { bike_id: b.bike_id, score };
-          }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
-          if (scored.length) bike_id = scored[0].bike_id;
-        }
-      } catch(e) { /* use default */ }
-
-      // Attach JWT if logged in
-      const planHeaders = { 'Content-Type': 'application/json' };
-      const tok = localStorage.getItem('mb_token');
-      if (tok) planHeaders['Authorization'] = 'Bearer ' + tok;
-
-      const resp = await fetch(`${API_BASE}/api/plan`, {
+      const resp = await fetch(geminiUrl, {
         method: 'POST',
-        headers: planHeaders,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: params.origin,
-          to: params.destination,
-          days: parseInt(params.days) || 3,
-          bike_id: bike_id,
-          vibe: vibe,
-          budget_tier: 'standard',
-          loop: resolvedTripType === 'round'
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 4096,
+            responseMimeType: 'application/json'
+          }
         })
       });
 
-      const data = await resp.json();
-      console.log('[MotoBhai] API response:', JSON.stringify(data).slice(0, 500));
-      if (!data || data.detail) throw new Error(data?.detail || "No response");
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error('[MotoBhai] Gemini API error:', resp.status, errText);
+        throw new Error(`Gemini API error: ${resp.status}`);
+      }
 
-      // Store trip_id for share
-      window._lastTripId = data.trip_id;
-      window._lastShareUrl = data.share_url;
-      window._lastTripIdFull = data.trip_id;
+      const result = await resp.json();
+      console.log('[MotoBhai] Gemini response received');
 
-      const s = data.summary || {};
-      const mileageVal = parseFloat(params.mileage) || 35;
-      const fuelCost = data.days_plan
-        ? Math.round((s.total_km || 0) / mileageVal * 105)
-        : (s.est_fuel_cost_inr || 0);
+      // Extract text from Gemini response
+      const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('Empty Gemini response');
+
+      // Parse JSON (handle markdown code blocks if any)
+      let jsonStr = text.trim();
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      }
+
+      const data = JSON.parse(jsonStr);
+      console.log('[MotoBhai] Parsed itinerary:', data.title, '| Days:', data.days?.length, '| KM:', data.totalKm);
 
       return {
-        title: `${params.origin} → ${params.destination}`,
-        totalKm: Math.round(s.total_km || 0),
-        estimatedFuelCost: fuelCost,
-        fuelPerPerson: fuelCost,
-        maps_url: '',
-        share_url: data.share_url || '',
-        days: (data.days_plan || []).map((d, idx) => {
-          const fuelStops = d.fuel_stops || [];
-          const food = d.food_stops || [];
-          const hotel = d.hotel_suggestion || {};
-          return {
-            day: d.day || idx + 1,
-            from: d.from || d.origin || '',
-            to: d.to || d.destination || '',
-            distanceKm: d.km || 0,
-            rideHours: d.eta_hours || Math.round((d.km || 0) / 60),
-            highlights: d.bhai_tip || '',
-            fuelStop: fuelStops.map(f => f.name).join(', '),
-            food: food.slice(0, 3).join(', '),
-            stay: hotel.name ? `${hotel.name}${hotel.price_range_inr ? ' (Rs ' + hotel.price_range_inr + ')' : ''}` : '',
-            lat: 0,
-            lng: 0
-          };
-        })
+        title: data.title || `${origin} → ${destination}`,
+        totalKm: Math.round(data.totalKm || 0),
+        estimatedFuelCost: Math.round(data.estimatedFuelCost || 0),
+        days: (data.days || []).map((d, idx) => ({
+          day: d.day || idx + 1,
+          from: d.from || '',
+          to: d.to || '',
+          distanceKm: d.distanceKm || 0,
+          rideHours: d.rideHours || 0,
+          highlights: d.highlights || '',
+          fuelStop: d.fuelStop || '',
+          food: d.food || '',
+          stay: d.stay || '',
+          lat: d.lat || 0,
+          lng: d.lng || 0
+        }))
       };
-
     }
 
     // ===== FALLBACK (smart route with real Indian data) =====
