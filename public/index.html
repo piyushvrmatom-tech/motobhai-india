@@ -2119,7 +2119,7 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       document.getElementById('resultsActions').style.display = 'flex';
       document.getElementById('bottomBar').classList.add('visible');
 
-      // Google Maps Embed with Directions
+      // Google Maps Embed — show actual ROUTE with direction line
       const mapDiv = document.getElementById('map');
       const waypoints = [];
       data.days?.forEach((day) => {
@@ -2127,17 +2127,43 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       });
       const originCity = data.days?.[0]?.from || origin;
       const destCity = waypoints[waypoints.length - 1] || destination;
-      const midWaypoints = waypoints.slice(0, -1).join('|');
-      // Google Maps embed (no-API-key method for directions)
-      const mapsQuery = midWaypoints
-        ? `${encodeURIComponent(originCity)}+to+${encodeURIComponent(midWaypoints.split('|').join('+to+'))}+to+${encodeURIComponent(destCity)}`
-        : `${encodeURIComponent(originCity)}+to+${encodeURIComponent(destCity)}`;
-      const embedUrl = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
+      const midWaypoints = waypoints.slice(0, -1);
+
+      // Use Google Maps Embed API with directions mode for route visualization
+      const mapApiKey = PLACES_API_KEY;
+      let embedUrl;
+      if (midWaypoints.length > 0) {
+        const waypointsParam = midWaypoints.map(w => encodeURIComponent(w)).join('|');
+        embedUrl = `https://www.google.com/maps/embed/v1/directions?key=${mapApiKey}&origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destCity)}&waypoints=${waypointsParam}&mode=driving`;
+      } else {
+        embedUrl = `https://www.google.com/maps/embed/v1/directions?key=${mapApiKey}&origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destCity)}&mode=driving`;
+      }
       mapDiv.innerHTML = `<iframe width="100%" height="100%" style="border:0;border-radius:12px" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="${embedUrl}"></iframe>`;
 
-      // Build Google Maps directions URL
+      // Build Google Maps directions URL (for "Open in Maps" button)
       const allWaypoints = [originCity, ...waypoints];
       window._googleMapsUrl = `https://www.google.com/maps/dir/${allWaypoints.map(w => encodeURIComponent(w)).join('/')}`;
+
+      // Safety Warning Banner — shown if user skipped fatigue check
+      const safetyBanner = document.getElementById('safetyBanner');
+      if (safetyBanner) safetyBanner.remove();
+      if (window._fatigueSkipped) {
+        const avgKm = data.totalKm ? Math.round(data.totalKm / (data.days?.length || 1)) : 0;
+        const bannerDiv = document.createElement('div');
+        bannerDiv.id = 'safetyBanner';
+        bannerDiv.style.cssText = 'background:linear-gradient(135deg,#fff3cd 0%,#ffe0b2 100%);border:1.5px solid #f0ad4e;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;';
+        bannerDiv.innerHTML = `
+          <div style="display:flex;align-items:flex-start;gap:.75rem">
+            <div style="font-size:1.5rem;flex-shrink:0">⚠️</div>
+            <div>
+              <div style="font-weight:800;color:#856404;font-size:.9rem;margin-bottom:.35rem">Safety Advisory — High Daily Distance (~${avgKm} km/day)</div>
+              <div style="font-size:.8rem;color:#664d03;line-height:1.6">MotoBhai recommends safe riding. This trip exceeds <strong>350 km/day</strong>. Use caution, wear proper riding gear (helmet, gloves, jacket, boots), and take rest breaks every 100-150 km. Avoid riding after sunset. <a href="#" onclick="document.getElementById('disclaimerModal').style.display='flex';return false" style="color:#856404;font-weight:700;text-decoration:underline">Read disclaimer for more info.</a></div>
+            </div>
+          </div>
+        `;
+        const statsBar = document.getElementById('statsBar');
+        if (statsBar) statsBar.after(bannerDiv);
+      }
 
       // Build cumulative km
       let cumulKm = 0;
