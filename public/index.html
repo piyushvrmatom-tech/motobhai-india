@@ -60,40 +60,44 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 .login-footer{font-size:.75rem;color:var(--text-3);margin-top:1rem;text-align:center}
 
 /* HEADER */
-.header{position:sticky;top:0;z-index:100;background:rgba(250,249,246,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:calc(.875rem + env(safe-area-inset-top,0px)) 1.25rem .875rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-@media(prefers-color-scheme:dark){.header{background:rgba(17,16,9,.88)}}
-.logo{display:flex;align-items:center;gap:.5rem}
-.logo svg{width:26px;height:30px;color:var(--primary);flex-shrink:0}
-.logo-txt{font-family:var(--font-d);font-weight:800;font-size:1.1rem}.logo-txt span{color:var(--primary)}
-.header-actions{display:flex;align-items:center;gap:.5rem}
-.header-btn{display:flex;align-items:center;gap:.375rem;padding:.5rem .875rem;border-radius:var(--r-full);font-size:.8125rem;font-weight:600;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);transition:all var(--t);min-height:36px}
+.header{position:sticky;top:0;z-index:100;background:rgba(250,249,246,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:calc(.625rem + env(safe-area-inset-top,0px)) 1rem .625rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+@media(prefers-color-scheme:dark){.header{background:rgba(17,16,9,.92)}}
+.logo{display:flex;align-items:center;gap:.4rem}
+.logo svg{width:24px;height:28px;color:var(--primary);flex-shrink:0}
+.logo-txt{font-family:var(--font-d);font-weight:800;font-size:1.05rem}.logo-txt span{color:var(--primary)}
+.header-actions{display:flex;align-items:center;gap:.375rem}
+.header-btn{display:flex;align-items:center;gap:.3rem;padding:.4rem .7rem;border-radius:var(--r-full);font-size:.75rem;font-weight:600;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);transition:all var(--t);min-height:32px}
+@media(max-width:480px){.header-btn .btn-label{display:none}.header-btn{padding:.4rem .5rem;min-height:32px;min-width:32px;justify-content:center}}
 .header-btn:hover{background:var(--surface-3);color:var(--text)}
 .header-btn.primary-hb{background:var(--primary);color:#fff;border-color:var(--primary)}
 #signOutBtn{display:none}
 
-/* HERO — animated gradient */
-.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#d96b1a 0%,#c45e15 25%,#e88533 50%,#b85412 75%,#d96b1a 100%);background-size:300% 300%;animation:heroGradient 8s ease infinite;padding:3.5rem 1.25rem 4rem;text-align:center}
+/* HERO — mobile-first, search integrated */
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#d96b1a 0%,#c45e15 25%,#e88533 50%,#b85412 75%,#d96b1a 100%);background-size:300% 300%;animation:heroGradient 8s ease infinite;padding:2rem 1.25rem 2.5rem;text-align:center}
+@media(min-width:640px){.hero{padding:3rem 1.5rem 3.5rem}}
 @keyframes heroGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,rgba(255,255,255,.12) 0%,transparent 60%);pointer-events:none}
-.hero-bg-svg{position:absolute;inset:0;opacity:.07;pointer-events:none;width:100%;height:100%}
-.hero-tag{display:inline-flex;align-items:center;gap:.375rem;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;border-radius:var(--r-full);padding:.3rem .875rem;font-size:.8125rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1rem;border:1px solid rgba(255,255,255,.2)}
-.hero h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;color:#fff;margin-bottom:.625rem;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.15)}
-.hero h1 span{display:block;font-size:.58em;font-weight:500;opacity:.85;margin-top:.25em;letter-spacing:.01em;text-shadow:none}
-.hero-sub{color:rgba(255,255,255,.88);font-size:clamp(.875rem,2.5vw,1rem);max-width:460px;margin:0 auto 1.5rem;text-shadow:0 1px 4px rgba(0,0,0,.1)}
-.hero-pills{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
-.hero-pill{background:rgba(255,255,255,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:var(--r-full);padding:.3rem .875rem;font-size:.8rem;font-weight:600;transition:all .25s var(--ease)}
-.hero-pill:hover{background:rgba(255,255,255,.22);transform:translateY(-1px)}
+.hero-bg-svg{position:absolute;inset:0;opacity:.06;pointer-events:none;width:100%;height:100%}
+.hero h1{font-size:clamp(1.5rem,6vw,2.6rem);font-weight:800;color:#fff;margin-bottom:.375rem;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.15)}
+.hero h1 span{display:block;font-size:.56em;font-weight:500;opacity:.8;margin-top:.25em;letter-spacing:.01em;text-shadow:none}
+.hero-sub{color:rgba(255,255,255,.82);font-size:clamp(.8rem,2.5vw,.95rem);max-width:420px;margin:0 auto 1.25rem;line-height:1.5}
+.hero-pills{display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+.hero-pill{background:rgba(255,255,255,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:var(--r-full);padding:.4rem .875rem;font-size:.8rem;font-weight:600;transition:all .2s var(--ease);cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:36px;display:inline-flex;align-items:center}
+.hero-pill:hover{background:rgba(255,255,255,.28);transform:translateY(-2px)}
+.hero-pill:active{transform:scale(.95);background:rgba(255,255,255,.35)}
 
-/* SEARCH BAR */
-.search-bar-wrap{max-width:600px;margin:-2rem auto 0;position:relative;z-index:10;padding:0 1.25rem}
-.search-bar{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-full);padding:.6rem .6rem .6rem 1.25rem;box-shadow:var(--shadow-lg);transition:border-color .3s var(--ease),box-shadow .3s var(--ease),transform .3s var(--ease)}
-.search-bar:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-lx),var(--shadow-xl);transform:translateY(-2px)}
-.search-input{flex:1;background:transparent;border:none;outline:none;font-size:1rem;color:var(--text);min-width:0}
-.search-input::placeholder{color:var(--text-3)}
-.search-btn{background:var(--primary);color:#fff;border-radius:var(--r-full);padding:.6rem 1.25rem;font-size:.9rem;font-weight:700;transition:all var(--t);white-space:nowrap;min-height:40px}
+/* SEARCH BAR — inside hero on mobile */
+.search-bar-wrap{max-width:540px;margin:0 auto;position:relative;z-index:10;padding:0}
+.search-bar{display:flex;align-items:center;gap:.5rem;background:#fff;border:2px solid rgba(255,255,255,.6);border-radius:var(--r-xl);padding:.5rem .5rem .5rem 1rem;box-shadow:0 8px 32px rgba(0,0,0,.15);transition:border-color .3s var(--ease),box-shadow .3s var(--ease),transform .3s var(--ease)}
+.search-bar:focus-within{border-color:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);transform:translateY(-2px)}
+.search-input{flex:1;background:transparent;border:none;outline:none;font-size:1rem;color:#1a1815;min-width:0;min-height:44px}
+.search-input::placeholder{color:#a8a49c}
+.search-btn{background:var(--primary);color:#fff;border-radius:var(--r-lg);padding:.7rem 1.25rem;font-size:.9rem;font-weight:700;transition:all var(--t);white-space:nowrap;min-height:44px}
+@media(max-width:400px){.search-btn{padding:.7rem .875rem;font-size:.8rem}}
 .search-btn:hover{background:var(--primary-h);transform:scale(1.02)}
-.autocomplete-list{position:absolute;top:calc(100% + .5rem);left:1.25rem;right:1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);overflow:hidden;z-index:200;animation:slideDown .2s var(--ease) both}
-.autocomplete-item{padding:.875rem 1.25rem;font-size:.9375rem;cursor:pointer;transition:background var(--t);display:flex;align-items:center;gap:.75rem}
+.search-btn:active{transform:scale(.97)}
+.autocomplete-list{position:absolute;top:calc(100% + .375rem);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);overflow:hidden;z-index:200;animation:slideDown .2s var(--ease) both;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.autocomplete-item{padding:.75rem 1rem;font-size:.9rem;cursor:pointer;transition:background var(--t);display:flex;align-items:center;gap:.75rem;min-height:44px;-webkit-tap-highlight-color:transparent}
 .autocomplete-item:hover,.autocomplete-item.active{background:var(--surface-2)}
 
 /* MAIN */
@@ -357,8 +361,8 @@ button:active:not(:disabled){transform:scale(.97)}
     <span class="logo-txt">Moto<span>Bhai</span></span>
   </a>
   <div class="header-actions">
-    <button class="header-btn" id="disclaimerBtn">&#9888;&#65039; Disclaimer</button>
-    <button class="header-btn" id="aboutBtn">About</button>
+    <button class="header-btn" id="disclaimerBtn"><span>&#9888;&#65039;</span><span class="btn-label"> Disclaimer</span></button>
+    <button class="header-btn" id="aboutBtn"><span>&#8505;&#65039;</span><span class="btn-label"> About</span></button>
     <button class="header-btn primary-hb hidden" id="signOutBtn">Sign out</button>
   </div>
 </header>
@@ -372,26 +376,24 @@ button:active:not(:disabled){transform:scale(.97)}
     <circle cx="666" cy="215" r="38" fill="none" stroke="white" stroke-width="6"/>
     <circle cx="666" cy="215" r="18" fill="none" stroke="white" stroke-width="4"/>
   </svg>
-  <div class="hero-tag">&#129349; AI Route Planner</div>
   <h1>Where are you riding?<span>Fuel &#183; Food &#183; Hotels &#183; Tips</span></h1>
-  <p class="hero-sub">Tell your Bhai the destination &#8212; get a full itinerary for any Indian route in seconds.</p>
+  <p class="hero-sub">Tell your Bhai the destination &#8212; full itinerary in seconds.</p>
   <div class="hero-pills">
-    <span class="hero-pill">&#127956; Manali &#183; Leh</span>
-    <span class="hero-pill">&#127754; Coastal Karnataka</span>
-    <span class="hero-pill">&#127963; Rajasthan Circuit</span>
-    <span class="hero-pill">&#127807; Northeast Loop</span>
+    <button class="hero-pill" data-dest="Manali">&#127956; Manali &#183; Leh</button>
+    <button class="hero-pill" data-dest="Gokarna">&#127754; Coastal Karnataka</button>
+    <button class="hero-pill" data-dest="Jaisalmer">&#127963; Rajasthan Circuit</button>
+    <button class="hero-pill" data-dest="Shillong">&#127807; Northeast Loop</button>
+  </div>
+  <!-- SEARCH BAR inside hero -->
+  <div class="search-bar-wrap">
+    <div class="search-bar">
+      <span style="font-size:1.1rem">&#128205;</span>
+      <input class="search-input" id="destinationInput" type="text" placeholder="Where to? e.g. Ladakh, Goa..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="search-btn" id="searchGoBtn">Plan Ride &#8594;</button>
+    </div>
+    <div id="originAuto" style="display:none" class="autocomplete-list"></div>
   </div>
 </section>
-
-<!-- SEARCH BAR -->
-<div class="search-bar-wrap">
-  <div class="search-bar">
-    <span style="font-size:1.1rem">&#128205;</span>
-    <input class="search-input" id="destinationInput" type="text" placeholder="Enter destination city..." autocomplete="off" autocorrect="off" spellcheck="false">
-    <button class="search-btn" id="searchGoBtn">Plan Ride &#8594;</button>
-  </div>
-  <div id="originAuto" style="display:none" class="autocomplete-list"></div>
-</div>
 
 <!-- MAIN -->
 <main class="main-wrap">
@@ -1387,6 +1389,25 @@ Rules:
     }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
     document.querySelectorAll('.day-card,.stat,.config-section,.share-card,.config-card').forEach(el => {
       el.classList.add('reveal-on-scroll'); revealObserver.observe(el);
+    });
+
+    // ===== HERO PILL QUICK-START =====
+    document.querySelectorAll('.hero-pill[data-dest]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const dest = pill.dataset.dest;
+        const input = document.getElementById('destinationInput');
+        if (input && dest) {
+          input.value = dest;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          // Find the matching city and trigger selection
+          const match = INDIA_CITIES.find(c => c.name.toLowerCase() === dest.toLowerCase());
+          if (match) {
+            destinationPlace = { name: match.name, lat: match.lat, lng: match.lng, state: match.state };
+            document.getElementById('searchGoBtn').disabled = false;
+            document.getElementById('searchGoBtn').click();
+          }
+        }
+      });
     });
   </script>
 
