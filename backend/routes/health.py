@@ -51,28 +51,26 @@ def healthz(response: Response, deep: bool = False) -> dict[str, Any]:
 
 @router.get("/healthz/firestore-test")
 def firestore_test() -> dict[str, Any]:
-    """Debug endpoint: write + read + delete a test doc in Firestore."""
+    """Debug endpoint: write + read + delete a test doc via REST API."""
     import traceback
     from datetime import datetime, timezone
 
-    db = firestore_client.get_db()
-    if db is None:
-        return {"ok": False, "error": "get_db() returned None", "sdk": "unknown"}
+    if not firestore_client.is_enabled():
+        return {"ok": False, "error": "Firestore not enabled (is_enabled=False)"}
 
-    sdk = "firebase-admin" if firestore_client._USE_ADMIN_SDK else "google-cloud-firestore"
+    sdk = "REST" if firestore_client._REST_READY else ("firebase-admin" if firestore_client._USE_ADMIN_SDK else "none")
     doc_id = "_healthz_test"
     try:
         # Write
-        db.collection("trips").document(doc_id).set({
+        wrote = firestore_client.set_doc("trips", doc_id, {
             "test": True,
             "ts": datetime.now(tz=timezone.utc).isoformat(),
         })
         # Read back
-        snap = db.collection("trips").document(doc_id).get()
-        data = snap.to_dict() if snap.exists else None
+        data = firestore_client.get_doc("trips", doc_id)
         # Cleanup
-        db.collection("trips").document(doc_id).delete()
-        return {"ok": True, "sdk": sdk, "wrote": True, "read_back": data}
+        firestore_client.delete_doc("trips", doc_id)
+        return {"ok": wrote, "sdk": sdk, "wrote": wrote, "read_back": data}
     except Exception as exc:
         return {
             "ok": False,

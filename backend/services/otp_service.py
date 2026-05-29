@@ -4,8 +4,7 @@ Codes are never stored in plaintext. We hash the phone number to form the
 document id, and HMAC-SHA256 the OTP code with `OTP_SECRET` so that a leaked
 Firestore dump cannot be replayed.
 
-DLT template (MSG91, sender MOTBHA, route 4):
-    "Your Moto Bhai verification code is {{var1}}. Valid for 5 minutes. Do not share with anyone."
+Uses the generic Firestore CRUD helpers from firestore_client (REST API based).
 """
 from __future__ import annotations
 
@@ -19,7 +18,7 @@ from typing import Tuple
 
 import requests
 
-from backend.services.firestore_client import get_db
+from backend.services import firestore_client
 
 log = logging.getLogger(__name__)
 
@@ -46,45 +45,36 @@ def _code_hash(code: str) -> str:
 
 
 def _generate_code() -> str:
-    # Cryptographically-strong 6-digit code, no leading-zero ambiguity issue.
     return f"{secrets.randbelow(10**OTP_LENGTH):0{OTP_LENGTH}d}"
 
 
 def send(phone: str) -> Tuple[bool, str]:
-    """Generate a fresh OTP, persist its hash, dispatch via MSG91.
-
-    Returns `(ok, message)`. On failure `message` is human-readable for logs;
-    callers should NOT surface it to clients verbatim.
-    """
+    """Generate a fresh OTP, persist its hash, dispatch via MSG91."""
     if not os.getenv("OTP_SECRET"):
         raise OtpError("OTP_SECRET not configured")
 
-    db = get_db()
-    if db is None:
+    if not firestore_client.is_enabled():
         raise OtpError("Firestore unavailable")
 
     phash = _phone_hash(phone)
     code = _generate_code()
     expires = datetime.now(tz=timezone.utc) + timedelta(minutes=OTP_TTL_MIN)
 
-    try:
-        db.collection("otp_codes").document(phash).set(
-            {
-                "phone_hash": phash,
-                "code_hash": _code_hash(code),
-                "expires_at": expires,
-                "attempts": 0,
-                "used": False,
-                "created_at": datetime.now(tz=timezone.utc),
-            }
-        )
-    except Exception as exc:
-        log.exception("OTP Firestore write failed for %s", phash[:8])
-        raise OtpError(f"otp_store_failed: {exc}") from exc
+    otp_doc = {
+        "phone_hash": phash,
+        "code_hash": _code_hash(code),
+        "expires_at": expires.isoformat(),
+        "attempts": 0,
+        "used": False,
+        "created_at": datetime.now(tz=timezone.utc).isoformat(),
+    }
+
+    ok = firestore_client.set_doc("otp_codes", phash, otp_doc)
+    if not ok:
+        raise OtpError("otp_store_failed")
 
     auth_key = os.getenv("MSG91_AUTH_KEY", "").strip()
     if not auth_key or not DLT_TEMPLATE_ID:
-        # In staging without keys we still return ok so the flow is testable.
         if os.getenv("ENV", "production") != "production":
             log.warning("MSG91 not configured (staging): code for %s is %s", phone, code)
             return True, "staging-bypass"
@@ -110,45 +100,40 @@ def send(phone: str) -> Tuple[bool, str]:
 
 
 def verify(phone: str, code: str) -> bool:
-    """Verify a submitted code. Constant-time compare. Burns the doc on success.
-
-    Returns True on success, False on any failure mode (expired, wrong code,
-    too many attempts, no record). Does not leak which mode failed.
-    """
-    db = get_db()
-    if db is None:
+    """Verify a submitted code. Returns True on success."""
+    if not firestore_client.is_enabled():
         raise OtpError("Firestore unavailable")
 
     phash = _phone_hash(phone)
-    try:
-        ref = db.collection("otp_codes").document(phash)
-        snap = ref.get()
-    except Exception as exc:
-        log.exception("OTP Firestore read failed")
-        raise OtpError(f"otp_read_failed: {exc}") from exc
+    rec = firestore_client.get_doc("otp_codes", phash)
 
-    if not snap.exists:
+    if rec is None:
         return False
-    rec = snap.to_dict() or {}
-
     if rec.get("used"):
         return False
     if rec.get("attempts", 0) >= MAX_ATTEMPTS:
         return False
-    expires = rec.get("expires_at")
-    if expires and expires < datetime.now(tz=timezone.utc):
-        return False
+
+    expires_str = rec.get("expires_at", "")
+    if expires_str:
+        try:
+            expires = datetime.fromisoformat(expires_str)
+            if expires < datetime.now(tz=timezone.utc):
+                return False
+        except (ValueError, TypeError):
+            pass
 
     expected = rec.get("code_hash", "")
     actual = _code_hash(code)
     ok = hmac.compare_digest(expected, actual)
 
-    # Atomic-ish update: read-then-write is racy but acceptable here.
-    try:
-        if ok:
-            ref.update({"used": True, "verified_at": datetime.now(tz=timezone.utc)})
-        else:
-            ref.update({"attempts": rec.get("attempts", 0) + 1})
-    except Exception:
-        log.warning("OTP Firestore update failed (non-fatal)")
+    if ok:
+        firestore_client.update_doc("otp_codes", phash, {
+            "used": True,
+            "verified_at": datetime.now(tz=timezone.utc).isoformat(),
+        })
+    else:
+        firestore_client.update_doc("otp_codes", phash, {
+            "attempts": rec.get("attempts", 0) + 1,
+        })
     return ok
