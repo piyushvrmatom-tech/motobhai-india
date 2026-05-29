@@ -71,13 +71,14 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 .header-btn:hover{background:var(--surface-3);color:var(--text)}
 .header-btn.primary-hb{background:var(--primary);color:#fff;border-color:var(--primary)}
 #signOutBtn{display:none}
+#signOutBtn.show{display:flex!important}
 
 /* HERO — mobile-first, search integrated */
-.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#d96b1a 0%,#c45e15 25%,#e88533 50%,#b85412 75%,#d96b1a 100%);background-size:300% 300%;animation:heroGradient 8s ease infinite;padding:2rem 1.25rem 2.5rem;text-align:center}
+.hero{position:relative;overflow:visible;background:linear-gradient(135deg,#d96b1a 0%,#c45e15 25%,#e88533 50%,#b85412 75%,#d96b1a 100%);background-size:300% 300%;animation:heroGradient 8s ease infinite;padding:2rem 1.25rem 2.5rem;text-align:center}
 @media(min-width:640px){.hero{padding:3rem 1.5rem 3.5rem}}
 @keyframes heroGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,rgba(255,255,255,.12) 0%,transparent 60%);pointer-events:none}
-.hero-bg-svg{position:absolute;inset:0;opacity:.06;pointer-events:none;width:100%;height:100%}
+.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,rgba(255,255,255,.12) 0%,transparent 60%);pointer-events:none;clip-path:inset(0)}
+.hero-bg-svg{position:absolute;inset:0;opacity:.06;pointer-events:none;width:100%;height:100%;clip-path:inset(0)}
 .hero h1{font-size:clamp(1.5rem,6vw,2.6rem);font-weight:800;color:#fff;margin-bottom:.375rem;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.15)}
 .hero h1 span{display:block;font-size:.56em;font-weight:500;opacity:.8;margin-top:.25em;letter-spacing:.01em;text-shadow:none}
 .hero-sub{color:rgba(255,255,255,.82);font-size:clamp(.8rem,2.5vw,.95rem);max-width:420px;margin:0 auto 1.25rem;line-height:1.5}
@@ -273,6 +274,19 @@ button:active:not(:disabled){transform:scale(.97)}
 .disclaimer-icon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:var(--warn-bg);margin-bottom:1rem;font-size:1.5rem}
 @media(min-width:768px){.hero{padding:4.5rem 2rem 5rem}.search-bar-wrap{padding:0 2rem}}
 
+/* TRIP HISTORY & FAVORITES */
+.trip-history-section{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
+.history-title{font-size:.9rem;font-weight:700;color:var(--text-2);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.history-list{display:flex;flex-direction:column;gap:.5rem}
+.history-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);cursor:pointer;transition:all .2s var(--ease);min-height:48px;-webkit-tap-highlight-color:transparent}
+.history-item:hover{background:var(--surface-2);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.history-item:active{transform:scale(.98)}
+.history-item .h-dest{flex:1;font-size:.875rem;font-weight:600;color:var(--text)}
+.history-item .h-date{font-size:.75rem;color:var(--text-3);white-space:nowrap}
+.history-item .h-fav{font-size:1.1rem;padding:.25rem;cursor:pointer;transition:transform .2s;-webkit-tap-highlight-color:transparent}
+.history-item .h-fav:active{transform:scale(1.3)}
+.history-empty{font-size:.8rem;color:var(--text-3);text-align:center;padding:1rem}
+
 /* ══ RUN 4 FIXES ══════════════════════════════════════════════ */
 /* C1/C2: show/hide via classList.add('visible') */
 #tripConfig.visible,
@@ -397,6 +411,14 @@ button:active:not(:disabled){transform:scale(.97)}
 
 <!-- MAIN -->
 <main class="main-wrap">
+  <!-- TRIP HISTORY (logged-in users) -->
+  <div id="tripHistory" class="trip-history-section" style="display:none">
+    <div class="history-title">&#128338; Recent Trips</div>
+    <div id="historyList" class="history-list">
+      <div class="history-empty">No trips yet. Plan your first ride!</div>
+    </div>
+  </div>
+
   <div id="selectedDest" style="display:none">
     <div class="dest-chip">
       <span id="destName"></span>
@@ -721,9 +743,12 @@ button:active:not(:disabled){transform:scale(.97)}
         const token = await user.getIdToken();
         setToken(token);
         loginGate.classList.add('hidden');
-        document.getElementById('signOutBtn').style.display = '';
-        document.getElementById('signOutBtn').classList.remove('hidden');
+        document.getElementById('signOutBtn').classList.add('show');
+        loadTripHistory();
         fetchUserLocation();
+      } else {
+        document.getElementById('signOutBtn').classList.remove('show');
+        document.getElementById('tripHistory').style.display = 'none';
       }
     });
 
@@ -822,8 +847,8 @@ button:active:not(:disabled){transform:scale(.97)}
         const token = await result.user.getIdToken();
         setToken(token);
         loginGate.classList.add('hidden');
-        document.getElementById('signOutBtn').style.display = '';
-        document.getElementById('signOutBtn').classList.remove('hidden');
+        document.getElementById('signOutBtn').classList.add('show');
+        loadTripHistory();
         fetchUserLocation();
       } catch (err) {
         console.error('Firebase verify error:', err);
@@ -1072,6 +1097,9 @@ button:active:not(:disabled){transform:scale(.97)}
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
         renderResults(itinerary, origin, destination);
+        // Save to trip history
+        const activeType = document.querySelector('.trip-pill.active')?.textContent?.trim() || 'Solo';
+        addToHistory(destination, activeType, days);
       } catch (err) {
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
@@ -1398,7 +1426,8 @@ Rules:
     document.getElementById('signOutBtn').addEventListener('click', async () => {
       try { await auth.signOut(); } catch(e) { console.error(e); }
       clearToken();
-      document.getElementById('signOutBtn').style.display = 'none';
+      localStorage.removeItem('mb_trips'); // clear history on logout
+      document.getElementById('signOutBtn').classList.remove('show');
       window.location.reload();
     });
 
@@ -1441,6 +1470,99 @@ Rules:
         }
       });
     });
+
+    // ===== TRIP HISTORY & FAVORITES =====
+    function getTripHistory() {
+      try { return JSON.parse(localStorage.getItem('mb_trips') || '[]'); } catch { return []; }
+    }
+    function saveTripHistory(trips) {
+      localStorage.setItem('mb_trips', JSON.stringify(trips.slice(0, 20))); // keep last 20
+    }
+
+    function addToHistory(dest, tripType, days) {
+      const trips = getTripHistory();
+      // Dedupe — don't add if same dest was planned in last 5 minutes
+      const now = Date.now();
+      const recent = trips.find(t => t.dest === dest && (now - t.ts) < 300000);
+      if (recent) return;
+      trips.unshift({
+        dest,
+        type: tripType || 'Solo',
+        days: days || 3,
+        ts: now,
+        fav: false,
+        id: Math.random().toString(36).slice(2, 8)
+      });
+      saveTripHistory(trips);
+      renderHistory();
+    }
+
+    function toggleFav(id) {
+      const trips = getTripHistory();
+      const t = trips.find(t => t.id === id);
+      if (t) { t.fav = !t.fav; saveTripHistory(trips); renderHistory(); }
+    }
+
+    function replanTrip(dest) {
+      const input = document.getElementById('destinationInput');
+      input.value = dest;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const match = INDIA_CITIES.find(c => c.name.toLowerCase() === dest.toLowerCase());
+      if (match) {
+        destinationPlace = { name: match.name, lat: match.lat, lng: match.lng, state: match.state };
+        document.getElementById('searchGoBtn').disabled = false;
+        document.getElementById('searchGoBtn').click();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderHistory() {
+      const trips = getTripHistory();
+      const container = document.getElementById('historyList');
+      const section = document.getElementById('tripHistory');
+
+      if (trips.length === 0) {
+        container.innerHTML = '<div class="history-empty">No trips yet. Plan your first ride! 🏍️</div>';
+        section.style.display = 'block';
+        return;
+      }
+
+      // Sort: favorites first, then by date
+      const sorted = [...trips].sort((a, b) => {
+        if (a.fav && !b.fav) return -1;
+        if (!a.fav && b.fav) return 1;
+        return b.ts - a.ts;
+      });
+
+      container.innerHTML = sorted.map(t => {
+        const date = new Date(t.ts);
+        const dateStr = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        return `<div class="history-item" data-dest="${t.dest}">
+          <span class="h-fav" data-id="${t.id}" title="${t.fav ? 'Remove favorite' : 'Add favorite'}">${t.fav ? '❤️' : '🤍'}</span>
+          <span class="h-dest">${t.dest} <span style="color:var(--text-3);font-weight:400;font-size:.75rem">${t.type} · ${t.days}d</span></span>
+          <span class="h-date">${dateStr}</span>
+        </div>`;
+      }).join('');
+
+      // Wire click handlers
+      container.querySelectorAll('.h-fav').forEach(el => {
+        el.addEventListener('click', (e) => { e.stopPropagation(); toggleFav(el.dataset.id); });
+      });
+      container.querySelectorAll('.history-item').forEach(el => {
+        el.addEventListener('click', () => replanTrip(el.dataset.dest));
+      });
+
+      section.style.display = 'block';
+    }
+
+    function loadTripHistory() {
+      renderHistory();
+    }
+
+    // Show history for guests too if they have any
+    if (getTripHistory().length > 0) {
+      renderHistory();
+    }
   </script>
 
 </body>
