@@ -535,7 +535,7 @@ button:active:not(:disabled){transform:scale(.97)}
 </div>
 
 <div id="recaptcha-container" style="display:none"></div>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww&libraries=places&callback=initAutocomplete" async defer></script>
+<!-- Google Maps removed — custom autocomplete handles city search -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -928,7 +928,7 @@ button:active:not(:disabled){transform:scale(.97)}
       return text.slice(0, idx) + '<strong style="color:var(--accent)">' + text.slice(idx, idx + query.length) + '</strong>' + text.slice(idx + query.length);
     }
 
-    function initAutocomplete() { var di = document.getElementById("destinationInput"); if (di && window.google && google.maps) { var ac = new google.maps.places.Autocomplete(di, {types: ["(cities)"], componentRestrictions: {country: "in"}}); ac.addListener("place_changed", function() { var p = ac.getPlace(); if (p && p.name) document.getElementById("searchGoBtn").disabled = false; }); } } window.initAutocomplete = initAutocomplete;
+    function initAutocomplete() { /* Google Maps removed — using custom India cities autocomplete instead */ } window.initAutocomplete = initAutocomplete;
     initCustomAutocomplete('destinationInput', (city) => {
       destinationPlace = { name: city.name, lat: city.lat, lng: city.lng, state: city.state };
       document.getElementById('searchGoBtn').disabled = false;
