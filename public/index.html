@@ -108,7 +108,7 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 .dest-chip button{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--primary);color:#fff;font-size:.65rem;font-weight:700;transition:all var(--t);flex-shrink:0}
 
 /* CONFIG CARD */
-.config-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:1rem;transition:box-shadow .3s var(--ease),transform .3s var(--ease)}
+.config-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:visible;box-shadow:var(--shadow-sm);margin-bottom:1rem;transition:box-shadow .3s var(--ease),transform .3s var(--ease)}
 .config-card:hover{box-shadow:var(--shadow-md)}
 .config-section{padding:1.125rem 1.25rem;border-bottom:1px solid var(--border)}
 .config-section:last-child{border-bottom:none}
@@ -436,15 +436,10 @@ button:active:not(:disabled){transform:scale(.97)}
           <button class="trip-pill" data-type="multi">&#128205; Multi-Stop</button>
         </div>
       </div>
-      <div class="config-section" id="originSection">
+      <div class="config-section" id="originSection" style="position:relative">
         <div class="config-label">Starting From</div>
-        <div class="origin-row" id="originAuto2">
-          <div class="origin-dot"></div>
-          <span class="origin-name" id="originName">Detecting location&#8230;</span>
-          <span class="origin-change">Change</span>
-        </div>
-        <div class="origin-input-wrap" id="originInputWrap">
-          <input class="origin-input" id="originInput" type="text" placeholder="Enter your starting city&#8230;">
+        <div style="position:relative">
+          <input class="origin-input" id="originInput" type="text" placeholder="Detecting your city..." style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.95rem;background:var(--surface);color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none">
         </div>
       </div>
       <div class="config-section">
@@ -867,10 +862,11 @@ button:active:not(:disabled){transform:scale(.97)}
     let userLocation = null;
     function fetchUserLocation() {
       if (navigator.geolocation) {
+        const originInput = document.getElementById('originInput');
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            // Use city from our database that's closest (simple distance)
+            // Find closest city from our database
             let closest = INDIA_CITIES[0];
             let minDist = Infinity;
             INDIA_CITIES.forEach(city => {
@@ -878,12 +874,13 @@ button:active:not(:disabled){transform:scale(.97)}
               const d = Math.pow(city.lat - pos.coords.latitude, 2) + Math.pow(city.lng - pos.coords.longitude, 2);
               if (d < minDist) { minDist = d; closest = city; }
             });
-            document.getElementById('originName').textContent = closest.name + ', ' + closest.state;
+            originInput.value = closest.name;
+            originInput.placeholder = 'Enter your starting city...';
             originPlace = closest;
           },
           () => {
-            document.getElementById('originName').textContent = 'Enter your starting city';
-            document.getElementById('originInputWrap').classList.add('visible');
+            originInput.value = '';
+            originInput.placeholder = 'Enter your starting city...';
           }
         );
       }
@@ -1126,11 +1123,7 @@ button:active:not(:disabled){transform:scale(.97)}
       });
     });
 
-    // Origin manual toggle
-    // H1 FIX: origin row click (new id is originAuto2)
-    document.getElementById('originAuto2').addEventListener('click', () => {
-      document.getElementById('originInputWrap').classList.toggle('visible');
-    });
+    // Origin input now uses Google Places autocomplete directly
 
     // Preference chips
     document.querySelectorAll('.pref-chip').forEach(chip => {
@@ -1154,7 +1147,7 @@ button:active:not(:disabled){transform:scale(.97)}
     generateBtn.addEventListener('click', async () => {
       const destination = document.getElementById('destName').textContent;
       const tripType = document.querySelector('.trip-pill.active')?.dataset.type || 'round';
-      const origin = document.getElementById('originInput').value || document.getElementById('originName').textContent;
+      const origin = document.getElementById('originInput').value.trim();
       const bike = document.getElementById('bikeInput').value || 'motorcycle';
       const mileage = document.getElementById('mileageInput').value || '35';
       const days = document.getElementById('daysInput').value || '3';
@@ -1163,8 +1156,12 @@ button:active:not(:disabled){transform:scale(.97)}
       const activeVibe = document.querySelector('.vibe-chip.active')?.dataset.vibe || 'scenic';
       const prefs = activeVibe;
 
-      if (!destination || origin === 'Detecting location...' || origin === 'Could not detect — enter manually') {
-        alert('Please wait for location detection or enter your starting city.');
+      if (!destination) {
+        alert('Please select a destination.');
+        return;
+      }
+      if (!origin || origin === 'Detecting your city...') {
+        alert('Please enter your starting city.');
         return;
       }
 
