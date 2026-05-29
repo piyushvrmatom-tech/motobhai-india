@@ -648,6 +648,28 @@ button:active:not(:disabled){transform:scale(.97)}
   </div>
 </div>
 
+<!-- FATIGUE WARNING MODAL -->
+<div id="fatigueModal" style="position:fixed;inset:0;z-index:2500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1.5rem">
+  <div style="background:var(--surface);border-radius:20px;padding:2rem 1.5rem;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:.5rem">⚠️</div>
+    <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:.5rem;color:var(--text)">Safety Warning — Rider Fatigue</h2>
+    <div id="fatigueMsg" style="font-size:.85rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">
+      The estimated distance is over <strong>350 km/day</strong>. MotoBhai recommends not riding more than 350 km in a single day — it causes fatigue and may lead to accidents.
+    </div>
+    <div style="background:rgba(229,62,62,0.06);border:1px solid rgba(229,62,62,0.15);border-radius:12px;padding:.75rem;margin-bottom:1.25rem;font-size:.8rem;color:#c53030;line-height:1.5">
+      🏍️ <strong>Increase the number of days</strong> so that a safe itinerary can be created. Your safety is more important than the destination.
+    </div>
+    <div id="fatigueDaysSuggestion" style="display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:1.25rem">
+      <span style="font-size:.8rem;font-weight:600;color:var(--text-3)">Recommended:</span>
+      <button id="fatigueAcceptDays" style="padding:8px 20px;border-radius:10px;background:var(--primary);color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:40px;transition:all .2s"></button>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button id="fatigueSkip" style="flex:1;padding:.75rem;border-radius:var(--r-md);background:var(--surface-2);color:var(--text-2);font-weight:600;font-size:.8rem;border:1px solid var(--border);cursor:pointer;min-height:44px;transition:all .2s">Skip & Proceed Anyway</button>
+      <button id="fatigueCancel" style="flex:1;padding:.75rem;border-radius:var(--r-md);background:rgba(229,62,62,0.08);color:#e53e3e;font-weight:600;font-size:.8rem;border:1px solid rgba(229,62,62,0.2);cursor:pointer;min-height:44px;transition:all .2s">Go Back & Fix</button>
+    </div>
+  </div>
+</div>
+
 <!-- DISCLAIMER MODAL -->
 <div class="modal-overlay" id="disclaimerModal">
   <div class="modal">
@@ -1573,6 +1595,56 @@ button:active:not(:disabled){transform:scale(.97)}
       "Almost there — mapping your adventure..."
     ];
 
+    // ===== DISTANCE ESTIMATION (Haversine) =====
+    function haversineKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function estimateDistance(originName, destName) {
+      // Find coordinates from INDIA_CITIES
+      const findCity = (name) => {
+        const n = name.toLowerCase().trim();
+        return INDIA_CITIES.find(c => c.name.toLowerCase() === n) ||
+               INDIA_CITIES.find(c => n.includes(c.name.toLowerCase())) ||
+               INDIA_CITIES.find(c => c.name.toLowerCase().includes(n));
+      };
+      const o = findCity(originName);
+      const d = findCity(destName);
+      if (!o || !d) return 300; // Default if cities not found — no warning
+      const straight = haversineKm(o.lat, o.lng, d.lat, d.lng);
+      return Math.round(straight * 1.35); // Road distance ≈ 1.35× straight line
+    }
+
+    function showFatigueWarning(totalDist, currentDays, recDays) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('fatigueModal');
+        const msg = document.getElementById('fatigueMsg');
+        const kmDay = Math.round(totalDist / currentDays);
+        msg.innerHTML = `Your route is approximately <strong>${Math.round(totalDist)} km</strong> total — that's <strong>~${kmDay} km/day</strong> with ${currentDays} day${currentDays > 1 ? 's' : ''}.<br><br>MotoBhai recommends <strong>not riding more than 350 km/day</strong>. Fatigue causes accidents — ride safe, ride smart.`;
+        document.getElementById('fatigueAcceptDays').textContent = `${recDays} Days ✓`;
+        modal.style.display = 'flex';
+
+        const cleanup = () => {
+          modal.style.display = 'none';
+          document.getElementById('fatigueAcceptDays').removeEventListener('click', onAccept);
+          document.getElementById('fatigueSkip').removeEventListener('click', onSkip);
+          document.getElementById('fatigueCancel').removeEventListener('click', onCancel);
+        };
+        const onAccept = () => { cleanup(); resolve('accept'); };
+        const onSkip = () => { cleanup(); resolve('skip'); };
+        const onCancel = () => { cleanup(); resolve('cancel'); };
+
+        document.getElementById('fatigueAcceptDays').addEventListener('click', onAccept);
+        document.getElementById('fatigueSkip').addEventListener('click', onSkip);
+        document.getElementById('fatigueCancel').addEventListener('click', onCancel);
+      });
+    }
+    window._fatigueSkipped = false;
+
     generateBtn.addEventListener('click', async () => {
       const destination = document.getElementById('destConfigInput').value.trim() || document.getElementById('destName').textContent;
       const tripType = document.querySelector('.trip-pill.active')?.dataset.type || 'round';
@@ -1617,6 +1689,24 @@ button:active:not(:disabled){transform:scale(.97)}
       if (tripType === 'multi' && stops.length > 0) {
         fullDestination = stops.join(' → ') + ' → ' + destination;
       }
+
+      // === FATIGUE CHECK (350 km/day limit) ===
+      const estimatedDist = estimateDistance(origin, destination);
+      const totalDist = tripType === 'round' ? estimatedDist * 2 : estimatedDist;
+      const kmPerDay = totalDist / parseInt(days);
+      if (kmPerDay > 350 && !window._fatigueSkipped) {
+        const recDays = Math.ceil(totalDist / 300); // recommend 300km/day for comfort
+        const fatigueResult = await showFatigueWarning(totalDist, parseInt(days), recDays);
+        if (fatigueResult === 'cancel') return;
+        if (fatigueResult === 'accept') {
+          document.getElementById('daysInput').value = recDays;
+          // Re-read days
+          return generateBtn.click(); // re-trigger with new days
+        }
+        // 'skip' — continue with original days
+        window._fatigueSkipped = true;
+      }
+      window._fatigueSkipped = false;
 
       // Show thinking state
       generateBtn.classList.add('loading');
