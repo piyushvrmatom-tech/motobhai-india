@@ -1971,9 +1971,6 @@ Rules:
     });
 
     // ===== ABOUT MODAL =====
-    document.getElementById('aboutBtn').addEventListener('click', () => {
-      document.getElementById('aboutModal').classList.add('visible');
-    });
     document.getElementById('closeAbout').addEventListener('click', () => {
       document.getElementById('aboutModal').classList.remove('visible');
     });
@@ -1981,19 +1978,7 @@ Rules:
       if (e.target === e.currentTarget) e.currentTarget.classList.remove('visible');
     });
 
-    // ===== SIGN OUT =====
-    document.getElementById('signOutBtn').addEventListener('click', async () => {
-      try { await auth.signOut(); } catch(e) { console.error(e); }
-      clearToken();
-      localStorage.removeItem('mb_trips'); // clear history on logout
-      document.getElementById('signOutBtn').classList.remove('show');
-      window.location.reload();
-    });
-
     // ===== DISCLAIMER MODAL =====
-    document.getElementById('disclaimerBtn').addEventListener('click', () => {
-      document.getElementById('disclaimerModal').classList.add('visible');
-    });
     document.getElementById('closeDisclaimer').addEventListener('click', () => {
       document.getElementById('disclaimerModal').classList.remove('visible');
     });
