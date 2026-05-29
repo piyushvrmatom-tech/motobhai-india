@@ -47,3 +47,38 @@ def healthz(response: Response, deep: bool = False) -> dict[str, Any]:
             payload["ok"] = False
             response.status_code = 503
     return payload
+
+
+@router.get("/healthz/firestore-test")
+def firestore_test() -> dict[str, Any]:
+    """Debug endpoint: write + read + delete a test doc in Firestore."""
+    import traceback
+    from datetime import datetime, timezone
+
+    db = firestore_client.get_db()
+    if db is None:
+        return {"ok": False, "error": "get_db() returned None", "sdk": "unknown"}
+
+    sdk = "firebase-admin" if firestore_client._USE_ADMIN_SDK else "google-cloud-firestore"
+    doc_id = "_healthz_test"
+    try:
+        # Write
+        db.collection("trips").document(doc_id).set({
+            "test": True,
+            "ts": datetime.now(tz=timezone.utc).isoformat(),
+        })
+        # Read back
+        snap = db.collection("trips").document(doc_id).get()
+        data = snap.to_dict() if snap.exists else None
+        # Cleanup
+        db.collection("trips").document(doc_id).delete()
+        return {"ok": True, "sdk": sdk, "wrote": True, "read_back": data}
+    except Exception as exc:
+        return {
+            "ok": False,
+            "sdk": sdk,
+            "error": str(exc),
+            "type": type(exc).__name__,
+            "traceback": traceback.format_exc()[-500:],
+        }
+
