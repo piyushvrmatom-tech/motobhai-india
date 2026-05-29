@@ -113,6 +113,7 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 .config-section{padding:1.125rem 1.25rem;border-bottom:1px solid var(--border);position:relative}
 .config-section:last-child{border-bottom:none}
 .config-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.75rem}
+.req{color:#e53e3e;font-weight:400}
 .trip-pills{display:flex;gap:.375rem;flex-wrap:wrap}
 .trip-pill{flex:1;min-width:80px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.625rem .5rem;font-size:.8125rem;font-weight:700;color:var(--text-2);transition:all var(--t);text-align:center;min-height:44px}
 .trip-pill:hover,.trip-pill.active{background:var(--primary-lx);border-color:var(--primary);color:var(--primary)}
@@ -428,39 +429,58 @@ button:active:not(:disabled){transform:scale(.97)}
 
   <div id="tripConfig" style="display:none">
     <div class="config-card">
+      <!-- TRIP TYPE -->
       <div class="config-section">
-        <div class="config-label">Trip Type</div>
+        <div class="config-label">Trip Type <span class="req">*</span></div>
         <div class="trip-pills">
           <button class="trip-pill active" data-type="round">&#128260; Round Trip</button>
           <button class="trip-pill" data-type="oneway">&#10145;&#65039; One Way</button>
           <button class="trip-pill" data-type="multi">&#128205; Multi-Stop</button>
         </div>
       </div>
-      <div class="config-section" id="originSection" style="z-index:10">
-        <div class="config-label">Starting From</div>
+      <!-- STARTING FROM -->
+      <div class="config-section" id="originSection" style="z-index:14">
+        <div class="config-label">Starting From <span class="req">*</span></div>
         <div style="position:relative">
-          <input class="origin-input" id="originInput" type="text" placeholder="Detecting your city..." style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.95rem;background:var(--surface);color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none">
+          <input class="origin-input route-field" id="originInput" type="text" placeholder="Detecting your city..." style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.95rem;background:var(--surface);color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none">
         </div>
       </div>
+      <!-- MULTI-STOP: STOPS (hidden by default) -->
+      <div class="config-section" id="stopsSection" style="display:none;z-index:13">
+        <div class="config-label">Stops</div>
+        <div id="stopsList" style="display:flex;flex-direction:column;gap:.5rem"></div>
+        <button id="addStopBtn" type="button" style="margin-top:.5rem;padding:8px 16px;border:1.5px dashed var(--primary);border-radius:var(--r-md);background:transparent;color:var(--primary);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;width:100%;min-height:44px">+ Add Stop</button>
+      </div>
+      <!-- DESTINATION -->
+      <div class="config-section" id="destSection" style="z-index:12">
+        <div class="config-label">Destination <span class="req">*</span></div>
+        <div style="position:relative">
+          <input class="origin-input route-field" id="destConfigInput" type="text" placeholder="Where are you riding to?" style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.95rem;background:var(--surface);color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none">
+        </div>
+      </div>
+      <!-- RIDE VIBE -->
       <div class="config-section">
-        <div class="config-label">Ride Vibe</div>
+        <div class="config-label">Ride Vibe <span class="req">*</span></div>
         <div class="vibe-grid" id="vibeGrid">
           <button class="vibe-chip active" data-vibe="scenic"><div class="vibe-icon">&#127956;&#65039;</div><div class="vibe-label">Scenic</div></button>
-          <button class="vibe-chip" data-vibe="offroad"><div class="vibe-icon">&#129704;</div><div class="vibe-label">Off-Road</div></button>
-          <button class="vibe-chip" data-vibe="express"><div class="vibe-icon">&#9889;</div><div class="vibe-label">Express</div></button>
-          <button class="vibe-chip" data-vibe="adventure"><div class="vibe-icon">&#127957;&#65039;</div><div class="vibe-label">Adventure</div></button>
+          <button class="vibe-chip" data-vibe="offroad"><div class="vibe-icon">&#129704;</div><div class="vibe-label">Offroad</div></button>
+          <button class="vibe-chip" data-vibe="sightseeing"><div class="vibe-icon">&#127984;</div><div class="vibe-label">Sightseeing</div></button>
+          <button class="vibe-chip" data-vibe="highway"><div class="vibe-icon">&#128739;&#65039;</div><div class="vibe-label">Highway Riding</div></button>
         </div>
       </div>
+      <!-- RIDE DETAILS -->
       <div class="config-section" style="z-index:5">
-        <div class="config-label">Ride Details</div>
+        <div class="config-label">Ride Details <span class="req">*</span></div>
         <div class="details-grid">
-          <div class="detail-field full" style="position:relative"><label class="detail-label" for="bikeInput">Motorcycle</label><input class="detail-input" id="bikeInput" type="text" placeholder="Type bike name... e.g. Himalayan" autocomplete="off"></div>
-          <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage km/L</label><input class="detail-input" id="mileageInput" type="number" placeholder="35" min="5" max="80"></div>
-          <div class="detail-field"><label class="detail-label" for="daysInput">Days</label><input class="detail-input" id="daysInput" type="number" placeholder="3" min="1" max="30" value="3"></div>
-          <div class="detail-field"><label class="detail-label" for="ridersInput">Riders</label><input class="detail-input" id="ridersInput" type="number" placeholder="2" min="1" max="10" value="2"></div>
+          <div class="detail-field full" style="position:relative"><label class="detail-label" for="bikeInput">Motorcycle *</label><input class="detail-input" id="bikeInput" type="text" placeholder="Type bike name... e.g. Himalayan" autocomplete="off"></div>
+          <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage km/L *</label><input class="detail-input" id="mileageInput" type="number" placeholder="35" min="5" max="80"></div>
+          <div class="detail-field"><label class="detail-label" for="daysInput">Days *</label><input class="detail-input" id="daysInput" type="number" placeholder="3" min="1" max="30" value="3"></div>
+          <div class="detail-field"><label class="detail-label" for="ridersInput">Riders *</label><input class="detail-input" id="ridersInput" type="number" placeholder="2" min="1" max="10" value="2"></div>
         </div>
       </div>
     </div>
+    <!-- VALIDATION ERROR -->
+    <div id="validationError" style="display:none;color:#e53e3e;font-size:.85rem;font-weight:600;text-align:center;padding:.75rem;margin-bottom:.75rem;background:rgba(229,62,62,0.08);border:1px solid rgba(229,62,62,0.2);border-radius:10px"></div>
     <button class="generate-btn" id="generateBtn">
       <span>&#129949;&#65039;</span><span id="generateBtnText">Generate My Itinerary</span>
     </button>
@@ -1155,7 +1175,15 @@ button:active:not(:disabled){transform:scale(.97)}
       document.getElementById('selectedDest').classList.add('visible');
       document.querySelector('.search-bar').style.display = 'none';
       document.getElementById('tripConfig').classList.add('visible');
+      // Pre-fill destination in config card
+      const destCfg = document.getElementById('destConfigInput');
+      if (destCfg) destCfg.value = dest;
       document.getElementById('tripConfig').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Attach Google Places autocomplete to destination config input
+    initPlacesAutocomplete('destConfigInput', (place) => {
+      document.getElementById('destName').textContent = place.name;
     });
 
 
@@ -1185,7 +1213,34 @@ button:active:not(:disabled){transform:scale(.97)}
       pill.addEventListener('click', () => {
         document.querySelectorAll('.trip-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
+        const type = pill.dataset.type;
+        const stopsSection = document.getElementById('stopsSection');
+        if (type === 'multi') {
+          stopsSection.style.display = 'block';
+        } else {
+          stopsSection.style.display = 'none';
+        }
       });
+    });
+
+    // ===== MULTI-STOP: ADD/REMOVE STOPS =====
+    let stopCounter = 0;
+    document.getElementById('addStopBtn').addEventListener('click', () => {
+      stopCounter++;
+      const stopDiv = document.createElement('div');
+      stopDiv.style.cssText = 'display:flex;gap:.5rem;align-items:center;';
+      const stopId = 'stopInput_' + stopCounter;
+      stopDiv.innerHTML = `
+        <div style="position:relative;flex:1">
+          <input class="origin-input stop-input" id="${stopId}" type="text" placeholder="Stop ${stopCounter}" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.9rem;background:var(--surface);color:var(--text);outline:none;">
+        </div>
+        <button type="button" style="width:36px;height:36px;border-radius:50%;background:rgba(229,62,62,0.1);color:#e53e3e;font-size:1rem;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+      `;
+      document.getElementById('stopsList').appendChild(stopDiv);
+      // Attach Places autocomplete
+      initPlacesAutocomplete(stopId, () => {});
+      // Remove button
+      stopDiv.querySelector('button').addEventListener('click', () => stopDiv.remove());
     });
 
     // Origin input now uses Google Places autocomplete directly
@@ -1210,24 +1265,48 @@ button:active:not(:disabled){transform:scale(.97)}
     ];
 
     generateBtn.addEventListener('click', async () => {
-      const destination = document.getElementById('destName').textContent;
+      const destination = document.getElementById('destConfigInput').value.trim() || document.getElementById('destName').textContent;
       const tripType = document.querySelector('.trip-pill.active')?.dataset.type || 'round';
       const origin = document.getElementById('originInput').value.trim();
-      const bike = document.getElementById('bikeInput').value || 'motorcycle';
-      const mileage = document.getElementById('mileageInput').value || '35';
-      const days = document.getElementById('daysInput').value || '3';
-      const riders = document.getElementById('ridersInput').value || '2';
-      // C4 FIX: read vibe from vibe-chip.active (no pref-chip in Run 3 HTML)
+      const bike = document.getElementById('bikeInput').value.trim();
+      const mileage = document.getElementById('mileageInput').value;
+      const days = document.getElementById('daysInput').value;
+      const riders = document.getElementById('ridersInput').value;
       const activeVibe = document.querySelector('.vibe-chip.active')?.dataset.vibe || 'scenic';
       const prefs = activeVibe;
 
-      if (!destination) {
-        alert('Please select a destination.');
+      // Collect stops for multi-stop
+      let stops = [];
+      if (tripType === 'multi') {
+        document.querySelectorAll('.stop-input').forEach(si => {
+          if (si.value.trim()) stops.push(si.value.trim());
+        });
+      }
+
+      // === VALIDATION ===
+      const errors = [];
+      if (!origin || origin === 'Detecting your city...') errors.push('Starting From');
+      if (!destination) errors.push('Destination');
+      if (tripType === 'multi' && stops.length === 0) errors.push('At least one stop');
+      if (!bike) errors.push('Motorcycle');
+      if (!mileage) errors.push('Mileage');
+      if (!days) errors.push('Days');
+      if (!riders) errors.push('Riders');
+
+      const validationDiv = document.getElementById('validationError');
+      if (errors.length > 0) {
+        validationDiv.textContent = '⚠️ Please fill: ' + errors.join(', ');
+        validationDiv.style.display = 'block';
+        validationDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => validationDiv.style.display = 'none', 5000);
         return;
       }
-      if (!origin || origin === 'Detecting your city...') {
-        alert('Please enter your starting city.');
-        return;
+      validationDiv.style.display = 'none';
+
+      // Build destination string with stops for multi-stop
+      let fullDestination = destination;
+      if (tripType === 'multi' && stops.length > 0) {
+        fullDestination = stops.join(' → ') + ' → ' + destination;
       }
 
       // Show thinking state
@@ -1246,7 +1325,7 @@ button:active:not(:disabled){transform:scale(.97)}
 
       try {
         const itinerary = await generateWithGemini({
-          origin, destination, tripType, bike, mileage, days, riders, prefs
+          origin, destination: fullDestination, tripType, bike, mileage, days, riders, prefs
         });
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
@@ -1254,6 +1333,23 @@ button:active:not(:disabled){transform:scale(.97)}
         // Save to trip history
         const activeType = document.querySelector('.trip-pill.active')?.textContent?.trim() || 'Solo';
         addToHistory(destination, activeType, days);
+
+        // Guest restrictions — hide share/download, show login prompt
+        const isGuest = !getToken() || !auth.currentUser;
+        if (isGuest) {
+          document.getElementById('resultsActions').style.display = 'none';
+          document.getElementById('bottomBar').classList.remove('visible');
+          document.getElementById('shareCard').style.display = 'none';
+          // Show guest login prompt
+          const old = document.getElementById('guestBanner');
+          if (old) old.remove();
+          const gb = document.createElement('div');
+          gb.id = 'guestBanner';
+          gb.style.cssText = 'text-align:center;padding:1rem 1.25rem;background:rgba(217,107,26,0.06);border:1.5px solid var(--primary);border-radius:12px;margin-bottom:1rem;';
+          gb.innerHTML = '<div style="font-weight:700;color:var(--primary);margin-bottom:.25rem;font-size:.95rem">🔒 Sign in to download & share</div><div style="font-size:.8rem;color:var(--text-2)">Login with your mobile to save, download PDF, and share your itinerary</div>';
+          const statsBar = document.getElementById('statsBar');
+          if (statsBar) statsBar.after(gb);
+        }
       } catch (err) {
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
