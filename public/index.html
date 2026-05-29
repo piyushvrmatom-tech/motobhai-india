@@ -562,7 +562,6 @@ button:active:not(:disabled){transform:scale(.97)}
           <div class="detail-field full" style="position:relative"><label class="detail-label" for="bikeInput">Motorcycle *</label><input class="detail-input" id="bikeInput" type="text" placeholder="Type bike name... e.g. Himalayan" autocomplete="off"></div>
           <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage km/L *</label><input class="detail-input" id="mileageInput" type="number" placeholder="35" min="5" max="80"></div>
           <div class="detail-field"><label class="detail-label" for="daysInput">Days *</label><input class="detail-input" id="daysInput" type="number" placeholder="3" min="1" max="30" value="3"></div>
-          <div class="detail-field"><label class="detail-label" for="ridersInput">Riders *</label><input class="detail-input" id="ridersInput" type="number" placeholder="2" min="1" max="10" value="2"></div>
         </div>
       </div>
     </div>
@@ -1655,7 +1654,7 @@ button:active:not(:disabled){transform:scale(.97)}
       const bike = document.getElementById('bikeInput').value.trim();
       const mileage = document.getElementById('mileageInput').value;
       const days = document.getElementById('daysInput').value;
-      const riders = document.getElementById('ridersInput').value;
+      const riders = 1;
       const activeVibe = document.querySelector('.vibe-chip.active')?.dataset.vibe || 'scenic';
       const prefs = activeVibe;
 
@@ -1675,7 +1674,7 @@ button:active:not(:disabled){transform:scale(.97)}
       if (!bike) errors.push('Motorcycle');
       if (!mileage) errors.push('Mileage');
       if (!days) errors.push('Days');
-      if (!riders) errors.push('Riders');
+
 
       const validationDiv = document.getElementById('validationError');
       if (errors.length > 0) {
@@ -2055,7 +2054,11 @@ Rules:
       const originCity = data.days?.[0]?.from || origin;
       const destCity = waypoints[waypoints.length - 1] || destination;
       const midWaypoints = waypoints.slice(0, -1).join('|');
-      const embedUrl = `https://www.google.com/maps/embed/v1/directions?key=${PLACES_API_KEY}&origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destCity)}${midWaypoints ? '&waypoints=' + encodeURIComponent(midWaypoints) : ''}&mode=driving`;
+      // Google Maps embed (no-API-key method for directions)
+      const mapsQuery = midWaypoints
+        ? `${encodeURIComponent(originCity)}+to+${encodeURIComponent(midWaypoints.split('|').join('+to+'))}+to+${encodeURIComponent(destCity)}`
+        : `${encodeURIComponent(originCity)}+to+${encodeURIComponent(destCity)}`;
+      const embedUrl = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
       mapDiv.innerHTML = `<iframe width="100%" height="100%" style="border:0;border-radius:12px" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="${embedUrl}"></iframe>`;
 
       // Build Google Maps directions URL
