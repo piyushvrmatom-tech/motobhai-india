@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: Firebase Auth UID
+    // Fields:
+    //   - name: string (required, max 100 chars)
+    //   - bike: string (optional, max 100 chars)
+    //   - mileage: number (optional)
+    //   - km: string (optional, max 20 chars)
+    //   - phone: string (optional, max 15 chars)
+    //   - updatedAt: timestamp (server)
+    //
+    // Collection: searches
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required — user UID or 'guest')
+    //   - origin: string (max 200 chars)
+    //   - destination: string (max 200 chars)
+    //   - tripType: string (max 20 chars)
+    //   - bike: string (max 100 chars)
+    //   - days: number
+    //   - vibe: string (max 50 chars)
+    //   - ts: timestamp (server)
+    //
+    // Collection: trips
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required — user UID)
+    //   - origin: string (max 200 chars)
+    //   - destination: string (max 200 chars)
+    //   - tripType: string (max 20 chars)
+    //   - bike: string (max 100 chars)
+    //   - days: number
+    //   - totalKm: number
+    //   - fuelCost: number
+    //   - title: string (max 300 chars)
+    //   - dayCount: number
+    //   - ts: timestamp (server)
+    //
+    // ===============================================================
+
+    // ── Helper Functions ────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ── Users Collection ────────────────────────────────────────
+    // Users can only read/write their own profile
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['name', 'bike', 'mileage', 'km', 'phone', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 100;
+      allow update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['name', 'bike', 'mileage', 'km', 'phone', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 100;
+      allow delete: if isOwner(userId);
+    }
+
+    // ── Searches Collection (analytics) ─────────────────────────
+    // Anyone can create (even guests), but only owner can read their own
+    match /searches/{searchId} {
+      allow create: if true
+        && request.resource.data.keys().hasOnly(['uid', 'origin', 'destination', 'tripType', 'bike', 'days', 'vibe', 'ts'])
+        && request.resource.data.origin is string
+        && request.resource.data.origin.size() <= 200
+        && request.resource.data.destination is string
+        && request.resource.data.destination.size() <= 200;
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ── Trips Collection ────────────────────────────────────────
+    // Only logged-in users can create trips, and only read/delete their own
+    match /trips/{tripId} {
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'origin', 'destination', 'tripType', 'bike', 'days', 'totalKm', 'fuelCost', 'title', 'dayCount', 'ts'])
+        && request.resource.data.origin is string
+        && request.resource.data.origin.size() <= 200
+        && request.resource.data.destination is string
+        && request.resource.data.destination.size() <= 200;
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // Default: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

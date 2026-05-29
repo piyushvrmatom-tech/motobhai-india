@@ -692,6 +692,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <!-- Google Maps removed — custom autocomplete handles city search -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 
 <script>
@@ -706,6 +707,7 @@ button:active:not(:disabled){transform:scale(.97)}
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // ===== GEMINI API (Free tier — replace with your key from aistudio.google.com/apikey) =====
     const API_BASE = 'https://motobhai-api.onrender.com';
@@ -867,11 +869,86 @@ button:active:not(:disabled){transform:scale(.97)}
     function setToken(t) { localStorage.setItem('mb_token', t); }
     function clearToken() { localStorage.removeItem('mb_token'); }
 
-    // ── Profile helpers ──────────────────────────────────────────
+    // ── Profile helpers (Firestore-backed) ─────────────────────────
     function getProfile() {
       try { return JSON.parse(localStorage.getItem('mb_profile')) || null; } catch { return null; }
     }
-    function saveProfile(p) { localStorage.setItem('mb_profile', JSON.stringify(p)); applyProfile(); }
+    function saveProfile(p) {
+      localStorage.setItem('mb_profile', JSON.stringify(p));
+      applyProfile();
+      // Sync to Firestore
+      const user = auth.currentUser;
+      if (user) {
+        db.collection('users').doc(user.uid).set({
+          name: p.name || '',
+          bike: p.bike || '',
+          mileage: p.mileage || null,
+          km: p.km || '',
+          phone: user.phoneNumber || '',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(e => console.warn('[Firestore] Profile save error:', e));
+      }
+    }
+    // Load profile from Firestore (on login)
+    async function loadProfileFromCloud() {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const doc = await db.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          const data = doc.data();
+          const p = { name: data.name, bike: data.bike, mileage: data.mileage, km: data.km };
+          localStorage.setItem('mb_profile', JSON.stringify(p));
+          applyProfile();
+        }
+      } catch (e) { console.warn('[Firestore] Profile load error:', e); }
+    }
+    // Save trip search to Firestore
+    function logTripSearch(params) {
+      const user = auth.currentUser;
+      db.collection('searches').add({
+        uid: user ? user.uid : 'guest',
+        origin: params.origin || '',
+        destination: params.destination || '',
+        tripType: params.tripType || '',
+        bike: params.bike || '',
+        days: parseInt(params.days) || 0,
+        vibe: params.prefs || '',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.warn('[Firestore] Search log error:', e));
+    }
+    // Save itinerary to Firestore
+    function saveItineraryToCloud(params, itinerary) {
+      const user = auth.currentUser;
+      if (!user) return;
+      db.collection('trips').add({
+        uid: user.uid,
+        origin: params.origin || '',
+        destination: params.destination || '',
+        tripType: params.tripType || '',
+        bike: params.bike || '',
+        days: parseInt(params.days) || 0,
+        totalKm: itinerary.totalKm || 0,
+        fuelCost: itinerary.estimatedFuelCost || 0,
+        title: itinerary.title || '',
+        dayCount: itinerary.days?.length || 0,
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.warn('[Firestore] Trip save error:', e));
+    }
+    // Load saved trips from Firestore
+    async function loadTripsFromCloud() {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const snap = await db.collection('trips').where('uid', '==', user.uid).orderBy('ts', 'desc').limit(20).get();
+        const trips = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          trips.push({ dest: d.destination || d.title, type: d.tripType, days: d.days, ts: d.ts?.toDate?.()?.getTime() || Date.now(), id: doc.id });
+        });
+        localStorage.setItem('mb_trips', JSON.stringify(trips));
+      } catch (e) { console.warn('[Firestore] Trips load error:', e); }
+    }
     function applyProfile() {
       const p = getProfile();
       const heroH = document.getElementById('heroHeading');
@@ -1077,6 +1154,9 @@ button:active:not(:disabled){transform:scale(.97)}
         loginGate.classList.add('hidden');
         loadTripHistory();
         fetchUserLocation();
+        // Load profile from Firestore first
+        await loadProfileFromCloud();
+        await loadTripsFromCloud();
         // Check if first-time user (no profile)
         if (!getProfile()) {
           showOnboarding();
@@ -1725,15 +1805,20 @@ button:active:not(:disabled){transform:scale(.97)}
       }, 2500);
 
       try {
+        // Log search to Firestore (all users including guests)
+        logTripSearch({ origin, destination: fullDestination, tripType, bike, days, prefs });
+
         const itinerary = await generateWithGemini({
           origin, destination: fullDestination, tripType, bike, mileage, days, riders, prefs
         });
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
         renderResults(itinerary, origin, destination);
-        // Save to trip history
+        // Save to trip history (local)
         const activeType = document.querySelector('.trip-pill.active')?.textContent?.trim() || 'Solo';
         addToHistory(destination, activeType, days);
+        // Save itinerary to Firestore (logged-in users)
+        saveItineraryToCloud({ origin, destination, tripType, bike, days }, itinerary);
 
         // Guest restrictions — hide share/download, show login prompt
         const isGuest = !getToken() || !auth.currentUser;
