@@ -144,6 +144,10 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 .detail-label{font-size:.75rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
 .detail-input{background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:.75rem .875rem;font-size:.9375rem;color:var(--text);outline:none;transition:border-color var(--t);min-height:48px;width:100%}
 .detail-input:focus{border-color:var(--primary);background:var(--surface)}
+/* Budget slider thumb */
+#budgetSlider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:var(--primary);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;transition:all .2s}
+#budgetSlider::-webkit-slider-thumb:hover{transform:scale(1.15);box-shadow:0 3px 12px rgba(217,107,26,.4)}
+#budgetSlider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--primary);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer}
 .generate-btn{width:100%;padding:1rem;background:var(--primary);color:#fff;font-size:1.05rem;font-weight:800;border-radius:var(--r-xl);border:none;box-shadow:0 4px 24px rgba(217,107,26,.35);transition:all .25s var(--ease);min-height:56px;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:1rem;position:relative;overflow:hidden;animation:btnPulseGlow 2.5s ease-in-out infinite}
 @keyframes btnPulseGlow{0%,100%{box-shadow:0 4px 24px rgba(217,107,26,.35)}50%{box-shadow:0 4px 32px rgba(217,107,26,.55),0 0 48px rgba(217,107,26,.15)}}
 .generate-btn::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 40%,rgba(255,255,255,.08) 50%,transparent 60%);animation:btnSheen 4s ease-in-out infinite}
@@ -553,6 +557,23 @@ button:active:not(:disabled){transform:scale(.97)}
           <button class="vibe-chip" data-vibe="offroad"><div class="vibe-icon">&#129704;</div><div class="vibe-label">Offroad</div></button>
           <button class="vibe-chip" data-vibe="sightseeing"><div class="vibe-icon">&#127984;</div><div class="vibe-label">Sightseeing</div></button>
           <button class="vibe-chip" data-vibe="highway"><div class="vibe-icon">&#128739;&#65039;</div><div class="vibe-label">Highway Riding</div></button>
+        </div>
+      </div>
+      <!-- BUDGET -->
+      <div class="config-section">
+        <div class="config-label">Budget <span class="req">*</span></div>
+        <div style="padding:0 .25rem">
+          <div style="display:flex;justify-content:space-between;margin-bottom:.35rem">
+            <span id="budgetLabel" style="font-weight:700;font-size:.9rem;color:var(--primary)">Standard</span>
+            <span id="budgetHint" style="font-size:.75rem;color:var(--text-3);font-weight:500">Dhabas & budget hotels</span>
+          </div>
+          <input type="range" id="budgetSlider" min="0" max="3" value="1" step="1" style="width:100%;height:6px;appearance:none;-webkit-appearance:none;background:linear-gradient(90deg,#38a169 0%,#d96b1a 50%,#805ad5 100%);border-radius:6px;outline:none;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;margin-top:.35rem;font-size:.7rem;color:var(--text-3);font-weight:500">
+            <span>💰 Economy</span>
+            <span>🏷️ Standard</span>
+            <span>⭐ Premium</span>
+            <span>👑 Luxury</span>
+          </div>
         </div>
       </div>
       <!-- RIDE DETAILS -->
@@ -1634,6 +1655,24 @@ button:active:not(:disabled){transform:scale(.97)}
       });
     });
 
+    // Budget slider handler
+    const budgetSlider = document.getElementById('budgetSlider');
+    if (budgetSlider) {
+      const budgetData = [
+        { label: '💰 Economy', hint: 'Cheapest dhabas & dharamshalas', color: '#38a169' },
+        { label: '🏷️ Standard', hint: 'Local dhabas & budget hotels', color: '#d96b1a' },
+        { label: '⭐ Premium', hint: 'Good restaurants & 3-star hotels', color: '#e67e22' },
+        { label: '👑 Luxury', hint: 'Fine dining & heritage properties', color: '#805ad5' }
+      ];
+      budgetSlider.addEventListener('input', () => {
+        const val = parseInt(budgetSlider.value);
+        const d = budgetData[val] || budgetData[1];
+        document.getElementById('budgetLabel').textContent = d.label;
+        document.getElementById('budgetLabel').style.color = d.color;
+        document.getElementById('budgetHint').textContent = d.hint;
+      });
+    }
+
     document.querySelectorAll('.trip-pill').forEach(pill => {
       pill.addEventListener('click', () => {
         document.querySelectorAll('.trip-pill').forEach(p => p.classList.remove('active'));
@@ -1749,6 +1788,7 @@ button:active:not(:disabled){transform:scale(.97)}
       const riders = 1;
       const activeVibe = document.querySelector('.vibe-chip.active')?.dataset.vibe || 'scenic';
       const prefs = activeVibe;
+      const budgetLevel = ['economy', 'standard', 'premium', 'luxury'][parseInt(document.getElementById('budgetSlider').value) || 1];
 
       // Collect stops for multi-stop
       let stops = [];
@@ -1868,7 +1908,7 @@ button:active:not(:disabled){transform:scale(.97)}
 
     // ===== GEMINI API CALL =====
     async function generateWithGemini(params) {
-      const { origin, destination, tripType, bike, mileage, days, riders, prefs } = params;
+      const { origin, destination, tripType, bike, mileage, days, riders, prefs, budget } = params;
 
       // Key decoded at runtime (base64 to avoid GitHub secret scanner flagging)
       const _gk = atob('QUl6YVN5QlRWNTdJYm8yRl9WZHh5RTVuQmhrS0lnYVpPRkpfX1M0');
@@ -1884,9 +1924,18 @@ button:active:not(:disabled){transform:scale(.97)}
       };
       const vibeHint = vibeDesc[prefs] || 'balanced mix of highway and scenic routes';
 
+      const budgetDesc = {
+        'economy': 'ECONOMY budget — suggest cheapest dhabas (₹100-200/meal), budget lodges/dharamshalas (₹300-800/night), basic fuel stops',
+        'standard': 'STANDARD budget — suggest local restaurants/dhabas (₹200-500/meal), budget hotels/OYO (₹800-2,000/night)',
+        'premium': 'PREMIUM budget — suggest good restaurants (₹500-1,000/meal), 3-star hotels/resorts (₹2,000-5,000/night)',
+        'luxury': 'LUXURY budget — suggest fine dining restaurants (₹1,000+/meal), 4-5 star hotels/heritage properties (₹5,000-25,000/night)'
+      };
+      const budgetHint = budgetDesc[budget] || budgetDesc['standard'];
+
       const prompt = `You are Moto Bhai, an expert Indian motorcycle trip planner. Generate a DETAILED ${days}-day ${tripTypeLabel} motorcycle itinerary from ${origin} to ${destination}.
 
 Motorcycle: ${bike} (${mileage} km/l). Ride vibe: ${vibeHint}.
+Budget: ${budgetHint}.
 
 CRITICAL INSTRUCTIONS:
 1. Use ONLY REAL places that exist in India
