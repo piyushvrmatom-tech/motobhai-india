@@ -7,7 +7,7 @@
 <title>Moto Bhai India</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 56'%3E%3Cpath d='M24 54 C24 54 44 36 44 22 C44 11 35 2 24 2 C13 2 4 11 4 22 C4 36 24 54 24 54Z' stroke='%23d96b1a' stroke-width='3' fill='none'/%3E%3Cpath d='M15 28 C15 28 14 24 15 20 C16 16 19 13 24 12 C29 11 33 14 34 18 C35 22 34 26 33 28 C32 30 28 31 24 31 C20 31 16 30 15 28Z' fill='%23d96b1a'/%3E%3C/svg%3E">
 <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 
 <meta property="og:title" content="Moto Bhai India &#129949; - Plan Your Ride">
 <meta property="og:description" content="AI motorcycle trip planner for India. Fuel stops, food, hotels, route map in seconds.">
@@ -693,7 +693,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <!-- Google Maps removed — custom autocomplete handles city search -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 
 <script>
     // ===== FIREBASE CONFIG =====
@@ -1895,37 +1895,117 @@ Rules:
 
     }
 
-    // ===== FALLBACK (no AI) =====
+    // ===== FALLBACK (smart route with real Indian data) =====
+    const ROUTE_DB = {
+      fuel: ['Indian Oil', 'HP Petrol Pump', 'Bharat Petroleum', 'Reliance Petrol Pump', 'Shell Fuel Station', 'Nayara Energy'],
+      food: [
+        {n:'Amrik Sukhdev Dhaba',t:'Parathas & lassi'}, {n:'Baba Ka Dhaba',t:'North Indian thali'},
+        {n:'Sharma Dhaba',t:'Rajma chawal & dal fry'}, {n:'Highway King',t:'Butter chicken & naan'},
+        {n:'Puran Da Dhaba',t:'Chole bhature & chai'}, {n:'Giani Da Dhaba',t:'Aloo paratha & dahi'},
+        {n:'Sher-e-Punjab Dhaba',t:'Tandoori roti & sabzi'}, {n:'Pehalwan Dhaba',t:'Mutton curry & rotis'},
+        {n:'Midway Restaurant',t:'South Indian breakfast'}, {n:'Rasoi Restaurant',t:'Gujarati thali'}
+      ],
+      hotels: [
+        {n:'Hotel Highway Inn',p:'₹1,200-2,000'}, {n:'OYO Townhouse',p:'₹1,500-2,500'},
+        {n:'FabHotel',p:'₹1,800-3,000'}, {n:'Treebo Trend',p:'₹1,500-2,800'},
+        {n:'Hotel Shanti Palace',p:'₹800-1,500'}, {n:'SPOT ON Hotel',p:'₹900-1,800'},
+        {n:'RedDoorz',p:'₹1,000-2,000'}, {n:'Hotel Green Park',p:'₹1,200-2,200'}
+      ]
+    };
+
+    function findIntermediateCities(originName, destName, numStops) {
+      const findCity = (name) => {
+        const n = name.toLowerCase().trim();
+        return INDIA_CITIES.find(c => c.name.toLowerCase() === n) ||
+               INDIA_CITIES.find(c => n.includes(c.name.toLowerCase()));
+      };
+      const o = findCity(originName);
+      const d = findCity(destName);
+      if (!o || !d) return [];
+
+      // Find cities roughly along the route
+      const candidates = INDIA_CITIES.filter(c => {
+        if (c.name === o.name || c.name === d.name || c.state === 'Route') return false;
+        // Check if city is roughly between origin and destination
+        const latMin = Math.min(o.lat, d.lat) - 1;
+        const latMax = Math.max(o.lat, d.lat) + 1;
+        const lngMin = Math.min(o.lng, d.lng) - 1;
+        const lngMax = Math.max(o.lng, d.lng) + 1;
+        return c.lat >= latMin && c.lat <= latMax && c.lng >= lngMin && c.lng <= lngMax;
+      });
+
+      // Sort by distance from origin along the route direction
+      const routeVec = { lat: d.lat - o.lat, lng: d.lng - o.lng };
+      const routeLen = Math.sqrt(routeVec.lat**2 + routeVec.lng**2);
+      candidates.sort((a, b) => {
+        const projA = ((a.lat - o.lat) * routeVec.lat + (a.lng - o.lng) * routeVec.lng) / routeLen;
+        const projB = ((b.lat - o.lat) * routeVec.lat + (b.lng - o.lng) * routeVec.lng) / routeLen;
+        return projA - projB;
+      });
+
+      // Pick evenly spaced stops
+      const result = [];
+      const step = Math.max(1, Math.floor(candidates.length / (numStops + 1)));
+      for (let i = 0; i < numStops && i * step < candidates.length; i++) {
+        result.push(candidates[Math.min(i * step + step - 1, candidates.length - 1)]);
+      }
+      return result;
+    }
+
     async function generateFallbackItinerary(params) {
       const { origin, destination, tripType, days, mileage } = params;
       const numDays = parseInt(days) || 3;
-      const totalKm = numDays * 280;
+      const dist = estimateDistance(origin, destination);
+      const totalKm = tripType === 'round' ? dist * 2 : dist;
       const fuelCost = Math.round((totalKm / parseInt(mileage || 35)) * 105);
 
+      const stops = findIntermediateCities(origin, destination, numDays - 1);
+      const allPoints = [origin, ...stops.map(s => s.name), destination];
+      if (tripType === 'round') {
+        // Add return stops
+        allPoints.push(...stops.reverse().map(s => s.name), origin);
+      }
+
       const daysList = [];
-      for (let i = 1; i <= numDays; i++) {
-        const isFirst = i === 1;
-        const isLast = i === numDays;
+      let cumulativeKm = 0;
+      const kmPerDay = Math.round(totalKm / numDays);
+
+      for (let i = 0; i < numDays; i++) {
+        const fromCity = allPoints[Math.min(i, allPoints.length - 1)];
+        const toCity = allPoints[Math.min(i + 1, allPoints.length - 1)];
+        const dayKm = i === numDays - 1 ? totalKm - cumulativeKm : kmPerDay;
+        cumulativeKm += dayKm;
+        const rideHrs = Math.round(dayKm / 55 * 10) / 10; // avg 55 km/h
+
+        const fuel = ROUTE_DB.fuel[i % ROUTE_DB.fuel.length];
+        const food = ROUTE_DB.food[i % ROUTE_DB.food.length];
+        const hotel = ROUTE_DB.hotels[i % ROUTE_DB.hotels.length];
+
+        // Get lat/lng for the destination city
+        const findCity = (name) => INDIA_CITIES.find(c => c.name.toLowerCase() === name.toLowerCase().trim());
+        const destCity = findCity(toCity);
+
         daysList.push({
-          day: i,
-          from: isFirst ? origin : `Stop ${i-1}`,
-          to: isLast ? destination : `Stop ${i}`,
-          distanceKm: Math.round(totalKm / numDays),
-          rideHours: Math.round((totalKm / numDays) / 60),
-          highlights: "Scenic highway riding with local stops",
-          fuelStop: "Highway fuel station",
-          food: "Local dhaba food",
-          stay: isLast ? "Destination reached" : "Highway hotel (~₹1500/night)",
-          lat: 20 + i,
-          lng: 77 + i
+          day: i + 1,
+          from: fromCity,
+          to: toCity,
+          distanceKm: dayKm,
+          cumulativeKm: cumulativeKm,
+          rideHours: rideHrs,
+          highlights: `Ride via NH highway. Stop at ${fuel} for refueling around ${Math.round(dayKm/2)} km mark.`,
+          fuelStop: `${fuel}, ${toCity} Highway`,
+          food: `${food.n} — ${food.t}`,
+          stay: i === numDays - 1 ? `Destination reached — ${destination}` : `${hotel.n} (${hotel.p}/night)`,
+          lat: destCity?.lat || 22 + i,
+          lng: destCity?.lng || 78 + i
         });
       }
 
-      return { title: `${origin} to ${destination}`, totalKm, estimatedFuelCost: fuelCost, days: daysList };
+      return { title: `${origin} → ${destination}`, totalKm: Math.round(totalKm), estimatedFuelCost: fuelCost, days: daysList };
     }
 
     // ===== RENDER RESULTS =====
-    let map = null;
+    // Map rendering uses Google Maps Embed API
     function renderResults(data, origin, destination) {
       document.getElementById('skeletonWrap').classList.remove('visible');
       const resultsEl = document.getElementById('results');
@@ -1966,22 +2046,27 @@ Rules:
       document.getElementById('resultsActions').style.display = 'flex';
       document.getElementById('bottomBar').classList.add('visible');
 
-      const bounds = [];
-      if (map) map.remove();
-      map = L.map('map').setView([22, 78], 5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '(c) OpenStreetMap'}).addTo(map);
-      const coords = [];
+      // Google Maps Embed with Directions
+      const mapDiv = document.getElementById('map');
+      const waypoints = [];
       data.days?.forEach((day) => {
-        if (day.lat && day.lng) {
-          L.marker([day.lat, day.lng]).addTo(map).bindPopup(`<strong>Day ${day.day}: ${day.to}</strong><br>${day.distanceKm} km`);
-          coords.push([day.lat, day.lng]);
-          bounds.push([day.lat, day.lng]);
-        }
+        if (day.to) waypoints.push(day.to);
       });
-      if (coords.length > 1) L.polyline(coords, {color:'#d96b1a',weight:3,opacity:.85}).addTo(map);
-      if (bounds.length) map.fitBounds(bounds, {padding:[30,30]});
+      const originCity = data.days?.[0]?.from || origin;
+      const destCity = waypoints[waypoints.length - 1] || destination;
+      const midWaypoints = waypoints.slice(0, -1).join('|');
+      const embedUrl = `https://www.google.com/maps/embed/v1/directions?key=${PLACES_API_KEY}&origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destCity)}${midWaypoints ? '&waypoints=' + encodeURIComponent(midWaypoints) : ''}&mode=driving`;
+      mapDiv.innerHTML = `<iframe width="100%" height="100%" style="border:0;border-radius:12px" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="${embedUrl}"></iframe>`;
 
-      const cardsHTML = (data.days||[]).map((day) => `
+      // Build Google Maps directions URL
+      const allWaypoints = [originCity, ...waypoints];
+      window._googleMapsUrl = `https://www.google.com/maps/dir/${allWaypoints.map(w => encodeURIComponent(w)).join('/')}`;
+
+      // Build cumulative km
+      let cumulKm = 0;
+      const cardsHTML = (data.days||[]).map((day) => {
+        cumulKm += (day.distanceKm || 0);
+        return `
         <div class="day-card">
           <div class="timeline-dot"></div>
           <div class="day-inner">
@@ -1992,7 +2077,7 @@ Rules:
             </div>
             <div class="day-meta">
               <span class="day-meta-item">~${day.rideHours||0}h ride</span>
-              ${day.fuelStop ? `<span class="day-meta-item">Fuel: ${day.fuelStop.split(',')[0]}</span>` : ''}
+              <span class="day-meta-item">${cumulKm} km from start</span>
             </div>
             <div class="day-stops">
               ${day.fuelStop ? `<div class="stop-row"><div class="stop-icon">&#9981;</div><div class="stop-content"><div class="stop-name">${day.fuelStop}<span class="stop-pill pill-fuel">Fuel</span></div></div></div>` : ''}
@@ -2002,22 +2087,19 @@ Rules:
             ${day.highlights ? `<div class="bhai-tip">Tip: ${day.highlights}</div>` : ''}
           </div>
         </div>
-      `).join('');
+      `}).join('');
       document.getElementById('itineraryCards').innerHTML = cardsHTML;
       window._tripData = data;
-      window._tripCoords = coords;
       resultsEl.scrollIntoView({behavior:'smooth',block:'start'});
     }
 
 // ===== SHARE / MAPS BUTTONS =====
     document.getElementById('mapsBtn').addEventListener('click', () => {
-      if (!window._tripCoords || !window._tripCoords.length) return;
-      const waypoints = window._tripCoords.map(c => `${c[0]},${c[1]}`);
-      const origin = waypoints[0];
-      const dest = waypoints[waypoints.length - 1];
-      const mid = waypoints.slice(1, -1).join('|');
-      const url = `https://www.google.com/maps/dir/${waypoints.join('/')}`;
-      window.open(url, '_blank');
+      if (window._googleMapsUrl) {
+        window.open(window._googleMapsUrl, '_blank');
+      } else {
+        alert('Generate a trip first!');
+      }
     });
 
     document.getElementById('pdfBtn').addEventListener('click', () => {
