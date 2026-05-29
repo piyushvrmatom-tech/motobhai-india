@@ -1,4 +1,11 @@
-"""GET /api/plan/{trip_id}/pdf — pure-Python PDF using fpdf2.
+"""GET /api/plan/{trip_id}/pdf — timetable-style PDF using fpdf2.
+
+Produces a professional itinerary document with:
+- Branded header with trip title
+- Trip summary info table
+- Per-day timetable (Time | Activity | Location) with orange headers
+- Hotel/stay info per day
+- Cost summary and safety banner
 
 fpdf2 has zero system dependencies — works on Render free tier.
 """
@@ -17,13 +24,20 @@ from backend.services.bikes import get_bike
 log = logging.getLogger(__name__)
 router = APIRouter()
 
-ORANGE = (232, 117, 26)
-DARK   = (26, 26, 26)
-MUTED  = (120, 120, 120)
-LIGHT  = (253, 248, 243)
-WHITE  = (255, 255, 255)
-WARN   = (255, 248, 225)
-WARN_B = (255, 193, 7)
+# ── Color palette ─────────────────────────────────────────────────────────────
+ORANGE      = (232, 117, 26)     # Brand orange
+DARK_ORANGE = (200, 95, 15)      # Darker accent
+DARK        = (30, 30, 30)       # Near-black text
+MUTED       = (110, 110, 110)    # Secondary text
+WHITE       = (255, 255, 255)
+LIGHT_BG    = (250, 246, 240)    # Warm off-white
+ROW_ALT     = (255, 250, 245)    # Alternating row
+HEADER_BG   = (245, 130, 32)    # Table header (warm orange)
+HEADER_TXT  = (255, 255, 255)    # Table header text
+BORDER_GRAY = (220, 215, 210)    # Table borders
+WARN_BG     = (255, 248, 225)    # Warning background
+WARN_BORDER = (255, 193, 7)      # Warning accent
+SAFETY_BG   = (26, 26, 26)      # Safety banner dark
 
 
 def _sanitize(obj):
@@ -38,7 +52,7 @@ def _sanitize(obj):
     return obj
 
 
-def _safe(text: str, maxlen: int = 120) -> str:
+def _safe(text, maxlen: int = 200) -> str:
     """Strip non-latin chars fpdf2 can't render; truncate."""
     out = ""
     for ch in str(text or ""):
@@ -47,6 +61,87 @@ def _safe(text: str, maxlen: int = 120) -> str:
         else:
             out += "?"
     return out[:maxlen]
+
+
+def _build_schedule(day: dict) -> list[tuple[str, str, str]]:
+    """Build a (Time, Activity, Location) schedule from day data.
+
+    Estimates realistic times based on riding hours, stops, etc.
+    """
+    rows: list[tuple[str, str, str]] = []
+
+    from_d = _safe(day.get("from") or day.get("origin", ""))
+    to_d = _safe(day.get("to") or day.get("destination", ""))
+    km = day.get("km", 0)
+    hrs = day.get("eta_hours", 0) or 0
+    fuel_stops = day.get("fuel_stops", [])
+    food_stops = day.get("food_stops", [])
+    hotel = day.get("hotel_suggestion") or {}
+    tip = _safe(day.get("bhai_tip", ""))
+
+    # Morning prep
+    rows.append(("06:00", "Wake up, final bike check & gear up.", from_d))
+    rows.append(("06:30", "Light breakfast at a local dhaba.", from_d))
+    rows.append(("07:00", f"Flag off towards {to_d}.", from_d))
+
+    # Distribute fuel + food stops across the ride
+    hour_cursor = 7.0  # Start at 07:00
+    total_stops = []
+
+    # Add fuel stops
+    for f in fuel_stops:
+        fname = _safe(f.get("name", "Fuel station"))
+        fkm = f.get("km_from_start", 0)
+        # Estimate time based on km proportion
+        if km > 0 and fkm > 0:
+            ratio = fkm / km
+            stop_hour = 7.0 + ratio * hrs
+        else:
+            stop_hour = hour_cursor + 1.5
+        total_stops.append((stop_hour, f"Fuel stop & quick refreshment.", fname))
+
+    # Add food stops
+    for i, food in enumerate(food_stops):
+        food_name = _safe(food if isinstance(food, str) else food.get("name", ""))
+        if i == 0 and hrs > 3:
+            # First food stop as mid-morning/lunch break
+            stop_hour = 7.0 + hrs * 0.45
+            total_stops.append((stop_hour, "Lunch/Brunch break.", food_name))
+        elif i == 1 and hrs > 5:
+            stop_hour = 7.0 + hrs * 0.7
+            total_stops.append((stop_hour, "Tea break & light snack.", food_name))
+
+    # Sort by time and add to rows
+    total_stops.sort(key=lambda x: x[0])
+    for stop_hour, activity, location in total_stops:
+        h = int(stop_hour)
+        m = int((stop_hour - h) * 60)
+        m = (m // 30) * 30  # Round to nearest 30 min
+        time_str = f"{h:02d}:{m:02d}"
+        rows.append((time_str, activity, location))
+
+    # Resume ride after stops
+    if total_stops:
+        last_stop_hour = total_stops[-1][0] + 0.5
+        h = int(last_stop_hour)
+        m = int((last_stop_hour - h) * 60)
+        m = (m // 30) * 30
+        rows.append((f"{h:02d}:{m:02d}", f"Resume ride towards {to_d}.", ""))
+
+    # Arrival
+    arrival_hour = 7.0 + hrs + len(total_stops) * 0.5  # Add 30min per stop
+    if arrival_hour > 20:
+        arrival_hour = 19.0
+    h = int(arrival_hour)
+    rows.append((f"{h:02d}:00", f"Arrive in {to_d}, check into hotel.", to_d))
+
+    # Evening
+    dinner_hour = max(h + 1, 19)
+    if dinner_hour <= 21:
+        hotel_name = _safe(hotel.get("name", "the hotel"))
+        rows.append((f"{dinner_hour:02d}:00", "Dinner at the hotel or a local restaurant.", hotel_name))
+
+    return rows
 
 
 def build_pdf(doc: dict) -> bytes:
@@ -68,227 +163,231 @@ def build_pdf(doc: dict) -> bytes:
     to_city   = _safe(summary.get("to", ""))
     total_km  = round(summary.get("total_km", 0))
     total_days = summary.get("total_days", len(days))
-    max_day   = summary.get("max_day_km", "?")
     fuel_cost = summary.get("est_fuel_cost_inr", 0)
     hotel_cost = summary.get("est_hotel_cost_inr", 0)
     gen_date  = datetime.now(tz=timezone.utc).strftime("%d %b %Y")
 
     pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=12)
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # ── PAGE 1: COVER ─────────────────────────────────────────────────
     pdf.add_page()
-    pdf.set_margins(0, 0, 0)
+    pdf.set_margins(14, 12, 14)
 
-    # ── COVER BANNER ────────────────────────────────────────────────
-    pdf.set_fill_color(*ORANGE)
-    pdf.rect(0, 0, 210, 54, "F")
-    pdf.set_text_color(*WHITE)
+    # Brand name
+    pdf.set_y(18)
+    pdf.set_font("Helvetica", "BI", 28)
+    pdf.set_text_color(*ORANGE)
+    pdf.cell(0, 14, "Moto Bhai India", ln=True, align="C")
 
-    pdf.set_xy(14, 8)
-    pdf.set_font("Helvetica", "B", 18)
-    pdf.cell(0, 10, "Moto Bhai India", ln=True)
+    # Trip title
+    pdf.set_y(36)
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(*DARK)
+    title = f"{from_city} to {to_city}"
+    if total_days > 1:
+        title = f"{total_days}-Day Ride: {title}"
+    pdf.cell(0, 10, _safe(title), ln=True, align="C")
 
-    pdf.set_xy(14, 20)
-    pdf.set_font("Helvetica", "B", 22)
-    pdf.cell(0, 10, f"{from_city}  ->  {to_city}", ln=True)
+    # Thin orange line
+    pdf.set_y(50)
+    pdf.set_draw_color(*ORANGE)
+    pdf.set_line_width(0.8)
+    pdf.line(14, 50, 196, 50)
 
-    pdf.set_xy(14, 33)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 8, f"{total_days}-day motorcycle itinerary  |  {_safe(bike_label)}  |  {gen_date}", ln=True)
-
-    pdf.set_xy(14, 43)
-    pdf.set_font("Helvetica", "B", 9)
-    for badge in [f"{total_km} km total", f"{total_days} days", f"Max {max_day} km/day"]:
-        pdf.set_fill_color(255, 255, 255)
-        pdf.set_text_color(*ORANGE)
-        w = pdf.get_string_width(badge) + 8
-        pdf.cell(w, 7, badge, border=0, fill=True, ln=0)
-        pdf.cell(3, 7, "", ln=0)
-
-    # ── SUMMARY BAR ─────────────────────────────────────────────────
-    pdf.set_y(56)
-    col_w = 42
-    items = [
-        (str(total_km), "Total km"),
-        (str(total_days), "Days"),
-        (str(max_day), "Max km/day"),
-        (f"Rs {fuel_cost:,}", "Fuel est."),
-        (f"Rs {hotel_cost:,}", "Hotel est."),
+    # ── TRIP INFO TABLE ───────────────────────────────────────────────
+    y = 56
+    pdf.set_y(y)
+    info_rows = [
+        ("Origin", from_city, "Destination", to_city),
+        ("Motorcycle", _safe(bike_label), "Distance", f"{total_km} km"),
+        ("Budget", doc.get("budget_tier", "standard").title(), "Days", str(total_days)),
+        ("Fuel Cost", f"Rs {fuel_cost:,}", "Hotel Cost", f"Rs {hotel_cost:,}"),
     ]
-    for i, (val, lbl) in enumerate(items):
-        x = i * col_w
-        pdf.set_xy(x, 56)
-        pdf.set_fill_color(*LIGHT)
-        pdf.rect(x, 56, col_w, 20, "F")
-        pdf.set_text_color(*ORANGE)
-        pdf.set_font("Helvetica", "B", 13)
-        pdf.set_xy(x, 59)
-        pdf.cell(col_w, 8, val, align="C", ln=False)
-        pdf.set_xy(x, 67)
-        pdf.set_font("Helvetica", "", 7)
-        pdf.set_text_color(*MUTED)
-        pdf.cell(col_w, 5, lbl, align="C", ln=False)
+    col_w = [35, 55, 35, 55]  # label, value, label, value
 
-    # Orange underline
-    pdf.set_fill_color(*ORANGE)
-    pdf.rect(0, 76, 210, 1.5, "F")
+    pdf.set_draw_color(*BORDER_GRAY)
+    pdf.set_line_width(0.3)
 
-    # ── WARNINGS ────────────────────────────────────────────────────
-    y = 82
+    for row in info_rows:
+        x = 15
+        for i, cell in enumerate(row):
+            pdf.set_xy(x, y)
+            if i % 2 == 0:  # Label
+                pdf.set_font("Helvetica", "B", 9)
+                pdf.set_text_color(*DARK)
+                pdf.set_fill_color(*LIGHT_BG)
+                pdf.cell(col_w[i], 8, f" {cell}", border=1, fill=True)
+            else:  # Value
+                pdf.set_font("Helvetica", "", 9)
+                pdf.set_text_color(60, 60, 60)
+                pdf.cell(col_w[i], 8, f" {cell}", border=1)
+            x += col_w[i]
+        y += 8
+
+    # ── ROUTE WARNINGS ────────────────────────────────────────────────
+    y += 6
     if warnings:
         pdf.set_xy(14, y)
-        pdf.set_font("Helvetica", "B", 10)
-        pdf.set_text_color(*ORANGE)
-        pdf.cell(0, 7, "Route Warnings", ln=True)
-        y += 8
-        for w_txt in warnings:
-            pdf.set_fill_color(*WARN)
-            pdf.rect(12, y, 186, 8, "F")
-            pdf.set_fill_color(*WARN_B)
-            pdf.rect(12, y, 2.5, 8, "F")
-            pdf.set_xy(17, y + 1)
-            pdf.set_font("Helvetica", "", 8.5)
-            pdf.set_text_color(*DARK)
-            pdf.cell(0, 6, _safe(f"  {w_txt}"), ln=True)
-            y += 10
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_text_color(*DARK_ORANGE)
+        pdf.cell(0, 6, "Route Notes:", ln=True)
+        y += 7
+        for w_txt in warnings[:4]:
+            pdf.set_xy(16, y)
+            pdf.set_font("Helvetica", "I", 8)
+            pdf.set_text_color(*MUTED)
+            pdf.cell(0, 5, f"  - {_safe(w_txt, 120)}", ln=True)
+            y += 5.5
+        y += 4
 
-    # ── ITINERARY ───────────────────────────────────────────────────
-    pdf.set_xy(14, y)
-    pdf.set_font("Helvetica", "B", 11)
-    pdf.set_text_color(*ORANGE)
-    pdf.cell(0, 8, "Day-by-Day Itinerary", ln=True)
-    y += 9
-
+    # ── DAY-BY-DAY ITINERARY ──────────────────────────────────────────
     for day in days:
         from_d  = _safe(day.get("from") or day.get("origin", ""))
         to_d    = _safe(day.get("to") or day.get("destination", ""))
         km_d    = day.get("km", 0)
-        hrs_d   = day.get("eta_hours", "?")
-        elev_d  = day.get("elevation_gain_m", 0)
-        tip     = _safe(day.get("bhai_tip", ""))
-        fuel_s  = day.get("fuel_stops", [])
-        food_s  = day.get("food_stops", [])
-        hotel   = day.get("hotel_suggestion") or {}
-        day_w   = day.get("warnings", [])
         day_n   = day.get("day", "?")
+        tip     = _safe(day.get("bhai_tip", ""))
+        hotel   = day.get("hotel_suggestion") or {}
+        schedule = _build_schedule(day)
 
-        # Calculate card height
-        rows = len(fuel_s) + len(food_s) + (1 if hotel.get("name") else 0) + len(day_w) + (1 if tip else 0)
-        card_h = 22 + rows * 8 + (10 if tip else 0)
-
-        # Page break check
-        if y + card_h > 275:
+        # Estimate card height
+        schedule_h = 9 + len(schedule) * 7 + 12 + (8 if tip else 0)
+        if y + schedule_h + 30 > 275:
             pdf.add_page()
             y = 14
 
-        # Day card background
-        pdf.set_fill_color(255, 250, 245)
-        pdf.rect(12, y, 186, card_h, "F")
-        pdf.set_fill_color(*ORANGE)
-        pdf.rect(12, y, 4, card_h, "F")
-
-        # Day header
-        pdf.set_xy(20, y + 3)
-        pdf.set_font("Helvetica", "B", 11)
-        pdf.set_text_color(*DARK)
-        pdf.cell(130, 7, f"Day {day_n}: {from_d}  ->  {to_d}", ln=False)
+        # Day heading
+        pdf.set_xy(14, y)
         pdf.set_font("Helvetica", "B", 13)
         pdf.set_text_color(*ORANGE)
-        pdf.cell(0, 7, f"{km_d} km", align="R", ln=True)
+        day_title = f"Day {day_n}: {from_d} -> {to_d}"
+        pdf.cell(0, 8, _safe(day_title), ln=True)
+        y += 9
 
-        pdf.set_xy(20, y + 11)
-        pdf.set_font("Helvetica", "", 8)
+        # Route subtitle
+        pdf.set_xy(14, y)
+        pdf.set_font("Helvetica", "", 8.5)
         pdf.set_text_color(*MUTED)
-        pdf.cell(0, 5, f"{hrs_d}h riding  |  Elevation gain: {elev_d}m", ln=True)
+        pdf.cell(0, 5, f"{from_d} -> {to_d} | {km_d} km", ln=True)
+        y += 7
 
-        row_y = y + 18
+        # Schedule table header
+        time_w = 18
+        activity_w = 108
+        location_w = 56
 
-        for f in fuel_s:
-            pdf.set_xy(22, row_y)
-            pdf.set_font("Helvetica", "", 9)
+        pdf.set_xy(14, y)
+        pdf.set_fill_color(*HEADER_BG)
+        pdf.set_text_color(*HEADER_TXT)
+        pdf.set_font("Helvetica", "B", 8)
+        pdf.set_draw_color(*HEADER_BG)
+        pdf.cell(time_w, 7, " Time", border=1, fill=True)
+        pdf.cell(activity_w, 7, " Activity", border=1, fill=True)
+        pdf.cell(location_w, 7, " Location", border=1, fill=True)
+        y += 7
+
+        # Schedule rows
+        for idx, (time_str, activity, location) in enumerate(schedule):
+            if y + 7 > 275:
+                pdf.add_page()
+                y = 14
+                # Re-draw header on new page
+                pdf.set_xy(14, y)
+                pdf.set_fill_color(*HEADER_BG)
+                pdf.set_text_color(*HEADER_TXT)
+                pdf.set_font("Helvetica", "B", 8)
+                pdf.set_draw_color(*HEADER_BG)
+                pdf.cell(time_w, 7, " Time", border=1, fill=True)
+                pdf.cell(activity_w, 7, " Activity", border=1, fill=True)
+                pdf.cell(location_w, 7, " Location", border=1, fill=True)
+                y += 7
+
+            pdf.set_xy(14, y)
+            if idx % 2 == 1:
+                pdf.set_fill_color(*ROW_ALT)
+            else:
+                pdf.set_fill_color(*WHITE)
             pdf.set_text_color(*DARK)
-            fname = _safe(f.get("name", ""))
-            fkm   = f.get("km_from_start", "?")
-            pdf.cell(0, 7, f"  Fuel: {fname}  @  {fkm} km from start", ln=True)
-            row_y += 7
+            pdf.set_font("Helvetica", "", 8)
+            pdf.set_draw_color(*BORDER_GRAY)
+            pdf.cell(time_w, 7, f" {time_str}", border=1, fill=True, align="C")
+            pdf.cell(activity_w, 7, f" {_safe(activity, 85)}", border=1, fill=True)
+            pdf.set_font("Helvetica", "", 7.5)
+            pdf.set_text_color(80, 80, 80)
+            pdf.cell(location_w, 7, f" {_safe(location, 45)}", border=1, fill=True)
+            y += 7
 
-        for r in food_s:
-            pdf.set_xy(22, row_y)
-            pdf.set_font("Helvetica", "", 9)
-            pdf.set_text_color(*DARK)
-            pdf.cell(0, 7, f"  Food: {_safe(r)}", ln=True)
-            row_y += 7
-
+        # Stay info
+        y += 3
         if hotel.get("name"):
-            pdf.set_xy(22, row_y)
-            pdf.set_font("Helvetica", "", 9)
+            pdf.set_xy(14, y)
+            pdf.set_font("Helvetica", "B", 8.5)
             pdf.set_text_color(*DARK)
-            area  = _safe(hotel.get("area", ""))
             price = hotel.get("price_range_inr", "")
-            pdf.cell(0, 7, f"  Stay: {_safe(hotel['name'])}  |  {area}  |  Rs {price}", ln=True)
-            row_y += 7
+            stay_text = f"Stay: {_safe(hotel['name'])}"
+            if hotel.get("area"):
+                stay_text += f", {_safe(hotel['area'])}"
+            if price:
+                stay_text += f" ~ Rs {price}"
+            pdf.cell(0, 6, stay_text, ln=True)
+            y += 7
 
-        for dw in day_w:
-            pdf.set_xy(22, row_y)
-            pdf.set_font("Helvetica", "I", 8.5)
-            pdf.set_text_color(120, 80, 0)
-            pdf.cell(0, 6, f"  ! {_safe(dw)}", ln=True)
-            row_y += 6
-
+        # Bhai tip
         if tip:
-            pdf.set_xy(22, row_y)
-            pdf.set_font("Helvetica", "I", 8.5)
-            pdf.set_text_color(100, 60, 0)
-            pdf.cell(0, 7, f"  Tip: {tip[:110]}", ln=True)
-            row_y += 7
+            pdf.set_xy(14, y)
+            pdf.set_font("Helvetica", "I", 8)
+            pdf.set_text_color(140, 90, 20)
+            pdf.cell(0, 5, f"Bhai Tip: {tip[:130]}", ln=True)
+            y += 7
 
-        y = y + card_h + 6
+        y += 6
 
-    # ── COST SUMMARY ────────────────────────────────────────────────
-    if y + 40 > 275:
+    # ── COST SUMMARY ──────────────────────────────────────────────────
+    if y + 35 > 275:
         pdf.add_page()
         y = 14
 
     pdf.set_xy(14, y)
-    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_font("Helvetica", "B", 12)
     pdf.set_text_color(*ORANGE)
-    pdf.cell(0, 8, "Cost Estimate", ln=True)
-    y += 9
+    pdf.cell(0, 8, "Trip Cost Summary", ln=True)
+    y += 10
 
+    pdf.set_draw_color(*BORDER_GRAY)
     cost_items = [
-        ("Fuel", f"Rs {fuel_cost:,}"),
-        ("Hotels", f"Rs {hotel_cost:,}"),
-        ("Total", f"Rs {fuel_cost + hotel_cost:,}"),
+        ("Fuel Estimate", f"Rs {fuel_cost:,}"),
+        ("Hotel Estimate", f"Rs {hotel_cost:,}"),
+        ("Total Estimate", f"Rs {fuel_cost + hotel_cost:,}"),
     ]
-    cw = 60
     for i, (lbl, val) in enumerate(cost_items):
-        cx = 14 + i * (cw + 4)
-        pdf.set_fill_color(*LIGHT)
-        pdf.rect(cx, y, cw, 20, "F")
-        pdf.set_text_color(*ORANGE)
-        pdf.set_font("Helvetica", "B", 13)
-        pdf.set_xy(cx, y + 2)
-        pdf.cell(cw, 8, val, align="C", ln=False)
-        pdf.set_xy(cx, y + 11)
-        pdf.set_font("Helvetica", "", 8)
-        pdf.set_text_color(*MUTED)
-        pdf.cell(cw, 5, lbl, align="C", ln=False)
-    y += 26
+        pdf.set_xy(14, y)
+        bg = LIGHT_BG if i < 2 else ORANGE
+        txt = DARK if i < 2 else WHITE
+        pdf.set_fill_color(*bg)
+        pdf.set_text_color(*txt)
+        pdf.set_font("Helvetica", "B" if i == 2 else "", 9)
+        pdf.cell(90, 8, f"  {lbl}", border=1, fill=True)
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(90, 8, f"  {val}", border=1, fill=True, align="R")
+        y += 8
 
-    # ── SAFETY BANNER ───────────────────────────────────────────────
+    # ── SAFETY BANNER ─────────────────────────────────────────────────
+    y += 8
     if y + 14 > 275:
         pdf.add_page()
         y = 14
-    pdf.set_fill_color(*ORANGE)
+    pdf.set_fill_color(*SAFETY_BG)
     pdf.rect(12, y, 186, 13, "F")
     pdf.set_xy(12, y + 2)
-    pdf.set_font("Helvetica", "B", 9)
+    pdf.set_font("Helvetica", "B", 8.5)
     pdf.set_text_color(*WHITE)
-    pdf.cell(186, 9, "ATGATT: All The Gear, All The Time. Helmet  Jacket  Gloves  Boots  Riding Pants  Every ride.", align="C")
+    pdf.cell(186, 9, "ATGATT: All The Gear, All The Time.  Helmet | Jacket | Gloves | Boots | Riding Pants | Every ride.", align="C")
     y += 18
 
-    # ── FOOTER ──────────────────────────────────────────────────────
+    # ── FOOTER ────────────────────────────────────────────────────────
     pdf.set_xy(14, y)
-    pdf.set_font("Helvetica", "", 7.5)
+    pdf.set_font("Helvetica", "", 7)
     pdf.set_text_color(*MUTED)
     pdf.cell(0, 6, f"Generated by Moto Bhai India  |  motobhai-india.web.app  |  {gen_date}  |  Trip ID: {trip_id}", align="C")
 
