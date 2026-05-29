@@ -1839,6 +1839,10 @@ button:active:not(:disabled){transform:scale(.97)}
       } catch (err) {
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
+        console.error('[MotoBhai] Gemini API failed, using fallback:', err.message, err);
+        // Show brief error notice
+        const aiTh = document.getElementById('aiThinking');
+        if (aiTh) aiTh.textContent = 'AI unavailable, using smart fallback...';
         // Fallback: generate a basic itinerary locally
         const fallback = await generateFallbackItinerary({ origin, destination, tripType, days, mileage });
         renderResults(fallback, origin, destination);
