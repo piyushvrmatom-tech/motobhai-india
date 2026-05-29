@@ -238,6 +238,27 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 .bhai-tip{margin:.25rem 1.25rem .875rem;background:linear-gradient(135deg,var(--primary-lx),rgba(217,107,26,.06));border-left:3px solid var(--primary);border-radius:0 var(--r-md) var(--r-md) 0;padding:.625rem .875rem;font-size:.8375rem;color:var(--text-2);transition:all .3s var(--ease)}
 .bhai-tip:hover{background:linear-gradient(135deg,rgba(217,107,26,.15),rgba(217,107,26,.08));box-shadow:0 2px 12px rgba(217,107,26,.1)}
 
+/* WEATHER & GEAR CARDS */
+.gear-card{margin:.5rem 1.25rem .875rem;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);transition:all .3s var(--ease)}
+.gear-header{display:flex;align-items:center;justify-content:space-between;padding:.625rem .875rem;cursor:pointer;gap:.5rem;min-height:40px;transition:background .2s}
+.gear-header:hover{background:var(--surface-2)}
+.gear-header-left{display:flex;align-items:center;gap:.5rem;flex:1;min-width:0}
+.gear-weather-icon{font-size:1.1rem;flex-shrink:0}
+.gear-temp{font-weight:800;font-size:.8rem;color:var(--text)}
+.gear-condition{font-size:.7rem;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gear-toggle{font-size:.7rem;color:var(--primary);font-weight:700;flex-shrink:0;transition:transform .2s}
+.gear-body{display:none;padding:.5rem .875rem .75rem;border-top:1px solid var(--border)}
+.gear-body.open{display:block}
+.gear-section-title{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin:.375rem 0 .25rem}
+.gear-item{font-size:.78rem;color:var(--text-2);line-height:1.7;padding-left:.25rem}
+.gear-safety{font-size:.75rem;color:var(--warn);line-height:1.7;padding-left:.25rem}
+.gear-card.hot{background:linear-gradient(135deg,rgba(255,152,0,.06),rgba(255,87,34,.04));border-color:rgba(255,152,0,.2)}
+.gear-card.cold{background:linear-gradient(135deg,rgba(33,150,243,.06),rgba(3,169,244,.04));border-color:rgba(33,150,243,.2)}
+.gear-card.rain,.gear-card[class*="+rain"]{background:linear-gradient(135deg,rgba(33,150,243,.06),rgba(30,136,229,.04));border-color:rgba(33,150,243,.2)}
+.gear-card.freezing{background:linear-gradient(135deg,rgba(156,39,176,.05),rgba(103,58,183,.04));border-color:rgba(156,39,176,.2)}
+.gear-card.mild,.gear-card.warm{background:linear-gradient(135deg,rgba(76,175,80,.05),rgba(139,195,74,.04));border-color:rgba(76,175,80,.2)}
+@media(prefers-color-scheme:dark){.gear-card.hot{background:linear-gradient(135deg,rgba(255,152,0,.1),rgba(255,87,34,.06));border-color:rgba(255,152,0,.3)}.gear-card.cold{background:linear-gradient(135deg,rgba(33,150,243,.1),rgba(3,169,244,.06));border-color:rgba(33,150,243,.3)}.gear-card.freezing{background:linear-gradient(135deg,rgba(156,39,176,.1),rgba(103,58,183,.06));border-color:rgba(156,39,176,.3)}.gear-card.mild,.gear-card.warm{background:linear-gradient(135deg,rgba(76,175,80,.1),rgba(139,195,74,.06));border-color:rgba(76,175,80,.3)}}
+
 /* DESKTOP ACTION BAR */
 .results-actions{display:none}
 @media(min-width:640px){
@@ -2311,6 +2332,184 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       return { title: `${origin} → ${destination}`, totalKm: Math.round(totalKm), estimatedFuelCost: fuelCost, days: daysList };
     }
 
+    // ===== WEATHER & GEAR RECOMMENDATIONS =====
+    // Uses Open-Meteo API (free, no API key needed)
+    async function fetchWeatherForCity(cityName, dayOffset) {
+      // Look up lat/lng from INDIA_CITIES
+      const city = INDIA_CITIES.find(c => c.name.toLowerCase() === cityName.toLowerCase().trim());
+      if (!city) {
+        // Try partial match
+        const partial = INDIA_CITIES.find(c => cityName.toLowerCase().includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(cityName.toLowerCase().split(/[,→\-]/)[0].trim()));
+        if (!partial) return null;
+        return await fetchWeatherByCoords(partial.lat, partial.lng, dayOffset);
+      }
+      return await fetchWeatherByCoords(city.lat, city.lng, dayOffset);
+    }
+
+    async function fetchWeatherByCoords(lat, lng, dayOffset) {
+      try {
+        const today = new Date();
+        const targetDate = new Date(today.getTime() + (dayOffset || 0) * 86400000);
+        const dateStr = targetDate.toISOString().split('T')[0];
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode,windspeed_10m_max&start_date=${dateStr}&end_date=${dateStr}&timezone=Asia/Kolkata`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data.daily) return null;
+        return {
+          maxTemp: data.daily.temperature_2m_max?.[0],
+          minTemp: data.daily.temperature_2m_min?.[0],
+          rainProb: data.daily.precipitation_probability_max?.[0],
+          weatherCode: data.daily.weathercode?.[0],
+          windSpeed: data.daily.windspeed_10m_max?.[0],
+          date: dateStr
+        };
+      } catch (e) {
+        console.warn('[Weather] Fetch error:', e);
+        return null;
+      }
+    }
+
+    function getWeatherLabel(code) {
+      if (code <= 1) return { label: 'Clear ☀️', icon: '☀️' };
+      if (code <= 3) return { label: 'Cloudy ⛅', icon: '⛅' };
+      if (code <= 48) return { label: 'Foggy 🌫️', icon: '🌫️' };
+      if (code <= 57) return { label: 'Drizzle 🌦️', icon: '🌦️' };
+      if (code <= 67) return { label: 'Rain 🌧️', icon: '🌧️' };
+      if (code <= 77) return { label: 'Snow ❄️', icon: '❄️' };
+      if (code <= 82) return { label: 'Heavy Rain 🌧️', icon: '🌧️' };
+      if (code <= 86) return { label: 'Snow ❄️', icon: '❄️' };
+      return { label: 'Thunderstorm ⛈️', icon: '⛈️' };
+    }
+
+    function getGearRecommendation(weather) {
+      if (!weather) return null;
+      const { maxTemp, minTemp, rainProb, weatherCode, windSpeed } = weather;
+      const avgTemp = (maxTemp + minTemp) / 2;
+      const gear = [];
+      const safety = [];
+      let condition = '';
+
+      // === HOT (above 32°C) ===
+      if (maxTemp >= 35) {
+        condition = 'hot';
+        gear.push('🧴 Sunscreen (SPF 50+) & UV arm sleeves');
+        gear.push('💧 Hydration bag / 2L water minimum');
+        gear.push('👕 Dryfit / moisture-wicking base layer');
+        gear.push('🧥 Mesh riding jacket with CE armors');
+        gear.push('🧤 Summer perforated riding gloves');
+        gear.push('👢 Ventilated riding boots');
+        gear.push('🪖 Helmet with visor — avoid dark visors at night');
+        safety.push('Take 15-min breaks every 60-80 km to hydrate');
+        safety.push('Avoid riding 12PM–3PM in extreme heat');
+        safety.push('Carry ORS / electrolyte packets');
+      }
+      // === WARM (25-34°C) ===
+      else if (maxTemp >= 25) {
+        condition = 'warm';
+        gear.push('👕 Light breathable riding jersey');
+        gear.push('🧥 Textile riding jacket with removable liner');
+        gear.push('🧤 Short-cuff riding gloves');
+        gear.push('👢 Ankle-length riding boots');
+        gear.push('🪖 Full-face helmet with clear visor');
+        gear.push('💧 Water bottle / hydration pack');
+        safety.push('Stay hydrated — sip water at every stop');
+      }
+      // === COLD (5-15°C) ===
+      else if (minTemp <= 15 && minTemp > 5) {
+        condition = 'cold';
+        gear.push('🧥 Winter riding jacket with thermal liner');
+        gear.push('🧣 Fleece neck warmer / balaclava');
+        gear.push('🧤 Winter riding gloves (insulated, waterproof)');
+        gear.push('🩳 Thermal innerwear / base layer');
+        gear.push('👢 Full-length waterproof riding boots');
+        gear.push('🧶 Hand & toe warmers (disposable heat packs)');
+        gear.push('🪖 Full-face helmet with anti-fog visor');
+        safety.push('Watch for black ice on mountain roads early morning');
+        safety.push('Warm up the engine 2-3 min before riding');
+      }
+      // === FREEZING (below 5°C) ===
+      else if (minTemp <= 5) {
+        condition = 'freezing';
+        gear.push('🧥 Heavy winter riding jacket + wind-stopper layer');
+        gear.push('🩳 Thermal base layer (merino wool recommended)');
+        gear.push('🧣 Full balaclava + neck gaiter');
+        gear.push('🧤 Heated or heavy-duty winter gloves');
+        gear.push('🧶 Multiple thermal layers — dress in 3 layers');
+        gear.push('👢 Insulated waterproof boots with thick socks');
+        gear.push('🪖 Pinlock-equipped helmet (anti-fog essential)');
+        gear.push('🔥 Portable hand warmers');
+        safety.push('⚠️ Extreme cold — check road conditions before starting');
+        safety.push('Keep emergency blanket in luggage');
+        safety.push('Limit riding to daylight hours only');
+      }
+      // === MILD (15-25°C — Perfect riding weather!) ===
+      else {
+        condition = 'mild';
+        gear.push('🧥 All-season riding jacket with armor');
+        gear.push('🧤 Full-gauntlet riding gloves');
+        gear.push('👢 Riding boots (ankle protection)');
+        gear.push('🪖 Full-face helmet');
+        safety.push('Perfect riding conditions! Stay alert and enjoy');
+      }
+
+      // === RAIN overlay ===
+      if (rainProb >= 60 || (weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)) {
+        gear.push('🌧️ Full rain suit (jacket + pants)');
+        gear.push('🎒 Rain cover for luggage / tank bag');
+        gear.push('👢 Waterproof boot covers or waterproof boots');
+        gear.push('🧤 Waterproof over-gloves');
+        safety.push('🌧️ Roads will be slippery — reduce speed by 30%');
+        safety.push('Increase following distance, avoid painted road markings');
+        safety.push('Use low beam, be visible — wear hi-viz rain gear');
+        if (condition !== 'rain') condition = condition + '+rain';
+      } else if (rainProb >= 30) {
+        gear.push('🌦️ Pack a compact rain jacket — rain possible');
+        gear.push('🎒 Rain cover for luggage (just in case)');
+        safety.push('Light rain possible — ride cautiously on wet patches');
+      }
+
+      // === WIND overlay ===
+      if (windSpeed >= 40) {
+        safety.push('💨 Strong winds expected — grip the tank with knees, stay low');
+        safety.push('Be extra careful on bridges, open highways, and mountain passes');
+      }
+
+      // === ESSENTIAL SAFETY (always) ===
+      safety.push('🪖 Always wear CE-certified riding gear — helmet, gloves, jacket, boots');
+
+      const wLabel = getWeatherLabel(weatherCode);
+      return {
+        condition,
+        maxTemp, minTemp, rainProb, windSpeed,
+        weatherLabel: wLabel.label,
+        weatherIcon: wLabel.icon,
+        gear,
+        safety,
+        tempRange: `${Math.round(minTemp)}°–${Math.round(maxTemp)}°C`
+      };
+    }
+
+    // Fetch weather for all days and attach to trip data
+    async function enrichTripWithWeather(data) {
+      if (!data || !data.days || data.days.length === 0) return data;
+      const weatherPromises = data.days.map((day, i) => {
+        const dest = day.to || day.from || '';
+        return fetchWeatherForCity(dest, i);
+      });
+      try {
+        const weatherResults = await Promise.all(weatherPromises);
+        data.days.forEach((day, i) => {
+          const weather = weatherResults[i];
+          if (weather) {
+            day.weather = weather;
+            day.gearRec = getGearRecommendation(weather);
+          }
+        });
+      } catch (e) { console.warn('[Weather] Enrichment error:', e); }
+      return data;
+    }
+
     // ===== RENDER RESULTS =====
     // Map rendering uses Google Maps Embed API
     function renderResults(data, origin, destination) {
@@ -2422,11 +2621,47 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
               ${day.stay ? `<div class="stop-row"><div class="stop-icon">&#127976;</div><div class="stop-content"><div class="stop-name">${day.stay}<span class="stop-pill pill-stay">Stay</span></div></div></div>` : ''}
             </div>
             ${day.highlights ? `<div class="bhai-tip">Tip: ${day.highlights}</div>` : ''}
+            <div class="gear-card" id="gearCard_${day.day}" style="display:none">
+              <div class="gear-header" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.gear-toggle').textContent=this.nextElementSibling.classList.contains('open')?'▲ Hide':'▼ Details'">
+                <div class="gear-header-left">
+                  <span class="gear-weather-icon" id="gearIcon_${day.day}">🌡️</span>
+                  <span class="gear-temp" id="gearTemp_${day.day}">Loading...</span>
+                  <span class="gear-condition" id="gearCond_${day.day}"></span>
+                </div>
+                <span class="gear-toggle">▼ Details</span>
+              </div>
+              <div class="gear-body" id="gearBody_${day.day}"></div>
+            </div>
           </div>
         </div>
       `}).join('');
       document.getElementById('itineraryCards').innerHTML = cardsHTML;
       window._tripData = data;
+
+      // === WEATHER + GEAR: Fetch asynchronously and inject ===
+      enrichTripWithWeather(data).then(enrichedData => {
+        (enrichedData.days || []).forEach(day => {
+          if (!day.gearRec) return;
+          const g = day.gearRec;
+          const cardEl = document.getElementById('gearCard_' + day.day);
+          if (!cardEl) return;
+          cardEl.style.display = 'block';
+          cardEl.className = 'gear-card ' + g.condition.split('+')[0];
+
+          document.getElementById('gearIcon_' + day.day).textContent = g.weatherIcon;
+          document.getElementById('gearTemp_' + day.day).textContent = g.tempRange;
+          document.getElementById('gearCond_' + day.day).textContent = g.weatherLabel + (g.rainProb >= 30 ? ` · ${g.rainProb}% rain` : '') + (g.windSpeed >= 30 ? ` · ${Math.round(g.windSpeed)} km/h wind` : '');
+
+          const bodyEl = document.getElementById('gearBody_' + day.day);
+          bodyEl.innerHTML = `
+            <div class="gear-section-title">🎒 What to Wear & Carry</div>
+            ${g.gear.map(item => `<div class="gear-item">${item}</div>`).join('')}
+            <div class="gear-section-title" style="margin-top:.5rem">⚠️ Safety Tips</div>
+            ${g.safety.map(tip => `<div class="gear-safety">${tip}</div>`).join('')}
+          `;
+        });
+        window._tripData = enrichedData;
+      }).catch(e => console.warn('[Weather] Enrichment failed:', e));
 
       // Show bottom action buttons
       const itinActions = document.getElementById('itineraryActions');
@@ -2464,7 +2699,24 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       if (!auth.currentUser) { showLoginPrompt(); return; }
 
       // Build PDF as printable HTML, open in new tab for native print-to-PDF
-      const daysHtml = (data.days || []).map(d => `
+      const daysHtml = (data.days || []).map(d => {
+        // Build gear section for PDF
+        let gearHtml = '';
+        if (d.gearRec) {
+          const g = d.gearRec;
+          const condColor = g.condition.includes('hot') ? '#e65100' : g.condition.includes('cold') || g.condition.includes('freezing') ? '#1565c0' : g.condition.includes('rain') ? '#0277bd' : '#2e7d32';
+          const condBg = g.condition.includes('hot') ? '#fff3e0' : g.condition.includes('cold') || g.condition.includes('freezing') ? '#e3f2fd' : g.condition.includes('rain') ? '#e1f5fe' : '#e8f5e9';
+          gearHtml = `
+            <div style="margin-top:10px;padding:10px 14px;background:${condBg};border-left:3px solid ${condColor};border-radius:0 8px 8px 0;page-break-inside:avoid">
+              <div style="font-weight:700;font-size:13px;color:${condColor};margin-bottom:6px">${g.weatherIcon} Weather: ${g.tempRange} — ${g.weatherLabel}${g.rainProb >= 30 ? ' · ' + g.rainProb + '% rain' : ''}</div>
+              <div style="font-weight:700;font-size:11px;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">🎒 What to Wear & Carry</div>
+              ${g.gear.map(item => `<div style="font-size:11px;color:#444;line-height:1.8;padding-left:4px">${item}</div>`).join('')}
+              <div style="font-weight:700;font-size:11px;color:#bf360c;margin:6px 0 4px;text-transform:uppercase;letter-spacing:.5px">⚠️ Safety Tips</div>
+              ${g.safety.map(tip => `<div style="font-size:11px;color:#c62828;line-height:1.8;padding-left:4px">${tip}</div>`).join('')}
+            </div>
+          `;
+        }
+        return `
         <div style="page-break-inside:avoid;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fafafa">
           <h3 style="margin:0 0 6px;color:#d96b1a;font-size:16px">Day ${d.day}: ${d.from} → ${d.to} (${d.distanceKm} km)</h3>
           <p style="margin:2px 0;font-size:13px;color:#555">~${d.rideHours}h ride</p>
@@ -2472,8 +2724,9 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
           ${d.food ? `<p style="margin:4px 0;font-size:13px">🍽 <strong>Food:</strong> ${d.food}</p>` : ''}
           ${d.stay ? `<p style="margin:4px 0;font-size:13px">🏨 <strong>Stay:</strong> ${d.stay}</p>` : ''}
           ${d.highlights ? `<p style="margin:6px 0;font-size:12px;color:#666;padding:8px;background:#fff3e0;border-radius:8px">💡 ${d.highlights}</p>` : ''}
+          ${gearHtml}
         </div>
-      `).join('');
+      `}).join('');
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${data.title} - MotoBhai</title>
         <style>@media print{body{margin:0;padding:20px}}</style></head><body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:700px;margin:0 auto;padding:24px;color:#1a202c">
