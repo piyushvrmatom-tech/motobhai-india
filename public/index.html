@@ -1030,13 +1030,13 @@ button:active:not(:disabled){transform:scale(.97)}
       generateBtn.disabled = true;
       const genTxt = document.getElementById('generateBtnText');
       if (genTxt) genTxt.textContent = 'Planning your ride…';
-      aiThinking.classList.add('visible');
+      aiStatus.classList.add('visible');
       document.getElementById('results').style.display = 'none'; document.getElementById('bottomBar').classList.remove('visible'); document.getElementById('shareCard').style.display = 'none'; document.getElementById('skeletonWrap').classList.remove('visible');
 
       let msgIndex = 0;
       const statusInterval = setInterval(() => {
         msgIndex = (msgIndex + 1) % statusMessages.length;
-        aiStatus.textContent = statusMessages[msgIndex];
+        aiThinking.textContent = statusMessages[msgIndex];
       }, 2500);
 
       try {
@@ -1044,13 +1044,11 @@ button:active:not(:disabled){transform:scale(.97)}
           origin, destination, tripType, bike, mileage, days, riders, prefs
         });
         clearInterval(statusInterval);
-        aiThinking.classList.remove('visible');
+        aiStatus.classList.remove('visible');
         renderResults(itinerary, origin, destination);
-      // Log to sheets (fire-and-forget)
-      logToSheets({ origin, destination, bike: params.bike, days: params.days, tripId: window._lastTripId }).catch(() => {});
       } catch (err) {
         clearInterval(statusInterval);
-        aiThinking.classList.remove('visible');
+        aiStatus.classList.remove('visible');
         // Fallback: generate a basic itinerary locally
         const fallback = generateFallbackItinerary({ origin, destination, tripType, days, mileage });
         renderResults(fallback, origin, destination);
@@ -1279,7 +1277,7 @@ Rules:
           <div class="day-inner">
             <div class="day-header">
               <div class="day-num">${day.day}</div>
-              <div class="day-route-text">${day.from||''} to ${day.to||''}</div>
+              <div class="day-route-txt">${day.from||''} to ${day.to||''}</div>
               <div class="day-km-badge">${day.distanceKm||0} km</div>
             </div>
             <div class="day-meta">
