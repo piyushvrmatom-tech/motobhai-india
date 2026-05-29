@@ -1,19 +1,17 @@
-"""Firestore wrapper — initialised once at module import, all reads/writes go through here.
+"""Firestore wrapper — initialised once at module import.
 
-Uses the **firebase-admin** SDK (not google-cloud-firestore directly).
-firebase-admin is the recommended server-side SDK — it bypasses Firestore
-security rules and uses a more reliable connection mechanism.
+Supports BOTH firebase-admin (preferred) and google-cloud-firestore (fallback).
+firebase-admin is more reliable for server-side access. Falls back to
+google-cloud-firestore if firebase-admin is not installed.
 
 Credentials are loaded from `FIRESTORE_CREDENTIALS_B64` (base64-encoded
-service-account JSON). If the env var is missing or invalid, `db` will be
-None and callers must degrade gracefully (return 503, log a Sentry event).
+service-account JSON).
 
 Collections (CTO spec §4.5):
     trips          : doc_id = trip_id (mb_<6char>)
     users          : doc_id = phone_hash
     otp_codes      : doc_id = phone_hash
     share_views    : doc_id = trip_id
-    location_intel : doc_id = slugified location name (legacy v0.9)
 """
 from __future__ import annotations
 
@@ -29,43 +27,70 @@ from typing import Any, Optional
 log = logging.getLogger(__name__)
 
 _db = None
-FIRESTORE_AVAILABLE = False
+_USE_ADMIN_SDK = False
 
+# ── SDK detection ─────────────────────────────────────────────────────────────
 try:
     import firebase_admin  # type: ignore
     from firebase_admin import credentials as fb_credentials  # type: ignore
     from firebase_admin import firestore as fb_firestore  # type: ignore
+    _USE_ADMIN_SDK = True
+    log.info("Firestore: using firebase-admin SDK")
+except ImportError:
+    _USE_ADMIN_SDK = False
+    log.info("firebase-admin not found, trying google-cloud-firestore")
 
-    FIRESTORE_AVAILABLE = True
-except ImportError:  # pragma: no cover
-    log.warning("firebase-admin not installed; Firestore disabled")
+if not _USE_ADMIN_SDK:
+    try:
+        from google.cloud import firestore  # type: ignore
+        from google.oauth2 import service_account  # type: ignore
+        log.info("Firestore: using google-cloud-firestore SDK")
+    except ImportError:
+        firestore = None  # type: ignore
+        log.warning("No Firestore SDK available")
 
 
 def _init_client():
-    """Initialise firebase-admin and return a Firestore client."""
-    if not FIRESTORE_AVAILABLE:
-        log.warning("firebase-admin not installed; Firestore disabled")
+    """Initialise Firestore client using whichever SDK is available."""
+    b64 = os.getenv("FIRESTORE_CREDENTIALS_B64", "").strip()
+
+    if _USE_ADMIN_SDK:
+        if b64:
+            try:
+                info = json.loads(base64.b64decode(b64).decode("utf-8"))
+                cred = fb_credentials.Certificate(info)
+                project_id = info.get("project_id") or os.getenv("GCP_PROJECT", "motobhai-india")
+                if not firebase_admin._apps:
+                    firebase_admin.initialize_app(cred, {"projectId": project_id})
+                return fb_firestore.client()
+            except Exception as exc:
+                log.exception("Failed to init Firestore via firebase-admin: %s", exc)
+                return None
+        try:
+            if not firebase_admin._apps:
+                firebase_admin.initialize_app()
+            return fb_firestore.client()
+        except Exception as exc:
+            log.warning("Firestore ADC init (firebase-admin) failed: %s", exc)
+            return None
+
+    # Fallback: google-cloud-firestore
+    if firestore is None:
+        log.warning("No Firestore SDK available")
         return None
 
-    b64 = os.getenv("FIRESTORE_CREDENTIALS_B64", "").strip()
     if b64:
         try:
             info = json.loads(base64.b64decode(b64).decode("utf-8"))
-            cred = fb_credentials.Certificate(info)
+            creds = service_account.Credentials.from_service_account_info(info)
             project_id = info.get("project_id") or os.getenv("GCP_PROJECT", "motobhai-india")
-            # Initialize only once — firebase_admin raises if called twice
-            if not firebase_admin._apps:
-                firebase_admin.initialize_app(cred, {"projectId": project_id})
-            return fb_firestore.client()
+            return firestore.Client(project=project_id, credentials=creds)
         except Exception as exc:
-            log.exception("Failed to init Firestore via firebase-admin: %s", exc)
+            log.exception("Failed to init Firestore from FIRESTORE_CREDENTIALS_B64: %s", exc)
             return None
 
-    # Fallback to ADC (works locally via `gcloud auth application-default login`).
     try:
-        if not firebase_admin._apps:
-            firebase_admin.initialize_app()
-        return fb_firestore.client()
+        return firestore.Client(project=os.getenv("GCP_PROJECT", "motobhai-india"))
     except Exception as exc:
         log.warning("Firestore ADC init failed: %s", exc)
         return None
@@ -93,11 +118,7 @@ def new_trip_id() -> str:
 
 
 def save_trip(trip_id: str, payload: dict[str, Any], *, ttl_days: int = 30) -> bool:
-    """Write a full trip document to `trips/<trip_id>`.
-
-    For anonymous riders we set a TTL field; a scheduled Firestore TTL policy
-    can reap stale documents (configure once in console: ttl on field `expires_at`).
-    """
+    """Write a full trip document to `trips/<trip_id>`."""
     db = get_db()
     if db is None:
         return False
@@ -106,9 +127,9 @@ def save_trip(trip_id: str, payload: dict[str, Any], *, ttl_days: int = 30) -> b
     doc["created_at"] = datetime.now(tz=timezone.utc)
     if ttl_days:
         from datetime import timedelta
-
         doc["expires_at"] = doc["created_at"] + timedelta(days=ttl_days)
     db.collection("trips").document(trip_id).set(doc)
+    log.info("Saved trip %s to Firestore", trip_id)
     return True
 
 
@@ -125,13 +146,12 @@ def load_trip(trip_id: str) -> Optional[dict[str, Any]]:
 
 
 def increment_share_view(trip_id: str) -> None:
-    """Best-effort view counter. Never raises — view counts must not block reads."""
+    """Best-effort view counter."""
     db = get_db()
     if db is None:
         return
     try:
-        from google.cloud.firestore_v1 import Increment  # type: ignore
-
+        from google.cloud.firestore_v1 import Increment
         ref = db.collection("share_views").document(trip_id)
         ref.set(
             {
