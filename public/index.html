@@ -622,6 +622,17 @@ button:active:not(:disabled){transform:scale(.97)}
       <div class="itin-title">Day-by-Day Itinerary</div>
       <div class="timeline" id="itineraryCards"></div>
     </div>
+    <!-- Bottom Action Bar after Itinerary -->
+    <div id="itineraryActions" style="display:none;padding:1rem 0;margin-bottom:2rem">
+      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+        <button id="downloadPdfBtn" class="action-btn" style="padding:.85rem 1.5rem;border-radius:14px;font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:.5rem;min-height:48px;border:none;cursor:pointer;background:var(--primary);color:#fff;box-shadow:0 4px 16px rgba(217,107,26,0.25);transition:all .2s">
+          &#128196; Download PDF
+        </button>
+        <button id="saveTripBtn" class="action-btn" style="padding:.85rem 1.5rem;border-radius:14px;font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:.5rem;min-height:48px;border:1.5px solid var(--primary);cursor:pointer;background:var(--surface);color:var(--primary);transition:all .2s">
+          &#128278; Save This Trip
+        </button>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -2193,6 +2204,24 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       `}).join('');
       document.getElementById('itineraryCards').innerHTML = cardsHTML;
       window._tripData = data;
+
+      // Show bottom action buttons
+      const itinActions = document.getElementById('itineraryActions');
+      if (itinActions) {
+        itinActions.style.display = 'block';
+        const isLoggedIn = !!auth.currentUser;
+        const dlBtn = document.getElementById('downloadPdfBtn');
+        const saveBtn = document.getElementById('saveTripBtn');
+        if (dlBtn) {
+          dlBtn.style.opacity = isLoggedIn ? '1' : '0.5';
+          dlBtn.style.cursor = isLoggedIn ? 'pointer' : 'not-allowed';
+        }
+        if (saveBtn) {
+          saveBtn.style.opacity = isLoggedIn ? '1' : '0.5';
+          saveBtn.style.cursor = isLoggedIn ? 'pointer' : 'not-allowed';
+        }
+      }
+
       resultsEl.scrollIntoView({behavior:'smooth',block:'start'});
     }
 
@@ -2205,41 +2234,165 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       }
     });
 
-    document.getElementById('pdfBtn').addEventListener('click', () => {
-      const tripId = window._lastTripIdFull;
-      if (!tripId) { alert('Generate a trip first!'); return; }
-      const btn = document.getElementById('pdfBtn');
-      btn.textContent = '⏳...';
-      btn.disabled = true;
-      const a = document.createElement('a');
-      a.href = `${API_BASE}/api/plan/${tripId}/pdf`;
-      a.download = `motobhai_${tripId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => { btn.textContent = '📄 PDF'; btn.disabled = false; }, 4000);
-    });
+    // === Client-side PDF Generation ===
+    function generatePDF() {
+      const data = window._tripData;
+      if (!data) { alert('Generate a trip first!'); return; }
+      if (!auth.currentUser) { showLoginPrompt(); return; }
+
+      // Build PDF as printable HTML, open in new tab for native print-to-PDF
+      const daysHtml = (data.days || []).map(d => `
+        <div style="page-break-inside:avoid;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fafafa">
+          <h3 style="margin:0 0 6px;color:#d96b1a;font-size:16px">Day ${d.day}: ${d.from} → ${d.to} (${d.distanceKm} km)</h3>
+          <p style="margin:2px 0;font-size:13px;color:#555">~${d.rideHours}h ride</p>
+          ${d.fuelStop ? `<p style="margin:4px 0;font-size:13px">⛽ <strong>Fuel:</strong> ${d.fuelStop}</p>` : ''}
+          ${d.food ? `<p style="margin:4px 0;font-size:13px">🍽 <strong>Food:</strong> ${d.food}</p>` : ''}
+          ${d.stay ? `<p style="margin:4px 0;font-size:13px">🏨 <strong>Stay:</strong> ${d.stay}</p>` : ''}
+          ${d.highlights ? `<p style="margin:6px 0;font-size:12px;color:#666;padding:8px;background:#fff3e0;border-radius:8px">💡 ${d.highlights}</p>` : ''}
+        </div>
+      `).join('');
+
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${data.title} - MotoBhai</title>
+        <style>@media print{body{margin:0;padding:20px}}</style></head><body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:700px;margin:0 auto;padding:24px;color:#1a202c">
+        <div style="text-align:center;margin-bottom:20px">
+          <h1 style="color:#d96b1a;margin:0;font-size:22px">🏍️ MotoBhai</h1>
+          <p style="color:#888;font-size:12px;margin:4px 0">Your Motorcycle Trip Planner</p>
+        </div>
+        <h2 style="font-size:18px;margin-bottom:4px">${data.title}</h2>
+        <div style="display:flex;gap:20px;margin-bottom:16px;font-size:14px;color:#555">
+          <span>📏 ${data.totalKm} km</span>
+          <span>📅 ${data.days?.length} days</span>
+          <span>⛽ ₹${(data.estimatedFuelCost||0).toLocaleString()}</span>
+        </div>
+        <hr style="border:none;border-top:2px solid #d96b1a;margin-bottom:16px">
+        ${daysHtml}
+        <div style="text-align:center;margin-top:20px;padding:12px;background:#fff3e0;border-radius:10px;font-size:11px;color:#856404">
+          ⚠️ This itinerary is AI-generated. Verify all stops, fuel stations, and accommodations before your trip.
+          Always wear proper riding gear and follow traffic rules. Ride safe!
+        </div>
+        <div style="text-align:center;margin-top:12px;font-size:11px;color:#aaa">Generated by motobhai.app</div>
+      </body></html>`;
+
+      const pdfWin = window.open('', '_blank');
+      pdfWin.document.write(html);
+      pdfWin.document.close();
+      setTimeout(() => pdfWin.print(), 500);
+    }
+
+    // === Login Prompt for Guests ===
+    function showLoginPrompt() {
+      // Show a login prompt modal
+      let prompt = document.getElementById('loginPromptModal');
+      if (!prompt) {
+        prompt = document.createElement('div');
+        prompt.id = 'loginPromptModal';
+        prompt.style.cssText = 'position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1.5rem';
+        prompt.innerHTML = `
+          <div style="background:var(--surface);border-radius:20px;padding:2rem 1.5rem;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center;position:relative">
+            <button id="loginPromptClose" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-3);padding:4px;line-height:1">✕</button>
+            <div style="font-size:2.5rem;margin-bottom:.5rem">🔒</div>
+            <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:.5rem;color:var(--text)">Login Required</h2>
+            <p style="font-size:.85rem;color:var(--text-2);line-height:1.6;margin-bottom:1.25rem">Sign in with your mobile number to download PDFs, save trips, and share your itinerary.</p>
+            <button id="loginPromptBtn" style="width:100%;padding:.85rem;border-radius:12px;background:var(--primary);color:#fff;font-weight:700;font-size:.95rem;border:none;cursor:pointer;min-height:48px;transition:all .2s;margin-bottom:.5rem">Sign In Now</button>
+            <button id="loginPromptDismiss" style="width:100%;padding:.65rem;border-radius:10px;background:transparent;color:var(--text-3);font-weight:600;font-size:.8rem;border:none;cursor:pointer">Maybe Later</button>
+          </div>
+        `;
+        document.body.appendChild(prompt);
+        document.getElementById('loginPromptClose').addEventListener('click', () => prompt.style.display = 'none');
+        document.getElementById('loginPromptDismiss').addEventListener('click', () => prompt.style.display = 'none');
+        document.getElementById('loginPromptBtn').addEventListener('click', () => {
+          prompt.style.display = 'none';
+          // Show the login gate
+          const loginGate = document.getElementById('loginGate');
+          if (loginGate) loginGate.classList.remove('hidden');
+        });
+      }
+      prompt.style.display = 'flex';
+    }
+
+    document.getElementById('pdfBtn').addEventListener('click', generatePDF);
 
     document.getElementById('shareBtn').addEventListener('click', async () => {
       const data = window._tripData;
       if (!data) return;
-      const text = `🏍️ ${data.title}\n📏 ${data.totalKm} km · ${data.days?.length} days\n⛽ ₹${data.estimatedFuelCost} fuel\n\nPlanned with Moto Bhai India\nhttps://motobhai-india.web.app`;
+      if (!auth.currentUser) { showLoginPrompt(); return; }
+      const text = `🏍️ ${data.title}\n📏 ${data.totalKm} km · ${data.days?.length} days\n⛽ ₹${data.estimatedFuelCost} fuel\n\nPlanned with Moto Bhai India\nhttps://motobhai.app`;
       try {
-        await navigator.clipboard.writeText(text);
-        document.getElementById('shareBtn').textContent = '✅ Copied!';
-        setTimeout(() => document.getElementById('shareBtn').textContent = '📤 Share', 2000);
-      } catch(e) {
-        // Fallback: share API
         if (navigator.share) {
-          navigator.share({ title: data.title, text });
+          await navigator.share({ title: data.title, text });
+        } else {
+          await navigator.clipboard.writeText(text);
+          document.getElementById('shareBtn').textContent = '✅ Copied!';
+          setTimeout(() => document.getElementById('shareBtn').textContent = '📤 Share', 2000);
         }
+      } catch(e) {
+        try {
+          await navigator.clipboard.writeText(text);
+          document.getElementById('shareBtn').textContent = '✅ Copied!';
+          setTimeout(() => document.getElementById('shareBtn').textContent = '📤 Share', 2000);
+        } catch(e2) { /* ignore */ }
       }
     });
 
     document.getElementById('bbShare').addEventListener('click', () => document.getElementById('shareBtn').click());
     document.getElementById('bbMaps').addEventListener('click', () => document.getElementById('mapsBtn').click());
     document.getElementById('bbNew').addEventListener('click', () => document.getElementById('newTripBtn').click());
-    document.getElementById('bbPdf').addEventListener('click', () => document.getElementById('pdfBtn').click());
+    document.getElementById('bbPdf').addEventListener('click', generatePDF);
+
+    // Bottom Download PDF button
+    document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
+
+    // Bottom Save Trip button
+    document.getElementById('saveTripBtn').addEventListener('click', async () => {
+      const data = window._tripData;
+      if (!data) return;
+      if (!auth.currentUser) { showLoginPrompt(); return; }
+
+      const btn = document.getElementById('saveTripBtn');
+      btn.textContent = '⏳ Saving...';
+      btn.disabled = true;
+
+      try {
+        // Save to Firestore
+        const uid = auth.currentUser.uid;
+        await db.collection('trips').add({
+          uid: uid,
+          title: data.title,
+          totalKm: data.totalKm,
+          estimatedFuelCost: data.estimatedFuelCost,
+          days: data.days,
+          savedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Also save to localStorage
+        const savedTrips = JSON.parse(localStorage.getItem('mb_saved_trips') || '[]');
+        savedTrips.unshift({
+          title: data.title,
+          totalKm: data.totalKm,
+          estimatedFuelCost: data.estimatedFuelCost,
+          days: data.days,
+          savedAt: new Date().toISOString()
+        });
+        localStorage.setItem('mb_saved_trips', JSON.stringify(savedTrips.slice(0, 50)));
+
+        btn.innerHTML = '&#10003; Saved!';
+        btn.style.background = '#38a169';
+        btn.style.color = '#fff';
+        btn.style.borderColor = '#38a169';
+        setTimeout(() => {
+          btn.innerHTML = '&#128278; Save This Trip';
+          btn.style.background = 'var(--surface)';
+          btn.style.color = 'var(--primary)';
+          btn.style.borderColor = 'var(--primary)';
+          btn.disabled = false;
+        }, 3000);
+      } catch(e) {
+        console.error('[MotoBhai] Save trip error:', e);
+        btn.innerHTML = '&#128278; Save This Trip';
+        btn.disabled = false;
+        alert('Could not save trip. Please try again.');
+      }
+    });
 
     document.getElementById('newTripBtn').addEventListener('click', () => {
       document.getElementById('results').style.display = 'none'; document.getElementById('bottomBar').classList.remove('visible'); document.getElementById('shareCard').style.display = 'none'; document.getElementById('skeletonWrap').classList.remove('visible');
