@@ -950,7 +950,7 @@ button:active:not(:disabled){transform:scale(.97)}
         ts: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(e => console.warn('[Firestore] Search log error:', e));
     }
-    // Save itinerary to Firestore
+    // Save itinerary to Firestore (FULL data for cross-device sync)
     function saveItineraryToCloud(params, itinerary) {
       const user = auth.currentUser;
       if (!user) return;
@@ -965,10 +965,12 @@ button:active:not(:disabled){transform:scale(.97)}
         fuelCost: itinerary.estimatedFuelCost || 0,
         title: itinerary.title || '',
         dayCount: itinerary.days?.length || 0,
+        itinerary: JSON.stringify(itinerary.days || []),  // full day data
+        estimatedFuelCost: itinerary.estimatedFuelCost || 0,
         ts: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(e => console.warn('[Firestore] Trip save error:', e));
     }
-    // Load saved trips from Firestore
+    // Load saved trips from Firestore (full data for cross-device sync)
     async function loadTripsFromCloud() {
       const user = auth.currentUser;
       if (!user) return;
@@ -977,9 +979,41 @@ button:active:not(:disabled){transform:scale(.97)}
         const trips = [];
         snap.forEach(doc => {
           const d = doc.data();
-          trips.push({ dest: d.destination || d.title, type: d.tripType, days: d.days, ts: d.ts?.toDate?.()?.getTime() || Date.now(), id: doc.id });
+          trips.push({
+            dest: d.destination || d.title,
+            title: d.title || '',
+            origin: d.origin || '',
+            type: d.tripType,
+            days: d.days,
+            totalKm: d.totalKm || 0,
+            fuelCost: d.fuelCost || d.estimatedFuelCost || 0,
+            itinerary: d.itinerary || null,
+            ts: d.ts?.toDate?.()?.getTime() || Date.now(),
+            id: doc.id,
+            cloudId: doc.id
+          });
         });
         localStorage.setItem('mb_trips', JSON.stringify(trips));
+        // Also load into recent trip history
+        const snap2 = await db.collection('recentTrips').where('uid', '==', user.uid).orderBy('ts', 'desc').limit(20).get();
+        const recent = [];
+        snap2.forEach(doc => {
+          const d = doc.data();
+          recent.push({
+            dest: d.dest || '',
+            type: d.type || 'Solo',
+            days: d.days || 3,
+            ts: d.ts?.toDate?.()?.getTime() || Date.now(),
+            fav: d.fav || false,
+            id: doc.id,
+            cloudId: doc.id
+          });
+        });
+        if (recent.length > 0) {
+          localStorage.setItem('mb_history', JSON.stringify(recent));
+        }
+        renderSavedTrips();
+        renderHistory();
       } catch (e) { console.warn('[Firestore] Trips load error:', e); }
     }
     function applyProfile() {
@@ -1072,25 +1106,48 @@ button:active:not(:disabled){transform:scale(.97)}
     function renderSavedTrips() {
       const trips = JSON.parse(localStorage.getItem('mb_trips') || '[]');
       const list = document.getElementById('savedTripsList');
+      if (!list) return;
       if (!trips.length) {
         list.innerHTML = '<div style="text-align:center;padding:2rem 1rem;color:var(--text-3);font-size:.85rem">No saved trips yet.<br>Plan your first ride! 🏍️</div>';
         return;
       }
       list.innerHTML = trips.map((t, i) => `
-        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1px solid var(--border);border-radius:12px;margin-bottom:.5rem;background:var(--surface-2)">
+        <div class="saved-trip-card" data-idx="${i}" style="display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1px solid var(--border);border-radius:12px;margin-bottom:.5rem;background:var(--surface-2);cursor:pointer;transition:all .2s">
           <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:.875rem;color:var(--text)">${t.dest || t.destination || 'Trip'}</div>
-            <div style="font-size:.7rem;color:var(--text-3)">${t.type || ''} · ${t.days || '?'} days · ${new Date(t.ts || Date.now()).toLocaleDateString()}</div>
+            <div style="font-weight:700;font-size:.875rem;color:var(--text)">${t.title || t.dest || t.destination || 'Trip'}</div>
+            <div style="font-size:.7rem;color:var(--text-3)">${t.origin ? t.origin + ' → ' : ''}${t.dest || ''} · ${t.type || ''} · ${t.days || '?'} days${t.totalKm ? ' · ' + t.totalKm + 'km' : ''}</div>
+            <div style="font-size:.65rem;color:var(--text-3);margin-top:2px">${new Date(t.ts || Date.now()).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})}</div>
           </div>
-          <button data-idx="${i}" class="del-trip-btn" style="width:28px;height:28px;border-radius:50%;background:rgba(229,62,62,0.08);color:#e53e3e;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center">✕</button>
+          <button data-idx="${i}" class="del-trip-btn" style="width:28px;height:28px;border-radius:50%;background:rgba(229,62,62,0.08);color:#e53e3e;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Delete trip">✕</button>
         </div>
       `).join('');
+      // Delete handler — remove from both local and Firestore
       list.querySelectorAll('.del-trip-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
           const idx = parseInt(btn.dataset.idx);
+          const trip = trips[idx];
           trips.splice(idx, 1);
           localStorage.setItem('mb_trips', JSON.stringify(trips));
+          // Delete from Firestore if has cloudId
+          if (trip?.cloudId && auth.currentUser) {
+            db.collection('trips').doc(trip.cloudId).delete().catch(e => console.warn('[Firestore] Delete error:', e));
+          }
           renderSavedTrips();
+        });
+      });
+      // Click to view saved trip
+      list.querySelectorAll('.saved-trip-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const idx = parseInt(card.dataset.idx);
+          const trip = trips[idx];
+          if (trip?.itinerary) {
+            try {
+              const days = typeof trip.itinerary === 'string' ? JSON.parse(trip.itinerary) : trip.itinerary;
+              const fullData = { title: trip.title, totalKm: trip.totalKm, estimatedFuelCost: trip.fuelCost, days };
+              renderResults(fullData, trip.origin || '', trip.dest || '');
+            } catch(e) { console.warn('Could not load saved trip:', e); }
+          }
         });
       });
     }
@@ -2501,34 +2558,55 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
 
     // ===== TRIP HISTORY & FAVORITES =====
     function getTripHistory() {
-      try { return JSON.parse(localStorage.getItem('mb_trips') || '[]'); } catch { return []; }
+      try { return JSON.parse(localStorage.getItem('mb_history') || '[]'); } catch { return []; }
     }
     function saveTripHistory(trips) {
-      localStorage.setItem('mb_trips', JSON.stringify(trips.slice(0, 20))); // keep last 20
+      localStorage.setItem('mb_history', JSON.stringify(trips.slice(0, 20)));
     }
 
     function addToHistory(dest, tripType, days) {
       const trips = getTripHistory();
-      // Dedupe — don't add if same dest was planned in last 5 minutes
+      // Dedupe
       const now = Date.now();
       const recent = trips.find(t => t.dest === dest && (now - t.ts) < 300000);
       if (recent) return;
-      trips.unshift({
+      const entry = {
         dest,
         type: tripType || 'Solo',
         days: days || 3,
         ts: now,
         fav: false,
         id: Math.random().toString(36).slice(2, 8)
-      });
+      };
+      trips.unshift(entry);
       saveTripHistory(trips);
       renderHistory();
+      // Sync to Firestore for cross-device access
+      const user = auth.currentUser;
+      if (user) {
+        db.collection('recentTrips').add({
+          uid: user.uid,
+          dest: entry.dest,
+          type: entry.type,
+          days: entry.days,
+          ts: firebase.firestore.FieldValue.serverTimestamp(),
+          fav: false
+        }).catch(e => console.warn('[Firestore] Recent trip save error:', e));
+      }
     }
 
     function toggleFav(id) {
       const trips = getTripHistory();
       const t = trips.find(t => t.id === id);
-      if (t) { t.fav = !t.fav; saveTripHistory(trips); renderHistory(); }
+      if (t) {
+        t.fav = !t.fav;
+        saveTripHistory(trips);
+        renderHistory();
+        // Sync fav status to Firestore
+        if (t.cloudId && auth.currentUser) {
+          db.collection('recentTrips').doc(t.cloudId).update({ fav: t.fav }).catch(() => {});
+        }
+      }
     }
 
     function replanTrip(dest) {
@@ -2591,6 +2669,8 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
     if (getTripHistory().length > 0) {
       renderHistory();
     }
+    // Show saved trips if any
+    renderSavedTrips();
   </script>
 
 </body>
