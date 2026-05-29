@@ -110,7 +110,7 @@ h1,h2,h3{font-family:var(--font-d);line-height:1.2}
 /* CONFIG CARD */
 .config-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:visible;box-shadow:var(--shadow-sm);margin-bottom:1rem;transition:box-shadow .3s var(--ease),transform .3s var(--ease)}
 .config-card:hover{box-shadow:var(--shadow-md)}
-.config-section{padding:1.125rem 1.25rem;border-bottom:1px solid var(--border)}
+.config-section{padding:1.125rem 1.25rem;border-bottom:1px solid var(--border);position:relative}
 .config-section:last-child{border-bottom:none}
 .config-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:.75rem}
 .trip-pills{display:flex;gap:.375rem;flex-wrap:wrap}
@@ -436,7 +436,7 @@ button:active:not(:disabled){transform:scale(.97)}
           <button class="trip-pill" data-type="multi">&#128205; Multi-Stop</button>
         </div>
       </div>
-      <div class="config-section" id="originSection" style="position:relative">
+      <div class="config-section" id="originSection" style="z-index:10">
         <div class="config-label">Starting From</div>
         <div style="position:relative">
           <input class="origin-input" id="originInput" type="text" placeholder="Detecting your city..." style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);font-size:.95rem;background:var(--surface);color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none">
@@ -451,11 +451,11 @@ button:active:not(:disabled){transform:scale(.97)}
           <button class="vibe-chip" data-vibe="adventure"><div class="vibe-icon">&#127957;&#65039;</div><div class="vibe-label">Adventure</div></button>
         </div>
       </div>
-      <div class="config-section">
+      <div class="config-section" style="z-index:5">
         <div class="config-label">Ride Details</div>
         <div class="details-grid">
-          <div class="detail-field full"><label class="detail-label" for="bikeInput">Motorcycle</label><input class="detail-input" id="bikeInput" type="text" placeholder="e.g. RE Himalayan 450"></div>
-          <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage km/L</label><input class="detail-input" id="mileageInput" type="number" placeholder="35" min="10" max="80"></div>
+          <div class="detail-field full" style="position:relative"><label class="detail-label" for="bikeInput">Motorcycle</label><input class="detail-input" id="bikeInput" type="text" placeholder="Type bike name... e.g. Himalayan" autocomplete="off"></div>
+          <div class="detail-field"><label class="detail-label" for="mileageInput">Mileage km/L</label><input class="detail-input" id="mileageInput" type="number" placeholder="35" min="5" max="80"></div>
           <div class="detail-field"><label class="detail-label" for="daysInput">Days</label><input class="detail-input" id="daysInput" type="number" placeholder="3" min="1" max="30" value="3"></div>
           <div class="detail-field"><label class="detail-label" for="ridersInput">Riders</label><input class="detail-input" id="ridersInput" type="number" placeholder="2" min="1" max="10" value="2"></div>
         </div>
@@ -1082,6 +1082,71 @@ button:active:not(:disabled){transform:scale(.97)}
     document.getElementById('destinationInput').addEventListener('input', (e) => {
       document.getElementById('searchGoBtn').disabled = e.target.value.length < 3;
     });
+
+    // ===== MOTORCYCLE AUTOCOMPLETE =====
+    const BIKES_DB=[{n:"Hero HF Deluxe",m:65,cc:97},{n:"Hero Splendor Plus",m:62,cc:97},{n:"Hero Splendor Plus XTEC",m:62,cc:97},{n:"Hero Passion Plus",m:62,cc:97},{n:"Hero Glamour X 125",m:55,cc:125},{n:"Hero Super Splendor XTEC",m:57,cc:125},{n:"Honda Shine 125",m:50,cc:124},{n:"Honda SP 125",m:55,cc:124},{n:"Honda Unicorn",m:48,cc:162},{n:"Honda SP 160",m:45,cc:162},{n:"Bajaj Platina 110",m:65,cc:115},{n:"Bajaj CT 110",m:65,cc:115},{n:"TVS Radeon",m:65,cc:110},{n:"TVS Star City Plus",m:65,cc:110},{n:"Bajaj Pulsar 125",m:50,cc:124},{n:"Honda Hornet 2.0",m:40,cc:184},{n:"Honda NX200",m:40,cc:184},{n:"Hero Xtreme 160R",m:45,cc:163},{n:"Hero Xtreme 160R 4V",m:42,cc:163},{n:"Hero Xtreme 125R",m:58,cc:125},{n:"TVS Raider 125",m:55,cc:125},{n:"Bajaj Pulsar 150",m:45,cc:150},{n:"Bajaj Pulsar 180",m:42,cc:179},{n:"Bajaj Pulsar 220F",m:38,cc:220},{n:"Bajaj Pulsar N160",m:45,cc:165},{n:"Bajaj Pulsar NS160",m:42,cc:160},{n:"Bajaj Pulsar NS200",m:35,cc:200},{n:"Bajaj Pulsar RS200",m:32,cc:200},{n:"Bajaj Pulsar N250",m:32,cc:249},{n:"Bajaj Pulsar NS400Z",m:30,cc:373},{n:"TVS Apache RTR 160",m:43,cc:160},{n:"TVS Apache RTR 160 4V",m:43,cc:160},{n:"TVS Apache RTR 180",m:40,cc:177},{n:"TVS Apache RTR 200 4V",m:36,cc:198},{n:"Yamaha FZ-FI V4",m:45,cc:149},{n:"Yamaha FZS-FI V4",m:44,cc:149},{n:"Yamaha R15 V4",m:40,cc:155},{n:"Yamaha MT-15 V2",m:40,cc:155},{n:"Suzuki Gixxer 150",m:42,cc:155},{n:"Suzuki Gixxer SF 150",m:42,cc:155},{n:"Suzuki Gixxer 250",m:35,cc:249},{n:"Suzuki Gixxer SF 250",m:35,cc:249},{n:"Hero Xtreme 250R",m:34,cc:249},{n:"Hero Karizma XMR",m:32,cc:210},{n:"KTM 160 Duke",m:35,cc:160},{n:"KTM 200 Duke",m:32,cc:200},{n:"KTM 250 Duke",m:30,cc:249},{n:"KTM 390 Duke",m:27,cc:399},{n:"Triumph Speed 400",m:30,cc:398},{n:"Triumph Scrambler 400X",m:28,cc:398},{n:"KTM RC 390",m:27,cc:373},{n:"TVS Apache RR 310",m:30,cc:312},{n:"TVS Apache RTR 310",m:30,cc:312},{n:"BMW G 310 R",m:28,cc:313},{n:"BMW G 310 RR",m:27,cc:313},{n:"Hero XPulse 200 4V",m:32,cc:200},{n:"Hero XPulse 210",m:35,cc:210},{n:"Suzuki V-Strom SX",m:34,cc:249},{n:"Yezdi Adventure",m:30,cc:334},{n:"KTM 250 Adventure",m:35,cc:249},{n:"Royal Enfield Himalayan 450",m:30,cc:452},{n:"Royal Enfield Scram 440",m:32,cc:443},{n:"KTM 390 Adventure",m:30,cc:399},{n:"KTM 390 Adventure X",m:28,cc:399},{n:"BMW G 310 GS",m:27,cc:313},{n:"Kawasaki Versys-X 300",m:28,cc:296},{n:"Honda NX500",m:24,cc:471},{n:"Kawasaki Versys 650",m:20,cc:649},{n:"Kawasaki Versys 1000",m:16,cc:1043},{n:"Royal Enfield Hunter 350",m:36,cc:349},{n:"Royal Enfield Bullet 350",m:35,cc:349},{n:"Royal Enfield Classic 350",m:35,cc:349},{n:"Royal Enfield Meteor 350",m:32,cc:349},{n:"Royal Enfield Goan Classic 350",m:35,cc:349},{n:"Royal Enfield Guerrilla 450",m:32,cc:452},{n:"Royal Enfield Super Meteor 650",m:22,cc:648},{n:"Royal Enfield Shotgun 650",m:22,cc:648},{n:"Royal Enfield Interceptor 650",m:24,cc:648},{n:"Royal Enfield Continental GT 650",m:24,cc:648},{n:"Royal Enfield Classic 650",m:23,cc:648},{n:"Royal Enfield Bear 650",m:23,cc:648},{n:"Honda H'ness CB350",m:35,cc:348},{n:"Honda CB350RS",m:35,cc:348},{n:"Jawa 42",m:30,cc:295},{n:"Jawa 42 Bobber",m:28,cc:334},{n:"Jawa 42 FJ",m:28,cc:334},{n:"Yezdi Roadster",m:28,cc:334},{n:"Yezdi Scrambler 350",m:28,cc:334},{n:"Bajaj Avenger Street 160",m:44,cc:160},{n:"Bajaj Avenger 220 Cruise",m:40,cc:220},{n:"TVS Ronin",m:38,cc:225},{n:"Harley-Davidson X440",m:30,cc:440},{n:"Hero Mavrick 440",m:28,cc:440},{n:"Kawasaki Ninja 300",m:28,cc:296},{n:"Kawasaki Ninja 500",m:22,cc:498},{n:"Kawasaki Ninja 650",m:20,cc:649},{n:"Kawasaki Z650",m:20,cc:649},{n:"Kawasaki Z900",m:18,cc:948},{n:"Kawasaki Ninja ZX-10R",m:12,cc:998},{n:"Kawasaki Ninja ZX-6R",m:18,cc:636},{n:"Aprilia RS 660",m:16,cc:659},{n:"Aprilia Tuono 660",m:16,cc:659},{n:"Aprilia Tuono 457",m:26,cc:457},{n:"Harley-Davidson Sportster S",m:18,cc:1252},{n:"Harley-Davidson Pan America 1250",m:18,cc:1252},{n:"Kawasaki Vulcan S",m:20,cc:649},{n:"Kawasaki Eliminator",m:25,cc:449},{n:"Triumph Tiger Sport 660",m:20,cc:660},{n:"Kawasaki W175",m:42,cc:177},{n:"Suzuki V-Strom 800DE",m:20,cc:776},{n:"Kawasaki KLX 230",m:35,cc:233},{n:"Harley-Davidson Nightster",m:20,cc:975}];
+
+    (function initBikeAutocomplete() {
+      const bikeInput = document.getElementById('bikeInput');
+      const mileageInput = document.getElementById('mileageInput');
+      if (!bikeInput) return;
+
+      const dd = document.createElement('div');
+      dd.className = 'city-dropdown';
+      dd.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:12px;max-height:240px;overflow-y:auto;z-index:1000;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.15);margin-top:4px;-webkit-overflow-scrolling:touch;';
+      bikeInput.parentElement.appendChild(dd);
+
+      bikeInput.addEventListener('input', () => {
+        const val = bikeInput.value.toLowerCase().trim();
+        if (val.length < 1) { dd.style.display = 'none'; return; }
+
+        const matches = BIKES_DB.filter(b =>
+          b.n.toLowerCase().includes(val)
+        ).slice(0, 8);
+
+        if (!matches.length) { dd.style.display = 'none'; return; }
+
+        dd.innerHTML = matches.map((b, i) => `
+          <div class="city-option" data-idx="${i}" style="padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,0,0,0.06);transition:background 0.15s;min-height:44px;">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;color:#1a1815;font-size:.875rem">${highlightMatch(b.n, val)}</div>
+              <div style="font-size:.7rem;color:#8a8680;margin-top:1px">${b.cc}cc · ${b.m} km/l</div>
+            </div>
+            <span style="font-size:.7rem;color:var(--primary);font-weight:700;padding-left:.5rem;white-space:nowrap">${b.m} km/l</span>
+          </div>
+        `).join('');
+        dd.style.display = 'block';
+
+        dd.querySelectorAll('.city-option').forEach((opt, i) => {
+          opt.addEventListener('click', () => {
+            const bike = matches[i];
+            bikeInput.value = bike.n;
+            mileageInput.value = bike.m;
+            // Brief highlight on mileage to show it was auto-filled
+            mileageInput.style.borderColor = 'var(--primary)';
+            mileageInput.style.background = 'rgba(217,107,26,0.06)';
+            setTimeout(() => { mileageInput.style.borderColor = ''; mileageInput.style.background = ''; }, 1500);
+            dd.style.display = 'none';
+          });
+          opt.addEventListener('mouseenter', () => opt.style.background = 'rgba(217,107,26,0.08)');
+          opt.addEventListener('mouseleave', () => opt.style.background = '');
+        });
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!bikeInput.contains(e.target) && !dd.contains(e.target)) dd.style.display = 'none';
+      });
+
+      bikeInput.addEventListener('keydown', (e) => {
+        const opts = dd.querySelectorAll('.city-option');
+        const act = dd.querySelector('.city-option.active');
+        let idx = Array.from(opts).indexOf(act);
+        if (e.key === 'ArrowDown') { e.preventDefault(); if(act){act.classList.remove('active');act.style.background='';} idx=(idx+1)%opts.length; opts[idx].classList.add('active');opts[idx].style.background='rgba(217,107,26,0.08)'; }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); if(act){act.classList.remove('active');act.style.background='';} idx=idx<=0?opts.length-1:idx-1; opts[idx].classList.add('active');opts[idx].style.background='rgba(217,107,26,0.08)'; }
+        else if (e.key === 'Enter' && act) { e.preventDefault(); act.click(); }
+      });
+    })();
+
     // ===== SEARCH GO BUTTON =====
     document.getElementById('searchGoBtn').addEventListener('click', () => {
       const dest = document.getElementById('destinationInput').value.trim();
