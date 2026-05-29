@@ -1529,6 +1529,9 @@ button:active:not(:disabled){transform:scale(.97)}
       document.getElementById('destinationInput').value = '';
       document.getElementById('searchGoBtn').disabled = true;
       document.getElementById('results').classList.remove('visible');
+      // Restore top trips
+      const topTrips = document.getElementById('topTripsSection');
+      if (topTrips) topTrips.style.display = 'block';
     });
 
     // ===== TRIP TYPE PILLS =====
@@ -1753,7 +1756,7 @@ button:active:not(:disabled){transform:scale(.97)}
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
         // Fallback: generate a basic itinerary locally
-        const fallback = generateFallbackItinerary({ origin, destination, tripType, days, mileage });
+        const fallback = await generateFallbackItinerary({ origin, destination, tripType, days, mileage });
         renderResults(fallback, origin, destination);
       }
 
@@ -1849,6 +1852,7 @@ Rules:
       });
 
       const data = await resp.json();
+      console.log('[MotoBhai] API response:', JSON.stringify(data).slice(0, 500));
       if (!data || data.detail) throw new Error(data?.detail || "No response");
 
       // Store trip_id for share
@@ -1926,6 +1930,9 @@ Rules:
       document.getElementById('skeletonWrap').classList.remove('visible');
       const resultsEl = document.getElementById('results');
       resultsEl.style.display = 'block';
+      // Hide top trips when results are showing
+      const topTrips = document.getElementById('topTripsSection');
+      if (topTrips) topTrips.style.display = 'none';
 
       document.getElementById('resultsTitle').textContent = data.title || `${origin} -> ${destination}`;
       const fuelPerPerson = data.estimatedFuelCost || 0;
