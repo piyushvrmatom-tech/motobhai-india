@@ -1850,8 +1850,8 @@ button:active:not(:disabled){transform:scale(.97)}
       if (genTxtDone) genTxtDone.textContent = 'Generate My Itinerary';
     });
 
-    // ===== GEMINI API CALL (Direct) =====
-    const GEMINI_API_KEY = 'AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww';
+    // ===== GEMINI API CALL (Direct — dedicated Gemini key, restricted to motobhai.app) =====
+    const GEMINI_KEY = 'AIzaSyCrI-PFG_j36f5a_bJZtfmvWsI41ohQtZc';
 
     async function generateWithGemini(params) {
       const { origin, destination, tripType, bike, mileage, days, riders, prefs } = params;
@@ -1904,8 +1904,8 @@ Return ONLY valid JSON (no markdown, no backticks, no explanation) in this EXACT
 Fuel cost calculation: (totalKm / ${mileage}) × 105 INR per liter.
 ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days back to ' + origin + '.' : ''}`;
 
-      // Call Gemini API directly
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+      // Call Gemini 2.5 Flash API
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
 
       const resp = await fetch(geminiUrl, {
         method: 'POST',
