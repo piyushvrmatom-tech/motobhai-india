@@ -154,3 +154,4 @@ htmlcov/
 venv/
 *.pem
 
+public/gemini-config.js

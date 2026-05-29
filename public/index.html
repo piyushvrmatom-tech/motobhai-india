@@ -693,6 +693,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="/gemini-config.js"></script>
 
 
 <script>
@@ -1854,11 +1855,16 @@ button:active:not(:disabled){transform:scale(.97)}
       if (genTxtDone) genTxtDone.textContent = 'Generate My Itinerary';
     });
 
-    // ===== GEMINI API CALL (Direct — dedicated Gemini key, restricted to motobhai.app) =====
-    const GEMINI_KEY = 'AIzaSyCrI-PFG_j36f5a_bJZtfmvWsI41ohQtZc';
+    // ===== GEMINI API CALL (Direct — key loaded from /gemini-config.js, gitignored) =====
+    const GEMINI_KEY = window.__MOTOBHAI_GEMINI_KEY__ || '';
 
     async function generateWithGemini(params) {
       const { origin, destination, tripType, bike, mileage, days, riders, prefs } = params;
+
+      if (!GEMINI_KEY) {
+        console.error('[MotoBhai] No Gemini API key found! Check /gemini-config.js');
+        throw new Error('Missing Gemini API key');
+      }
 
       const tripTypeLabel = tripType === 'round' ? 'round trip (include return journey)' :
                             tripType === 'oneway' ? 'one-way trip' : 'multi-stop trip';
@@ -1908,8 +1914,8 @@ Return ONLY valid JSON (no markdown, no backticks, no explanation) in this EXACT
 Fuel cost calculation: (totalKm / ${mileage}) × 105 INR per liter.
 ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days back to ' + origin + '.' : ''}`;
 
-      // Call Gemini 2.5 Flash API
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+      // Call Gemini 2.5 Flash Lite API (fast: ~3s vs 15s for full flash)
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_KEY}`;
 
       const resp = await fetch(geminiUrl, {
         method: 'POST',
