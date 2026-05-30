@@ -461,6 +461,11 @@ button:active:not(:disabled){transform:scale(.97)}
         <span style="font-size:1.1rem;width:28px;text-align:center">⚠️</span>
         <span>Disclaimer</span>
       </button>
+      <button class="menu-item" id="menuStore">
+        <span style="font-size:1.1rem;width:28px;text-align:center">🛍️</span>
+        <span>Store</span>
+        <span id="bagBadge" style="display:none;margin-left:auto;background:var(--primary);color:#fff;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center">0</span>
+      </button>
       <button class="menu-item" id="menuAbout">
         <span style="font-size:1.1rem;width:28px;text-align:center">ℹ️</span>
         <span>About</span>
@@ -718,6 +723,9 @@ button:active:not(:disabled){transform:scale(.97)}
     <p style="color:var(--text-2);font-size:.9rem;line-height:1.7;margin-bottom:1rem">Moto Bhai is built by Piyush Verma, a rider, tech enthusiast, businessman, and investor. He is based in Gurugram, and rides with his group NCR Bikers United.</p>
     <div style="background:var(--primary-lx);border-radius:var(--r-lg);padding:1rem;font-size:.875rem;color:var(--text-2);line-height:1.6">
       &#129949; <strong>ATGATT:</strong> All The Gear, All The Time.<br>Helmet &#183; Jacket &#183; Gloves &#183; Boots &#183; Riding Pants. Every ride.
+    </div>
+    <div style="margin-top:.75rem;padding:.75rem;background:var(--surface-2);border-radius:var(--r-md);font-size:.7rem;color:var(--text-3);line-height:1.5">
+      🛍️ MotoBhai participates in the Amazon Associates Programme (IN). Affiliate tag: motobhai-21. When you buy gear through our links, we earn a small commission at no extra cost to you.
     </div>
   </div>
 </div>
@@ -2797,6 +2805,15 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
           `;
         });
         window._tripData = enrichedData;
+        // Inject Buy Gear button after weather data is ready
+        const oldBuyGear = document.getElementById('buyGearBtn');
+        if (oldBuyGear) oldBuyGear.remove();
+        const buyGearDiv = document.createElement('div');
+        buyGearDiv.id = 'buyGearBtn';
+        buyGearDiv.style.cssText = 'margin:1rem 0;';
+        buyGearDiv.innerHTML = `<button onclick="openGearBuyModal()" style="width:100%;padding:.95rem;border-radius:14px;background:#FF9900;color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:48px;display:flex;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 16px rgba(255,153,0,0.25);transition:all .2s">🛒 Buy Gear for This Ride on Amazon</button><div style="font-size:.55rem;color:var(--text-3);text-align:center;margin-top:.35rem">As an Amazon Associate, MotoBhai earns from qualifying purchases. Tag: motobhai-21</div>`;
+        const itinCards = document.getElementById('itineraryCards');
+        if (itinCards) itinCards.after(buyGearDiv);
       }).catch(e => console.warn('[Weather] Enrichment failed:', e));
 
       // Show bottom action buttons
@@ -3207,7 +3224,260 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
     }
     // Show saved trips if any
     renderSavedTrips();
+    // ===== AMAZON AFFILIATE STORE =====
+    const AFFILIATE_TAG = 'motobhai-21';
+    function getAffiliateUrl(query) {
+      return `https://www.amazon.in/s?k=${encodeURIComponent(query)}&tag=${AFFILIATE_TAG}`;
+    }
+    const PRODUCTS = [
+      { id: 1, cat: 'safety', emoji: '🪖', name: 'LS2 FF320 Stream Evo Helmet', brand: 'LS2', price: 6100, ce: true, season: 'all', query: 'LS2 FF320 Stream Evo full face helmet' },
+      { id: 2, cat: 'safety', emoji: '🧥', name: 'ViaTerra Miller Mesh Jacket', brand: 'ViaTerra', price: 7999, ce: true, season: 'all', query: 'ViaTerra Miller mesh riding jacket CE' },
+      { id: 3, cat: 'safety', emoji: '🧥', name: 'Rynox Apex Evo Jacket CE AA', brand: 'Rynox', price: 15750, ce: true, season: 'summer', query: 'Rynox Apex Evo riding jacket CE class AA' },
+      { id: 4, cat: 'safety', emoji: '🧤', name: 'Korda Stunt Short Cuff Gloves', brand: 'Korda', price: 1500, ce: true, season: 'all', query: 'Korda Stunt short cuff riding gloves motorcycle' },
+      { id: 5, cat: 'safety', emoji: '🧤', name: 'Royal Enfield Street Ace V2 Gloves', brand: 'Royal Enfield', price: 1090, ce: true, season: 'summer', query: 'Royal Enfield Street Ace V2 riding gloves' },
+      { id: 6, cat: 'safety', emoji: '👢', name: 'BBG Ankle Riding Boots', brand: 'BBG', price: 9499, ce: true, season: 'all', query: 'BBG ankle riding boots motorcycle protection' },
+      { id: 7, cat: 'safety', emoji: '👢', name: 'TVS Racing Ankle Boots', brand: 'TVS Racing', price: 4269, ce: true, season: 'summer', query: 'TVS racing ankle length riding boots ventilated' },
+      { id: 8, cat: 'monsoon', emoji: '🌧️', name: 'ViaTerra B100 Rain Jacket', brand: 'ViaTerra', price: 1399, ce: false, season: 'monsoon', query: 'ViaTerra B100 waterproof motorcycle rain jacket' },
+      { id: 9, cat: 'monsoon', emoji: '🌧️', name: 'ViaTerra B100 Rain Pants', brand: 'ViaTerra', price: 1299, ce: false, season: 'monsoon', query: 'motorcycle waterproof rain pants riding' },
+      { id: 10, cat: 'monsoon', emoji: '🌧️', name: 'Lone Ranger DryStorm Rain Suit', brand: 'Lone Ranger', price: 4999, ce: false, season: 'monsoon', query: 'motorcycle hi viz rain suit jacket pants waterproof' },
+      { id: 11, cat: 'monsoon', emoji: '🌧️', name: 'Rynox H2GO Pro 3 Rain Jacket', brand: 'Rynox', price: 1550, ce: false, season: 'monsoon', query: 'Rynox H2GO Pro rain jacket motorcycle' },
+      { id: 12, cat: 'monsoon', emoji: '🧤', name: 'Solace Rain Over Gloves V2', brand: 'Solace', price: 1250, ce: false, season: 'monsoon', query: 'Solace rain over gloves motorcycle waterproof' },
+      { id: 13, cat: 'monsoon', emoji: '👢', name: 'Steelbird Waterproof Boot Covers', brand: 'Steelbird', price: 849, ce: false, season: 'monsoon', query: 'Steelbird waterproof boot covers riding reflective' },
+      { id: 14, cat: 'summer', emoji: '👕', name: 'Wroom Dri-Fit Riding Jersey', brand: 'Wroom', price: 999, ce: false, season: 'summer', query: 'Wroom dri fit motorcycle riding jersey breathable' },
+      { id: 15, cat: 'summer', emoji: '👕', name: 'Rynox Vapour Pro Base Layer', brand: 'Rynox', price: 1400, ce: false, season: 'summer', query: 'Rynox Vapour Pro moisture wicking base layer motorcycle' },
+      { id: 16, cat: 'summer', emoji: '🧴', name: 'UV Protection Arm Sleeves', brand: 'Generic', price: 450, ce: false, season: 'summer', query: 'UV protection cooling arm sleeves bike riding men' },
+      { id: 17, cat: 'summer', emoji: '🧴', name: 'Sunscreen SPF 50+ for Riders', brand: 'Generic', price: 350, ce: false, season: 'summer', query: 'sunscreen SPF 50 water resistant outdoor bike riding' },
+      { id: 18, cat: 'luggage', emoji: '💧', name: 'Raida Hydration Backpack 5L', brand: 'Raida', price: 1250, ce: false, season: 'all', query: 'Raida motorcycle hydration backpack 2L bladder' },
+      { id: 19, cat: 'luggage', emoji: '🎒', name: 'Guardian Gears Wolverine Tank Bag', brand: 'Guardian Gears', price: 599, ce: false, season: 'all', query: 'Guardian Gears Wolverine motorcycle tank bag rain cover' },
+      { id: 20, cat: 'luggage', emoji: '🎒', name: 'Rynox Navigator Tank Bag Rain Cover', brand: 'Rynox', price: 250, ce: false, season: 'monsoon', query: 'motorcycle tank bag rain cover universal' },
+      { id: 21, cat: 'health', emoji: '💧', name: 'ORS Electrolyte Sachets (20-pack)', brand: 'Generic', price: 399, ce: false, season: 'all', query: 'ORS electrolyte sachets hydration riding outdoor 20 pack' }
+    ];
+
+    // === BAG STATE ===
+    let bag = JSON.parse(localStorage.getItem('motobhai_bag') || '[]');
+    function saveBag() { localStorage.setItem('motobhai_bag', JSON.stringify(bag)); }
+    function addToBag(product) {
+      if (!bag.find(p => p.id === product.id)) {
+        bag.push(product); saveBag(); updateBagUI();
+        showStoreToast('✅ ' + product.name + ' added to bag!');
+      }
+    }
+    function removeFromBag(pid) { bag = bag.filter(p => p.id !== pid); saveBag(); updateBagUI(); }
+    function updateBagUI() {
+      const c = bag.length, t = bag.reduce((s, p) => s + p.price, 0);
+      const mb = document.getElementById('bagBadge');
+      if (mb) { mb.style.display = c > 0 ? 'inline-block' : 'none'; mb.textContent = c; }
+      const sb = document.getElementById('storeBagCount');
+      if (sb) { sb.style.display = c > 0 ? 'block' : 'none'; sb.textContent = c; }
+      const ssb = document.getElementById('storeStickyBag');
+      if (ssb) ssb.style.display = c > 0 ? 'block' : 'none';
+      const sc = document.getElementById('stickyBagCount'); if (sc) sc.textContent = c;
+      const st = document.getElementById('stickyBagTotal'); if (st) st.textContent = t.toLocaleString();
+      const bs = document.getElementById('bagSubtotal'); if (bs) bs.textContent = '₹' + t.toLocaleString();
+      document.querySelectorAll('.store-add-btn').forEach(btn => {
+        const id = parseInt(btn.dataset.id);
+        if (bag.find(p => p.id === id)) { btn.textContent = '✅ Added'; btn.disabled = true; btn.style.opacity = '.6'; }
+        else { btn.textContent = '+ Add to Bag'; btn.disabled = false; btn.style.opacity = '1'; }
+      });
+    }
+    function showStoreToast(msg) {
+      let t = document.getElementById('storeToast');
+      if (!t) { t = document.createElement('div'); t.id = 'storeToast'; t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:.65rem 1.25rem;border-radius:12px;font-size:.8rem;font-weight:600;z-index:4000;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90vw;text-align:center'; document.body.appendChild(t); }
+      t.textContent = msg; t.style.opacity = '1';
+      clearTimeout(t._timer); t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+    }
+
+    // === STORE GRID RENDER ===
+    function renderStoreGrid(filter) {
+      const grid = document.getElementById('storeGrid');
+      const items = filter === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.cat === filter);
+      grid.innerHTML = items.map(p => {
+        const inBag = bag.find(b => b.id === p.id);
+        const sPill = { all: 'All Seasons', monsoon: '🌧️ Monsoon', summer: '☀️ Summer' }[p.season] || p.season;
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:.875rem;display:flex;flex-direction:column;gap:.35rem;transition:all .2s">
+          <div style="font-size:2rem;text-align:center;padding:.25rem 0">${p.emoji}</div>
+          <div style="font-weight:700;font-size:.8rem;color:var(--text);line-height:1.3">${p.name}</div>
+          <div style="font-size:.65rem;color:var(--text-3)">${p.brand}</div>
+          <div style="display:flex;align-items:center;gap:.35rem;flex-wrap:wrap">
+            <span style="font-weight:800;font-size:.9rem;color:#38a169">₹${p.price.toLocaleString()}</span>
+            ${p.ce ? '<span style="font-size:.55rem;background:#e6fffa;color:#2f855a;padding:1px 5px;border-radius:4px;font-weight:700">CE Certified 🟢</span>' : ''}
+          </div>
+          <div style="font-size:.55rem;background:var(--surface-2);color:var(--text-3);padding:2px 6px;border-radius:4px;align-self:flex-start;font-weight:600">${sPill}</div>
+          <button class="store-add-btn" data-id="${p.id}" onclick="addToBag(PRODUCTS.find(x=>x.id===${p.id}));updateBagUI()" style="width:100%;padding:.5rem;border-radius:var(--r-md);background:var(--primary);color:#fff;font-weight:700;font-size:.75rem;border:none;cursor:pointer;min-height:36px;margin-top:auto;transition:all .2s${inBag ? ';opacity:.6' : ''}" ${inBag ? 'disabled' : ''}>${inBag ? '✅ Added' : '+ Add to Bag'}</button>
+          <a href="${getAffiliateUrl(p.query)}" target="_blank" rel="noopener noreferrer nofollow" style="font-size:.6rem;color:var(--primary);text-align:center;text-decoration:none;font-weight:600">Amazon 🔗</a>
+        </div>`;
+      }).join('');
+    }
+
+    // === BAG DRAWER ===
+    function renderBagDrawer() {
+      const el = document.getElementById('bagItems');
+      if (bag.length === 0) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)"><div style="font-size:2rem;margin-bottom:.5rem">🛒</div><div style="font-size:.85rem">Your bag is empty</div></div>'; return; }
+      el.innerHTML = bag.map(p => `<div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:1.3rem;flex-shrink:0">${p.emoji}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div><div style="font-size:.75rem;color:#38a169;font-weight:700">₹${p.price.toLocaleString()}</div></div>
+        <button onclick="removeFromBag(${p.id});renderBagDrawer()" style="width:28px;height:28px;border-radius:50%;background:rgba(229,62,62,0.1);color:#e53e3e;font-size:.8rem;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+      </div>`).join('');
+      updateBagUI();
+    }
+    function openBagDrawer() { renderBagDrawer(); document.getElementById('bagDrawer').style.display = 'block'; setTimeout(() => { document.getElementById('bagPanel').style.transform = 'translateX(0)'; }, 10); }
+    function closeBagDrawer() { document.getElementById('bagPanel').style.transform = 'translateX(100%)'; setTimeout(() => { document.getElementById('bagDrawer').style.display = 'none'; }, 300); }
+
+    // === STORE OPEN/CLOSE ===
+    function openStore() {
+      document.getElementById('storePage').style.display = 'block';
+      document.getElementById('hamburgerPanel').style.display = 'none';
+      document.getElementById('hamburgerDrawer').style.transform = 'translateX(100%)';
+      renderStoreGrid('all'); updateBagUI();
+      document.querySelectorAll('#storeCatPills .vibe-chip').forEach(p => p.classList.remove('active'));
+      document.querySelector('#storeCatPills [data-cat="all"]').classList.add('active');
+    }
+    document.getElementById('menuStore').addEventListener('click', openStore);
+
+    // === GEAR BUY MODAL ===
+    const GEAR_KEYWORD_MAP = {
+      'helmet': [1], 'full face': [1],
+      'riding jacket': [2, 3], 'mesh jacket': [2, 3], 'textile jacket': [2],
+      'gloves': [4, 5], 'riding gloves': [4, 5], 'winter gloves': [4],
+      'boots': [6, 7], 'riding boots': [6, 7],
+      'rain jacket': [8, 11], 'rain pants': [9], 'rain suit': [10],
+      'over gloves': [12], 'over-gloves': [12], 'rain gloves': [12],
+      'boot cover': [13], 'boot covers': [13],
+      'jersey': [14], 'dryfit': [14], 'dri-fit': [14],
+      'base layer': [15], 'arm sleeves': [16], 'arm sleeve': [16],
+      'sunscreen': [17], 'spf': [17],
+      'hydration': [18], 'hydration bag': [18], 'hydration pack': [18],
+      'tank bag': [19], 'rain cover': [20],
+      'ors': [21], 'electrolyte': [21]
+    };
+    function getRecommendedProducts(data) {
+      let text = '';
+      (data.days || []).forEach(d => { if (d.gearRec) { text += ' ' + d.gearRec.gear.join(' ') + ' ' + d.gearRec.safety.join(' '); } });
+      const lower = text.toLowerCase();
+      const matchedIds = new Set();
+      for (const [kw, ids] of Object.entries(GEAR_KEYWORD_MAP)) { if (lower.includes(kw)) ids.forEach(id => matchedIds.add(id)); }
+      matchedIds.add(1); // always recommend helmet
+      return PRODUCTS.filter(p => matchedIds.has(p.id));
+    }
+    function openGearBuyModal() {
+      const data = window._tripData; if (!data) return;
+      const recommended = getRecommendedProducts(data);
+      if (recommended.length === 0) { openStore(); return; }
+      const modal = document.getElementById('gearBuyModal');
+      const itemsEl = document.getElementById('gearModalItems');
+      const selectedSet = new Set(recommended.map(p => p.id));
+      function renderGearItems() {
+        itemsEl.innerHTML = recommended.map(p => `
+          <label style="display:flex;align-items:center;gap:.75rem;padding:.65rem 0;border-bottom:1px solid var(--border);cursor:pointer;min-height:44px">
+            <input type="checkbox" class="gear-modal-cb" data-id="${p.id}" ${selectedSet.has(p.id) ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--primary);flex-shrink:0">
+            <span style="font-size:1.2rem;flex-shrink:0">${p.emoji}</span>
+            <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.8rem;color:var(--text);line-height:1.3">${p.name}</div><div style="font-size:.65rem;color:var(--text-3)">${p.brand}${p.ce ? ' · CE Certified 🟢' : ''}</div></div>
+            <div style="font-weight:800;font-size:.85rem;color:#38a169;flex-shrink:0">₹${p.price.toLocaleString()}</div>
+          </label>`).join('');
+        updateGearTotal();
+        itemsEl.querySelectorAll('.gear-modal-cb').forEach(cb => {
+          cb.addEventListener('change', () => { const id = parseInt(cb.dataset.id); if (cb.checked) selectedSet.add(id); else selectedSet.delete(id); updateGearTotal(); });
+        });
+      }
+      function updateGearTotal() {
+        let total = 0; recommended.forEach(p => { if (selectedSet.has(p.id)) total += p.price; });
+        document.getElementById('gearModalTotal').textContent = '₹' + total.toLocaleString();
+      }
+      renderGearItems(); modal.style.display = 'flex';
+      document.getElementById('gearModalCheckout').onclick = () => {
+        const selected = recommended.filter(p => selectedSet.has(p.id)); if (selected.length === 0) return;
+        selected.forEach((item, i) => { setTimeout(() => { window.open(getAffiliateUrl(item.query), '_blank', 'noopener,noreferrer'); }, i * 400); });
+        showStoreToast('Opening Amazon for ' + selected.length + ' items… Complete your purchase there 🛒');
+        modal.style.display = 'none';
+      };
+    }
+    updateBagUI(); // init badge on load
   </script>
+
+<!-- STORE PAGE -->
+<div id="storePage" style="display:none;position:fixed;inset:0;z-index:2500;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem">
+    <button id="storeBack" style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--text-2);cursor:pointer;flex-shrink:0" aria-label="Back">←</button>
+    <div style="flex:1"><div style="font-weight:800;font-size:1rem;color:var(--text)">🏍️ MotoBhai Store</div><div style="font-size:.65rem;color:var(--text-3)">As an Amazon Associate, MotoBhai earns from qualifying purchases.</div></div>
+    <button id="storeBagBtn" style="position:relative;width:40px;height:40px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer" aria-label="View bag">🛒<span id="storeBagCount" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--primary);color:#fff;font-size:.6rem;font-weight:800;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center">0</span></button>
+  </div>
+  <div style="padding:.5rem 1rem;overflow-x:auto;display:flex;gap:.5rem;-webkit-overflow-scrolling:touch" id="storeCatPills">
+    <button class="vibe-chip active" data-cat="all"><div class="vibe-label">All</div></button>
+    <button class="vibe-chip" data-cat="safety"><div class="vibe-label">🛡️ Safety</div></button>
+    <button class="vibe-chip" data-cat="monsoon"><div class="vibe-label">🌧️ Monsoon</div></button>
+    <button class="vibe-chip" data-cat="summer"><div class="vibe-label">☀️ Summer</div></button>
+    <button class="vibe-chip" data-cat="luggage"><div class="vibe-label">🎒 Luggage</div></button>
+    <button class="vibe-chip" data-cat="health"><div class="vibe-label">💊 Health</div></button>
+  </div>
+  <div id="storeGrid" style="padding:.5rem 1rem 6rem;display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem"></div>
+  <div id="storeStickyBag" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:11;padding:.75rem 1rem;background:var(--bg);border-top:1.5px solid var(--border);box-shadow:0 -4px 20px rgba(0,0,0,0.08)">
+    <button id="storeViewBag" style="width:100%;padding:.85rem;border-radius:14px;background:#FF9900;color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:48px;display:flex;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 16px rgba(255,153,0,0.25)">🛒 View Bag (<span id="stickyBagCount">0</span> items) — ₹<span id="stickyBagTotal">0</span></button>
+  </div>
+</div>
+
+<!-- BAG DRAWER -->
+<div id="bagDrawer" style="display:none;position:fixed;inset:0;z-index:3000">
+  <div id="bagOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)"></div>
+  <div id="bagPanel" style="position:absolute;right:0;top:0;bottom:0;width:min(360px,90vw);background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,0.15);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border)">
+      <div style="font-weight:800;font-size:1rem;color:var(--text)">🛒 Your Bag</div>
+      <button id="closeBag" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--text-2);cursor:pointer" aria-label="Close bag">✕</button>
+    </div>
+    <div id="bagItems" style="flex:1;overflow-y:auto;padding:.75rem 1.25rem;-webkit-overflow-scrolling:touch"></div>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:.75rem"><span style="font-weight:700;color:var(--text)">Subtotal</span><span id="bagSubtotal" style="font-weight:800;font-size:1.1rem;color:var(--primary)">₹0</span></div>
+      <button id="bagCheckout" style="width:100%;padding:.85rem;border-radius:14px;background:#FF9900;color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:48px;box-shadow:0 4px 16px rgba(255,153,0,0.25)">🛒 Checkout on Amazon</button>
+      <div style="text-align:center;margin-top:.5rem"><button id="bagClear" style="background:none;border:none;color:var(--text-3);font-size:.75rem;cursor:pointer;padding:.25rem">Clear Bag</button></div>
+      <div style="font-size:.6rem;color:var(--text-3);text-align:center;margin-top:.5rem;line-height:1.4">Links open Amazon India. MotoBhai earns a small commission at no extra cost to you. Tag: motobhai-21</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// === Store/Bag/Gear event bindings (after HTML elements exist) ===
+document.getElementById('storeBack').addEventListener('click', () => { document.getElementById('storePage').style.display = 'none'; });
+document.getElementById('storeCatPills').addEventListener('click', (e) => {
+  const pill = e.target.closest('.vibe-chip'); if (!pill) return;
+  document.querySelectorAll('#storeCatPills .vibe-chip').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active'); renderStoreGrid(pill.dataset.cat);
+});
+document.getElementById('storeBagBtn').addEventListener('click', openBagDrawer);
+document.getElementById('storeViewBag').addEventListener('click', openBagDrawer);
+document.getElementById('closeBag').addEventListener('click', closeBagDrawer);
+document.getElementById('bagOverlay').addEventListener('click', closeBagDrawer);
+document.getElementById('bagClear').addEventListener('click', () => { bag = []; saveBag(); updateBagUI(); renderBagDrawer(); renderStoreGrid(document.querySelector('#storeCatPills .vibe-chip.active')?.dataset.cat || 'all'); });
+document.getElementById('bagCheckout').addEventListener('click', () => {
+  if (bag.length === 0) return;
+  bag.forEach((item, i) => { setTimeout(() => { window.open(getAffiliateUrl(item.query), '_blank', 'noopener,noreferrer'); }, i * 400); });
+  showStoreToast('Opening Amazon for ' + bag.length + ' items… Complete your purchase there 🛒');
+});
+</script>
+
+<!-- GEAR BUY MODAL -->
+<div id="gearBuyModal" style="display:none;position:fixed;inset:0;z-index:3000;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1rem">
+  <div style="background:var(--surface);border-radius:20px;max-width:420px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.2);position:relative;overflow:hidden">
+    <button id="gearModalClose" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-3);padding:4px;line-height:1;z-index:1">✕</button>
+    <div style="padding:1.25rem 1.25rem .75rem">
+      <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:.25rem">🛒 Buy Gear for This Ride</div>
+      <div style="font-size:.75rem;color:var(--text-3)">Based on weather & conditions for your trip</div>
+    </div>
+    <div id="gearModalItems" style="flex:1;overflow-y:auto;padding:0 1.25rem;-webkit-overflow-scrolling:touch"></div>
+    <div style="padding:.75rem 1.25rem 1rem;border-top:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem"><span style="font-size:.85rem;font-weight:600;color:var(--text-2)">Selected total</span><span id="gearModalTotal" style="font-weight:800;color:var(--primary)">₹0</span></div>
+      <button id="gearModalCheckout" style="width:100%;padding:.85rem;border-radius:14px;background:#FF9900;color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:48px;box-shadow:0 4px 16px rgba(255,153,0,0.25)">🛒 Buy Selected on Amazon</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.5rem">
+        <button id="gearModalStore" style="background:none;border:none;color:var(--primary);font-size:.75rem;font-weight:700;cursor:pointer">🛍️ Open Full Store</button>
+        <span style="font-size:.6rem;color:var(--text-3)">Tag: motobhai-21</span>
+      </div>
+      <div style="font-size:.6rem;color:var(--text-3);text-align:center;margin-top:.35rem;line-height:1.3">Links open Amazon India. MotoBhai earns a small commission at no extra cost to you.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('gearModalClose').addEventListener('click', () => { document.getElementById('gearBuyModal').style.display = 'none'; });
+document.getElementById('gearModalStore').addEventListener('click', () => { document.getElementById('gearBuyModal').style.display = 'none'; openStore(); });
+</script>
 
 <!-- PWA Install Banner -->
 <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:2500;padding:0 1rem 1.5rem;pointer-events:none">
