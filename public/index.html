@@ -462,8 +462,8 @@ button:active:not(:disabled){transform:scale(.97)}
         <span>Disclaimer</span>
       </button>
       <button class="menu-item" id="menuStore">
-        <span style="font-size:1.1rem;width:28px;text-align:center">🛍️</span>
-        <span>Store</span>
+        <span style="font-size:1.1rem;width:28px;text-align:center">🛒</span>
+        <span>Cart</span>
         <span id="bagBadge" style="display:none;margin-left:auto;background:var(--primary);color:#fff;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center">0</span>
       </button>
       <button class="menu-item" id="menuAbout">
@@ -2797,23 +2797,17 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
           document.getElementById('gearCond_' + day.day).textContent = g.weatherLabel + (g.rainProb >= 30 ? ` · ${g.rainProb}% rain` : '') + (g.windSpeed >= 30 ? ` · ${Math.round(g.windSpeed)} km/h wind` : '');
 
           const bodyEl = document.getElementById('gearBody_' + day.day);
+          const dayGearText = (g.gear.join(' ') + ' ' + g.safety.join(' ')).toLowerCase();
           bodyEl.innerHTML = `
             <div class="gear-section-title">🎒 What to Wear & Carry</div>
             ${g.gear.map(item => `<div class="gear-item">${item}</div>`).join('')}
             <div class="gear-section-title" style="margin-top:.5rem">⚠️ Safety Tips</div>
             ${g.safety.map(tip => `<div class="gear-safety">${tip}</div>`).join('')}
+            <button class="gear-add-cart-btn" data-day="${day.day}" onclick="addGearToCart(this, '${day.day}')" style="width:100%;margin-top:.75rem;padding:.65rem;border-radius:10px;background:#FF9900;color:#fff;font-weight:700;font-size:.8rem;border:none;cursor:pointer;min-height:40px;display:flex;align-items:center;justify-content:center;gap:.4rem;box-shadow:0 2px 8px rgba(255,153,0,0.2);transition:all .2s">🛒 Add to Cart</button>
+            <div style="font-size:.5rem;color:var(--text-3);text-align:center;margin-top:.2rem">Amazon Associate link · motobhai-21</div>
           `;
         });
         window._tripData = enrichedData;
-        // Inject Buy Gear button after weather data is ready
-        const oldBuyGear = document.getElementById('buyGearBtn');
-        if (oldBuyGear) oldBuyGear.remove();
-        const buyGearDiv = document.createElement('div');
-        buyGearDiv.id = 'buyGearBtn';
-        buyGearDiv.style.cssText = 'margin:1rem 0;';
-        buyGearDiv.innerHTML = `<button onclick="openGearBuyModal()" style="width:100%;padding:.95rem;border-radius:14px;background:#FF9900;color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:48px;display:flex;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 16px rgba(255,153,0,0.25);transition:all .2s">🛒 Buy Gear for This Ride on Amazon</button><div style="font-size:.55rem;color:var(--text-3);text-align:center;margin-top:.35rem">As an Amazon Associate, MotoBhai earns from qualifying purchases. Tag: motobhai-21</div>`;
-        const itinCards = document.getElementById('itineraryCards');
-        if (itinCards) itinCards.after(buyGearDiv);
       }).catch(e => console.warn('[Weather] Enrichment failed:', e));
 
       // Show bottom action buttons
@@ -3287,12 +3281,19 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       clearTimeout(t._timer); t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
     }
 
-    // === STORE GRID RENDER ===
-    function renderStoreGrid(filter) {
+    // === STORE GRID RENDER (shows only bag items) ===
+    function renderStoreGrid() {
       const grid = document.getElementById('storeGrid');
-      const items = filter === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.cat === filter);
-      grid.innerHTML = items.map(p => {
-        const inBag = bag.find(b => b.id === p.id);
+      if (bag.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem 1rem">
+          <div style="font-size:2.5rem;margin-bottom:.75rem">🛒</div>
+          <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:.35rem">Your cart is empty</div>
+          <div style="font-size:.8rem;color:var(--text-3);line-height:1.5">Generate a ride itinerary, then tap<br><strong>"🛒 Add to Cart"</strong> below the gear checklist<br>to add items here for checkout.</div>
+        </div>`;
+        return;
+      }
+      const total = bag.reduce((s, p) => s + p.price, 0);
+      grid.innerHTML = bag.map(p => {
         const sPill = { all: 'All Seasons', monsoon: '🌧️ Monsoon', summer: '☀️ Summer' }[p.season] || p.season;
         return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:.875rem;display:flex;flex-direction:column;gap:.35rem;transition:all .2s">
           <div style="font-size:2rem;text-align:center;padding:.25rem 0">${p.emoji}</div>
@@ -3303,10 +3304,31 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
             ${p.ce ? '<span style="font-size:.55rem;background:#e6fffa;color:#2f855a;padding:1px 5px;border-radius:4px;font-weight:700">CE Certified 🟢</span>' : ''}
           </div>
           <div style="font-size:.55rem;background:var(--surface-2);color:var(--text-3);padding:2px 6px;border-radius:4px;align-self:flex-start;font-weight:600">${sPill}</div>
-          <button class="store-add-btn" data-id="${p.id}" onclick="addToBag(PRODUCTS.find(x=>x.id===${p.id}));updateBagUI()" style="width:100%;padding:.5rem;border-radius:var(--r-md);background:var(--primary);color:#fff;font-weight:700;font-size:.75rem;border:none;cursor:pointer;min-height:36px;margin-top:auto;transition:all .2s${inBag ? ';opacity:.6' : ''}" ${inBag ? 'disabled' : ''}>${inBag ? '✅ Added' : '+ Add to Bag'}</button>
-          <a href="${getAffiliateUrl(p.query)}" target="_blank" rel="noopener noreferrer nofollow" style="font-size:.6rem;color:var(--primary);text-align:center;text-decoration:none;font-weight:600">Amazon 🔗</a>
+          <button onclick="removeFromBag(${p.id});renderStoreGrid();" style="width:100%;padding:.5rem;border-radius:var(--r-md);background:rgba(229,62,62,0.08);color:#e53e3e;font-weight:700;font-size:.75rem;border:1px solid rgba(229,62,62,0.15);cursor:pointer;min-height:36px;margin-top:auto;transition:all .2s">✕ Remove</button>
+          <a href="${getAffiliateUrl(p.query)}" target="_blank" rel="noopener noreferrer nofollow" style="font-size:.6rem;color:var(--primary);text-align:center;text-decoration:none;font-weight:600">View on Amazon 🔗</a>
         </div>`;
       }).join('');
+    }
+
+    // === ADD GEAR TO CART (from itinerary checklist) ===
+    function addGearToCart(btn, dayNum) {
+      const data = window._tripData; if (!data) return;
+      const day = (data.days || []).find(d => String(d.day) === String(dayNum));
+      if (!day || !day.gearRec) return;
+      const gearText = (day.gearRec.gear.join(' ') + ' ' + day.gearRec.safety.join(' ')).toLowerCase();
+      const matchedIds = new Set();
+      for (const [kw, ids] of Object.entries(GEAR_KEYWORD_MAP)) { if (gearText.includes(kw)) ids.forEach(id => matchedIds.add(id)); }
+      matchedIds.add(1); // always recommend helmet
+      let addedCount = 0;
+      PRODUCTS.filter(p => matchedIds.has(p.id)).forEach(p => {
+        if (!bag.find(b => b.id === p.id)) { bag.push(p); addedCount++; }
+      });
+      saveBag(); updateBagUI();
+      btn.textContent = '✅ Added to Cart';
+      btn.disabled = true;
+      btn.style.background = '#38a169';
+      btn.style.opacity = '.7';
+      showStoreToast(addedCount > 0 ? `✅ ${addedCount} item${addedCount > 1 ? 's' : ''} added to cart!` : '✅ All items already in cart');
     }
 
     // === BAG DRAWER ===
@@ -3328,9 +3350,7 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       document.getElementById('storePage').style.display = 'block';
       document.getElementById('hamburgerPanel').style.display = 'none';
       document.getElementById('hamburgerDrawer').style.transform = 'translateX(100%)';
-      renderStoreGrid('all'); updateBagUI();
-      document.querySelectorAll('#storeCatPills .vibe-chip').forEach(p => p.classList.remove('active'));
-      document.querySelector('#storeCatPills [data-cat="all"]').classList.add('active');
+      renderStoreGrid(); updateBagUI();
     }
     document.getElementById('menuStore').addEventListener('click', openStore);
 
@@ -3350,47 +3370,6 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
       'tank bag': [19], 'rain cover': [20],
       'ors': [21], 'electrolyte': [21]
     };
-    function getRecommendedProducts(data) {
-      let text = '';
-      (data.days || []).forEach(d => { if (d.gearRec) { text += ' ' + d.gearRec.gear.join(' ') + ' ' + d.gearRec.safety.join(' '); } });
-      const lower = text.toLowerCase();
-      const matchedIds = new Set();
-      for (const [kw, ids] of Object.entries(GEAR_KEYWORD_MAP)) { if (lower.includes(kw)) ids.forEach(id => matchedIds.add(id)); }
-      matchedIds.add(1); // always recommend helmet
-      return PRODUCTS.filter(p => matchedIds.has(p.id));
-    }
-    function openGearBuyModal() {
-      const data = window._tripData; if (!data) return;
-      const recommended = getRecommendedProducts(data);
-      if (recommended.length === 0) { openStore(); return; }
-      const modal = document.getElementById('gearBuyModal');
-      const itemsEl = document.getElementById('gearModalItems');
-      const selectedSet = new Set(recommended.map(p => p.id));
-      function renderGearItems() {
-        itemsEl.innerHTML = recommended.map(p => `
-          <label style="display:flex;align-items:center;gap:.75rem;padding:.65rem 0;border-bottom:1px solid var(--border);cursor:pointer;min-height:44px">
-            <input type="checkbox" class="gear-modal-cb" data-id="${p.id}" ${selectedSet.has(p.id) ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--primary);flex-shrink:0">
-            <span style="font-size:1.2rem;flex-shrink:0">${p.emoji}</span>
-            <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.8rem;color:var(--text);line-height:1.3">${p.name}</div><div style="font-size:.65rem;color:var(--text-3)">${p.brand}${p.ce ? ' · CE Certified 🟢' : ''}</div></div>
-            <div style="font-weight:800;font-size:.85rem;color:#38a169;flex-shrink:0">₹${p.price.toLocaleString()}</div>
-          </label>`).join('');
-        updateGearTotal();
-        itemsEl.querySelectorAll('.gear-modal-cb').forEach(cb => {
-          cb.addEventListener('change', () => { const id = parseInt(cb.dataset.id); if (cb.checked) selectedSet.add(id); else selectedSet.delete(id); updateGearTotal(); });
-        });
-      }
-      function updateGearTotal() {
-        let total = 0; recommended.forEach(p => { if (selectedSet.has(p.id)) total += p.price; });
-        document.getElementById('gearModalTotal').textContent = '₹' + total.toLocaleString();
-      }
-      renderGearItems(); modal.style.display = 'flex';
-      document.getElementById('gearModalCheckout').onclick = () => {
-        const selected = recommended.filter(p => selectedSet.has(p.id)); if (selected.length === 0) return;
-        selected.forEach((item, i) => { setTimeout(() => { window.open(getAffiliateUrl(item.query), '_blank', 'noopener,noreferrer'); }, i * 400); });
-        showStoreToast('Opening Amazon for ' + selected.length + ' items… Complete your purchase there 🛒');
-        modal.style.display = 'none';
-      };
-    }
     updateBagUI(); // init badge on load
   </script>
 
@@ -3398,16 +3377,8 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
 <div id="storePage" style="display:none;position:fixed;inset:0;z-index:2500;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
   <div style="position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem">
     <button id="storeBack" style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--text-2);cursor:pointer;flex-shrink:0" aria-label="Back">←</button>
-    <div style="flex:1"><div style="font-weight:800;font-size:1rem;color:var(--text)">🏍️ MotoBhai Store</div><div style="font-size:.65rem;color:var(--text-3)">As an Amazon Associate, MotoBhai earns from qualifying purchases.</div></div>
+    <div style="flex:1"><div style="font-weight:800;font-size:1rem;color:var(--text)">🛒 Your Cart</div><div style="font-size:.65rem;color:var(--text-3)">Items from your ride's gear checklist · Amazon Associate tag: motobhai-21</div></div>
     <button id="storeBagBtn" style="position:relative;width:40px;height:40px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer" aria-label="View bag">🛒<span id="storeBagCount" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--primary);color:#fff;font-size:.6rem;font-weight:800;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center">0</span></button>
-  </div>
-  <div style="padding:.5rem 1rem;overflow-x:auto;display:flex;gap:.5rem;-webkit-overflow-scrolling:touch" id="storeCatPills">
-    <button class="vibe-chip active" data-cat="all"><div class="vibe-label">All</div></button>
-    <button class="vibe-chip" data-cat="safety"><div class="vibe-label">🛡️ Safety</div></button>
-    <button class="vibe-chip" data-cat="monsoon"><div class="vibe-label">🌧️ Monsoon</div></button>
-    <button class="vibe-chip" data-cat="summer"><div class="vibe-label">☀️ Summer</div></button>
-    <button class="vibe-chip" data-cat="luggage"><div class="vibe-label">🎒 Luggage</div></button>
-    <button class="vibe-chip" data-cat="health"><div class="vibe-label">💊 Health</div></button>
   </div>
   <div id="storeGrid" style="padding:.5rem 1rem 6rem;display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem"></div>
   <div id="storeStickyBag" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:11;padding:.75rem 1rem;background:var(--bg);border-top:1.5px solid var(--border);box-shadow:0 -4px 20px rgba(0,0,0,0.08)">
@@ -3434,49 +3405,18 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
 </div>
 
 <script>
-// === Store/Bag/Gear event bindings (after HTML elements exist) ===
+// === Store/Bag event bindings (after HTML elements exist) ===
 document.getElementById('storeBack').addEventListener('click', () => { document.getElementById('storePage').style.display = 'none'; });
-document.getElementById('storeCatPills').addEventListener('click', (e) => {
-  const pill = e.target.closest('.vibe-chip'); if (!pill) return;
-  document.querySelectorAll('#storeCatPills .vibe-chip').forEach(p => p.classList.remove('active'));
-  pill.classList.add('active'); renderStoreGrid(pill.dataset.cat);
-});
 document.getElementById('storeBagBtn').addEventListener('click', openBagDrawer);
 document.getElementById('storeViewBag').addEventListener('click', openBagDrawer);
 document.getElementById('closeBag').addEventListener('click', closeBagDrawer);
 document.getElementById('bagOverlay').addEventListener('click', closeBagDrawer);
-document.getElementById('bagClear').addEventListener('click', () => { bag = []; saveBag(); updateBagUI(); renderBagDrawer(); renderStoreGrid(document.querySelector('#storeCatPills .vibe-chip.active')?.dataset.cat || 'all'); });
+document.getElementById('bagClear').addEventListener('click', () => { bag = []; saveBag(); updateBagUI(); renderBagDrawer(); renderStoreGrid(); });
 document.getElementById('bagCheckout').addEventListener('click', () => {
   if (bag.length === 0) return;
   bag.forEach((item, i) => { setTimeout(() => { window.open(getAffiliateUrl(item.query), '_blank', 'noopener,noreferrer'); }, i * 400); });
   showStoreToast('Opening Amazon for ' + bag.length + ' items… Complete your purchase there 🛒');
 });
-</script>
-
-<!-- GEAR BUY MODAL -->
-<div id="gearBuyModal" style="display:none;position:fixed;inset:0;z-index:3000;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1rem">
-  <div style="background:var(--surface);border-radius:20px;max-width:420px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.2);position:relative;overflow:hidden">
-    <button id="gearModalClose" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-3);padding:4px;line-height:1;z-index:1">✕</button>
-    <div style="padding:1.25rem 1.25rem .75rem">
-      <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:.25rem">🛒 Buy Gear for This Ride</div>
-      <div style="font-size:.75rem;color:var(--text-3)">Based on weather & conditions for your trip</div>
-    </div>
-    <div id="gearModalItems" style="flex:1;overflow-y:auto;padding:0 1.25rem;-webkit-overflow-scrolling:touch"></div>
-    <div style="padding:.75rem 1.25rem 1rem;border-top:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem"><span style="font-size:.85rem;font-weight:600;color:var(--text-2)">Selected total</span><span id="gearModalTotal" style="font-weight:800;color:var(--primary)">₹0</span></div>
-      <button id="gearModalCheckout" style="width:100%;padding:.85rem;border-radius:14px;background:#FF9900;color:#fff;font-weight:700;font-size:.9rem;border:none;cursor:pointer;min-height:48px;box-shadow:0 4px 16px rgba(255,153,0,0.25)">🛒 Buy Selected on Amazon</button>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.5rem">
-        <button id="gearModalStore" style="background:none;border:none;color:var(--primary);font-size:.75rem;font-weight:700;cursor:pointer">🛍️ Open Full Store</button>
-        <span style="font-size:.6rem;color:var(--text-3)">Tag: motobhai-21</span>
-      </div>
-      <div style="font-size:.6rem;color:var(--text-3);text-align:center;margin-top:.35rem;line-height:1.3">Links open Amazon India. MotoBhai earns a small commission at no extra cost to you.</div>
-    </div>
-  </div>
-</div>
-
-<script>
-document.getElementById('gearModalClose').addEventListener('click', () => { document.getElementById('gearBuyModal').style.display = 'none'; });
-document.getElementById('gearModalStore').addEventListener('click', () => { document.getElementById('gearBuyModal').style.display = 'none'; openStore(); });
 </script>
 
 <!-- PWA Install Banner -->
