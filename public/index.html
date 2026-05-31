@@ -1107,6 +1107,10 @@ button:active:not(:disabled){transform:scale(.97)}
         <span>Store</span>
         <span id="bagBadge" style="display:none;margin-left:auto;background:var(--primary);color:#fff;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center">0</span>
       </button>
+      <button class="menu-item" id="menuBuySell" style="color:var(--accent)">
+        <span style="font-size:1.1rem;width:28px;text-align:center">🤝</span>
+        <span style="font-weight:700">Buy/Sell Marketplace</span>
+      </button>
       <button class="menu-item" id="menuAbout">
         <span style="font-size:1.1rem;width:28px;text-align:center">ℹ️</span>
         <span>About</span>
@@ -1998,6 +2002,403 @@ button:active:not(:disabled){transform:scale(.97)}
     </div>
     <div style="margin-top:.75rem;padding:.75rem;background:var(--surface-2);border-radius:var(--r-md);font-size:.7rem;color:var(--text-3);line-height:1.5">
       🛍️ MotoBhai participates in the Amazon Associates Programme (IN). Affiliate tag: motobhai-21. When you buy gear through our links, we earn a small commission at no extra cost to you.
+    </div>
+  </div>
+</div>
+
+<!-- === BUY/SELL MARKETPLACE PAGE === -->
+<div id="buySellPage" style="display:none;position:fixed;inset:0;z-index:2500;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <!-- Sticky Header -->
+  <div style="position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem">
+    <button id="buySellBack" style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--text-2);cursor:pointer;flex-shrink:0" aria-label="Back">←</button>
+    <div style="flex:1">
+      <div style="font-weight:800;font-size:1rem;color:var(--text)">🤝 MotoBhai Marketplace</div>
+      <div style="font-size:.65rem;color:var(--text-3)">Verified riders · Trusted community listings</div>
+    </div>
+    <button id="listBikeBtn" class="btn-primary" style="width:auto;min-height:36px;padding:0 1rem;font-size:.8rem;border-radius:20px;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:4px">
+      <span>➕ List Bike</span>
+    </button>
+  </div>
+
+  <!-- Tab Selector & Filter Toggle -->
+  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 1rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:54px;z-index:9">
+    <div style="display:flex">
+      <button class="market-tab-btn active" id="tabBrowse">Browse Marketplace</button>
+      <button class="market-tab-btn" id="tabMyListings">My Listings</button>
+    </div>
+    <button id="toggleFiltersBtn" style="font-size:.75rem;font-weight:700;color:var(--primary);cursor:pointer;padding:.5rem;display:flex;align-items:center;gap:4px">
+      🔍 Filters <span id="filtersActiveCount" style="display:none;background:var(--primary);color:#fff;font-size:.6rem;font-weight:800;padding:1px 5px;border-radius:8px">0</span>
+    </button>
+  </div>
+
+  <!-- Filters Panel (Collapsible) -->
+  <div id="filtersPanel" style="display:none;background:var(--surface);border-bottom:1.5px solid var(--border);padding:1rem;gap:.75rem;grid-template-columns:repeat(2,1fr);animation:slideUp .25s ease-out">
+    <div>
+      <label style="font-size:.7rem;font-weight:800;color:var(--text-2);display:block;margin-bottom:3px">Brand</label>
+      <select id="filterBrand" class="phone-input" style="padding:.4rem .6rem;font-size:.8rem;min-height:36px;width:100%" onchange="handleFilterBrandChanged()">
+        <option value="">All Brands</option>
+        <option value="Royal Enfield">Royal Enfield</option>
+        <option value="KTM">KTM</option>
+        <option value="Honda">Honda</option>
+        <option value="Hero">Hero</option>
+        <option value="Bajaj">Bajaj</option>
+        <option value="Yamaha">Yamaha</option>
+        <option value="TVS">TVS</option>
+        <option value="Suzuki">Suzuki</option>
+        <option value="Kawasaki">Kawasaki</option>
+        <option value="Harley-Davidson">Harley-Davidson</option>
+        <option value="BMW">BMW</option>
+        <option value="Triumph">Triumph</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.7rem;font-weight:800;color:var(--text-2);display:block;margin-bottom:3px">Model</label>
+      <div style="position:relative">
+        <input type="text" id="filterModel" placeholder="e.g. Duke 390" class="phone-input" style="padding:.4rem .6rem;font-size:.8rem;min-height:36px;width:100%" autocomplete="off">
+        <div id="filterModelAutocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);max-height:150px;overflow-y:auto;z-index:20"></div>
+      </div>
+    </div>
+    <div>
+      <label style="font-size:.7rem;font-weight:800;color:var(--text-2);display:block;margin-bottom:3px">Reg State</label>
+      <select id="filterState" class="phone-input" style="padding:.4rem .6rem;font-size:.8rem;min-height:36px;width:100%">
+        <option value="">All States</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.7rem;font-weight:800;color:var(--text-2);display:block;margin-bottom:3px">Sort By</label>
+      <select id="marketSort" class="phone-input" style="padding:.4rem .6rem;font-size:.8rem;min-height:36px;width:100%">
+        <option value="newest">Newest First</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="km_asc">Lowest Odometer</option>
+      </select>
+    </div>
+    <div style="grid-column:span 2">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <label style="font-size:.7rem;font-weight:800;color:var(--text-2)">Max Price: ₹<span id="valFilterPriceMax">10,00,000+</span></label>
+      </div>
+      <input type="range" id="filterPriceMax" min="10000" max="1000000" step="10000" value="1000000" style="width:100%;accent-color:var(--primary)" oninput="document.getElementById('valFilterPriceMax').textContent = parseInt(this.value) >= 1000000 ? '10,00,000+' : parseInt(this.value).toLocaleString('en-IN')">
+    </div>
+    <div style="grid-column:span 2">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <label style="font-size:.7rem;font-weight:800;color:var(--text-2)">Max Odometer: <span id="valFilterOdoMax">1,50,000+ km</span></label>
+      </div>
+      <input type="range" id="filterOdoMax" min="1000" max="150000" step="5000" value="150000" style="width:100%;accent-color:var(--primary)" oninput="document.getElementById('valFilterOdoMax').textContent = parseInt(this.value) >= 150000 ? '1,50,000+ km' : parseInt(this.value).toLocaleString('en-IN') + ' km'">
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <input type="checkbox" id="filterAccidental" style="width:16px;height:16px;accent-color:var(--primary)">
+      <label for="filterAccidental" style="font-size:.75rem;font-weight:700;color:var(--text)">Clean Title Only</label>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <input type="checkbox" id="filterService" style="width:16px;height:16px;accent-color:var(--primary)">
+      <label for="filterService" style="font-size:.75rem;font-weight:700;color:var(--text)">Service History Only</label>
+    </div>
+    <div style="grid-column:span 2;display:flex;justify-content:flex-end;gap:.5rem;margin-top:4px">
+      <button id="resetFiltersBtn" style="font-size:.75rem;font-weight:700;color:var(--text-2);padding:.4rem .8rem;border:1px solid var(--border);border-radius:8px">Reset</button>
+      <button id="applyFiltersBtn" style="font-size:.75rem;font-weight:700;color:#fff;background:var(--primary);padding:.4rem .8rem;border-radius:8px">Apply Filters</button>
+    </div>
+  </div>
+
+  <!-- Listings List View -->
+  <div id="marketplaceContainer" style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem;padding-bottom:120px">
+    <!-- Cards will be populated dynamically -->
+  </div>
+
+  <!-- Marketplace Footer legal disclaimer -->
+  <div style="padding:2rem 1rem;background:var(--surface-2);border-top:1px solid var(--border);font-size:.7rem;color:var(--text-3);line-height:1.6;text-align:center">
+    <h4 style="font-weight:800;color:var(--text-2);margin-bottom:6px">MotoBhai Buy/Sell Classifieds Disclaimer</h4>
+    <p style="max-width:600px;margin:0 auto">
+      Moto Bhai ("the Platform") operates Buy/Sell as a community classifieds service that enables registered users to list motorcycles for sale and connect with prospective buyers within the Moto Bhai rider community.
+      The Platform does not verify, certify, inspect, or guarantee the accuracy of any listing, the condition of any motorcycle, the identity of any seller, or the legitimacy of any transaction. Moto Bhai is not a party to any transaction between a buyer and a seller and assumes no responsibility or liability for any loss, damage, fraud, impersonation, cheating, or dispute of any kind arising from or in connection with the use of Buy/Sell.
+    </p>
+    <p style="max-width:600px;margin:8px auto 0;font-weight:700">
+      By using Buy/Sell, users agree that all transactions are entered into solely at their own risk and discretion. Always inspect motorcycles in person, conduct test rides, and avoid online bank transfers before complete inspection.
+    </p>
+  </div>
+</div>
+
+<!-- ==================== LISTING WRITER/EDITOR MODAL ==================== -->
+<div class="modal-overlay" id="listingEditorModal" style="z-index:2600">
+  <div class="modal" style="max-width:500px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:1.2rem;font-weight:800" id="listingModalTitle">List Motorcycle for Sale</h2>
+      <button id="closeListingEditor" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--text-2)">&#10005;</button>
+    </div>
+
+    <!-- Silhouette Outlines Photo Upload Grid (Exactly 4 Mandatory + 4 Optional) -->
+    <div>
+      <div style="font-size:.75rem;font-weight:800;color:var(--text);margin-bottom:4px">Vehicle Photos (4 Mandatory Angles + 4 Extras)</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:.75rem">
+        <!-- Photo 1: Front -->
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(0)">
+          <input type="file" id="listingPhotoInput_0" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(0, event)">
+          <img id="listingPhotoPreview_0" class="silhouette-img" style="display:none">
+          <!-- Front facing motorcycle SVG outline silhouette -->
+          <svg class="silhouette-overlay" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5">
+            <ellipse cx="50" cy="80" rx="14" ry="14" />
+            <path d="M50,66 L50,42" />
+            <path d="M35,30 L65,30" />
+            <circle cx="32" cy="27" r="4" />
+            <circle cx="68" cy="27" r="4" />
+            <circle cx="50" cy="40" r="10" />
+          </svg>
+          <span class="silhouette-label">Front View *</span>
+        </div>
+        <!-- Photo 2: Rear -->
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(1)">
+          <input type="file" id="listingPhotoInput_1" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(1, event)">
+          <img id="listingPhotoPreview_1" class="silhouette-img" style="display:none">
+          <!-- Rear facing motorcycle SVG outline silhouette -->
+          <svg class="silhouette-overlay" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5">
+            <ellipse cx="50" cy="80" rx="14" ry="14" />
+            <path d="M50,66 L50,50 L40,40" />
+            <rect x="42" y="50" width="16" height="12" rx="2" />
+            <circle cx="50" cy="38" r="5" fill="none" />
+            <path d="M30,30 L70,30" />
+          </svg>
+          <span class="silhouette-label">Rear View *</span>
+        </div>
+        <!-- Photo 3: Left Profile -->
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(2)">
+          <input type="file" id="listingPhotoInput_2" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(2, event)">
+          <img id="listingPhotoPreview_2" class="silhouette-img" style="display:none">
+          <!-- Left side profile motorcycle outline -->
+          <svg class="silhouette-overlay" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="20" cy="70" r="12" />
+            <circle cx="80" cy="70" r="12" />
+            <path d="M20,70 L35,35 M80,70 L65,45" />
+            <path d="M35,35 L45,45 L65,45" />
+            <path d="M42,40 C55,30 65,40 68,45" />
+            <path d="M32,32 L26,30" />
+          </svg>
+          <span class="silhouette-label">Left Side *</span>
+        </div>
+        <!-- Photo 4: Right Profile -->
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(3)">
+          <input type="file" id="listingPhotoInput_3" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(3, event)">
+          <img id="listingPhotoPreview_3" class="silhouette-img" style="display:none">
+          <!-- Right side profile motorcycle outline (mirrored left) -->
+          <svg class="silhouette-overlay" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="80" cy="70" r="12" />
+            <circle cx="20" cy="70" r="12" />
+            <path d="M80,70 L65,35 M20,70 L35,45" />
+            <path d="M65,35 L55,45 L35,45" />
+            <path d="M58,40 C45,30 35,40 32,45" />
+            <path d="M68,32 L74,30" />
+          </svg>
+          <span class="silhouette-label">Right Side *</span>
+        </div>
+      </div>
+
+      <!-- Extra optional photos upload grid (up to 4 extra) -->
+      <div style="font-size:.65rem;color:var(--text-3);margin-bottom:4px">Optional Additional Photos (scratches, dashboard, accessories)</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1rem">
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(4)">
+          <input type="file" id="listingPhotoInput_4" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(4, event)">
+          <img id="listingPhotoPreview_4" class="silhouette-img" style="display:none">
+          <span style="font-size:1.2rem;color:var(--text-3)">➕</span>
+          <span class="silhouette-label">Extra 1</span>
+        </div>
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(5)">
+          <input type="file" id="listingPhotoInput_5" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(5, event)">
+          <img id="listingPhotoPreview_5" class="silhouette-img" style="display:none">
+          <span style="font-size:1.2rem;color:var(--text-3)">➕</span>
+          <span class="silhouette-label">Extra 2</span>
+        </div>
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(6)">
+          <input type="file" id="listingPhotoInput_6" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(6, event)">
+          <img id="listingPhotoPreview_6" class="silhouette-img" style="display:none">
+          <span style="font-size:1.2rem;color:var(--text-3)">➕</span>
+          <span class="silhouette-label">Extra 3</span>
+        </div>
+        <div class="silhouette-box" onclick="triggerListingPhotoUpload(7)">
+          <input type="file" id="listingPhotoInput_7" accept="image/*" style="display:none" onchange="handleListingPhotoSelected(7, event)">
+          <img id="listingPhotoPreview_7" class="silhouette-img" style="display:none">
+          <span style="font-size:1.2rem;color:var(--text-3)">➕</span>
+          <span class="silhouette-label">Extra 4</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Specs Inputs -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:.75rem">
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Brand / Make *</label>
+        <select id="listingBrand" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%" onchange="handleListingBrandChanged()">
+          <option value="">Select Brand</option>
+          <option value="Royal Enfield">Royal Enfield</option>
+          <option value="KTM">KTM</option>
+          <option value="Honda">Honda</option>
+          <option value="Hero">Hero</option>
+          <option value="Bajaj">Bajaj</option>
+          <option value="Yamaha">Yamaha</option>
+          <option value="TVS">TVS</option>
+          <option value="Suzuki">Suzuki</option>
+          <option value="Kawasaki">Kawasaki</option>
+          <option value="Harley-Davidson">Harley-Davidson</option>
+          <option value="BMW">BMW</option>
+          <option value="Triumph">Triumph</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Model *</label>
+        <div style="position:relative">
+          <input type="text" id="listingModel" placeholder="e.g. Classic 350" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%" autocomplete="off" oninput="handleListingModelInput()">
+          <div id="listingModelAutocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);max-height:150px;overflow-y:auto;z-index:20"></div>
+        </div>
+      </div>
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Manufacturing Year *</label>
+        <select id="listingYear" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+          <!-- Will populate years dynamically -->
+        </select>
+      </div>
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Registration State *</label>
+        <select id="listingState" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+          <option value="">Select State</option>
+        </select>
+      </div>
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Odometer (km) *</label>
+        <input type="number" id="listingOdo" placeholder="e.g. 15000" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+      </div>
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Asking Price (₹) *</label>
+        <input type="number" id="listingPrice" placeholder="Asking price in ₹" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+      </div>
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Service History *</label>
+        <select id="listingService" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+          <option value="yes">Available</option>
+          <option value="partial">Partial</option>
+          <option value="no">Not Available</option>
+        </select>
+      </div>
+      <div>
+        <label class="input-label" style="margin-bottom:3px">Accidental History *</label>
+        <select id="listingAccidental" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+          <option value="no">No (Clean Title)</option>
+          <option value="yes">Yes (Accidental History)</option>
+        </select>
+      </div>
+      <div style="grid-column:span 2">
+        <label class="input-label" style="margin-bottom:3px">Contact Phone Number * (revealed after approval)</label>
+        <input type="tel" id="listingPhone" placeholder="10-digit mobile number" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+      </div>
+      <div style="grid-column:span 2">
+        <label class="input-label" style="margin-bottom:3px">Reason for Selling * (max 300 chars)</label>
+        <textarea id="listingReason" placeholder="Why are you selling? (e.g., Upgrading to adventure tourer)" class="phone-input" style="padding:.5rem;font-size:.85rem;width:100%;height:60px;resize:none" maxlength="300"></textarea>
+      </div>
+      <div style="grid-column:span 2">
+        <label class="input-label" style="margin-bottom:3px">Additional Notes (Optional, max 500 chars)</label>
+        <textarea id="listingNotes" placeholder="Any additional modifications, tyre condition, insurance status..." class="phone-input" style="padding:.5rem;font-size:.85rem;width:100%;height:70px;resize:none" maxlength="500"></textarea>
+      </div>
+    </div>
+
+    <!-- Error container -->
+    <div id="listingEditorError" style="display:none;color:var(--error);font-size:.75rem;font-weight:700;margin-bottom:.75rem"></div>
+
+    <!-- Submit buttons -->
+    <div style="display:flex;gap:.5rem;margin-top:1rem">
+      <button id="cancelListingBtn" class="btn-ghost" style="flex:1;min-height:42px;padding:.5rem">Cancel</button>
+      <button id="saveListingBtn" class="btn-primary" style="flex:2;min-height:42px;padding:.5rem">Publish Listing</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== BUYER INTEREST / CONTACT REVEAL MODAL ==================== -->
+<div class="modal-overlay" id="interestModal" style="z-index:2600">
+  <div class="modal" style="max-width:440px;padding:1.5rem;text-align:center">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-size:1.15rem;font-weight:800;text-align:left">🤝 Connect with Seller</h2>
+      <button id="closeInterestModal" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--text-2)">&#10005;</button>
+    </div>
+
+    <!-- Step 1: Price Confirmation & Safety Advisory -->
+    <div id="interestStepConfirm">
+      <div style="background:var(--primary-lx);border-radius:12px;padding:1rem;margin-bottom:1rem;text-align:center">
+        <div style="font-size:.75rem;color:var(--text-2);font-weight:600">Asking Price</div>
+        <div style="font-size:1.6rem;font-weight:900;color:var(--primary);margin:2px 0" id="interestConfirmPrice">₹0</div>
+        <div style="font-size:.7rem;color:var(--text-3)">Fixed/Non-negotiable unless stated by seller</div>
+      </div>
+
+      <div style="font-size:.85rem;color:var(--text-2);line-height:1.5;margin-bottom:1rem">
+        Do you agree to proceed at this price? Tapping "Yes" will reveal the seller's contact details.
+      </div>
+
+      <!-- Non-Dismissable Safety Advisory -->
+      <div style="background:rgba(229,62,62,0.05);border:1.5px solid rgba(229,62,62,0.2);border-radius:12px;padding:.75rem;margin-bottom:1.25rem;text-align:left;font-size:.7rem;line-height:1.5;color:var(--text)">
+        <div style="font-weight:800;color:var(--error);margin-bottom:4px;display:flex;align-items:center;gap:4px">
+          ⚠️ Moto Bhai Safety Advisory
+        </div>
+        <div style="margin-bottom:2px"><b>1. Physical Inspection:</b> Never transfer money online without seeing the bike physically.</div>
+        <div style="margin-bottom:2px"><b>2. Professional Checkup:</b> Inspect document status (RC, PUC, Insurance) and get the mechanical fitness verified.</div>
+        <div style="margin-bottom:2px"><b>3. Safe Handover:</b> Meet in a public spot and complete payment only during physical exchange.</div>
+      </div>
+
+      <div style="display:flex;gap:.5rem">
+        <button id="interestCancelBtn" class="btn-ghost" style="flex:1;min-height:42px">No, Negotiate / Back</button>
+        <button id="interestConfirmBtn" class="btn-primary" style="flex:1.5;min-height:42px">Yes, Show Contact</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Contact Details Revealed -->
+    <div id="interestStepReveal" style="display:none">
+      <div style="font-size:2rem;margin-bottom:.25rem">🎉</div>
+      <h3 style="font-weight:800;font-size:1rem;color:var(--success);margin-bottom:.5rem">Seller Contact Unlocked</h3>
+      
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem">
+        <div style="font-size:.7rem;color:var(--text-3)">Seller Phone Number</div>
+        <div style="font-size:1.35rem;font-weight:900;color:var(--text);letter-spacing:1px;margin:4px 0" id="interestSellerPhone">0000000000</div>
+        <div style="font-size:.65rem;color:var(--text-2)">Kindly call or text between 9 AM and 9 PM</div>
+      </div>
+
+      <div style="background:rgba(229,62,62,0.05);border:1.5px solid rgba(229,62,62,0.2);border-radius:12px;padding:.6rem .75rem;margin-bottom:1.25rem;text-align:left;font-size:.65rem;line-height:1.4">
+        <span style="font-weight:800;color:var(--error)">⚠️ Reminder:</span> Do NOT transfer token money or advance payments online! Pay in person only after test ride and inspection.
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <a id="interestWhatsAppBtn" target="_blank" class="btn-primary" style="background:#25D366;color:#fff;border:none;min-height:44px;display:flex;align-items:center;justify-content:center;gap:.5rem;font-weight:700;font-size:.9rem">
+          💬 Chat on WhatsApp
+        </a>
+        <button id="interestDoneBtn" class="btn-ghost" style="min-height:44px">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== REPORT LISTING MODAL ==================== -->
+<div class="modal-overlay" id="reportListingModal" style="z-index:2600">
+  <div class="modal" style="max-width:380px;padding:1.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-size:1.1rem;font-weight:800;color:var(--error)">🚩 Report Listing / Seller</h2>
+      <button id="closeReportModal" style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--text-2)">&#10005;</button>
+    </div>
+    
+    <div style="margin-bottom:.75rem">
+      <label class="input-label" style="margin-bottom:3px">Reason for reporting</label>
+      <select id="reportReason" class="phone-input" style="padding:.5rem;font-size:.85rem;min-height:38px;width:100%">
+        <option value="spam">Spam / Duplicate listing</option>
+        <option value="fraud">Fraudulent / Suspicious behavior</option>
+        <option value="misleading">Misleading specs / Outdated details</option>
+        <option value="inappropriate">Inappropriate text or photos</option>
+        <option value="harassment">Seller harassment / Impersonation</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:1rem">
+      <label class="input-label" style="margin-bottom:3px">Additional Notes (Optional)</label>
+      <textarea id="reportNotes" placeholder="Provide more details to help moderators review this flag..." class="phone-input" style="padding:.5rem;font-size:.85rem;width:100%;height:80px;resize:none" maxlength="250"></textarea>
+    </div>
+
+    <div id="reportModalError" style="display:none;color:var(--error);font-size:.75rem;font-weight:700;margin-bottom:.5rem"></div>
+
+    <div style="display:flex;gap:.5rem">
+      <button id="cancelReportBtn" class="btn-ghost" style="flex:1;min-height:40px">Cancel</button>
+      <button id="submitReportBtn" class="btn-primary" style="flex:1.5;min-height:40px;background:var(--error)">Submit Report</button>
     </div>
   </div>
 </div>
@@ -5433,7 +5834,767 @@ ${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days b
     }
     document.getElementById('menuStore').addEventListener('click', openStore);
     updateBagUI(); // init badge on load
+
+    // =========================================================================
+    // === BUY/SELL MARKETPLACE LOGIC ===
+    // =========================================================================
+    let marketplaceListings = [];
+    let activeMarketTab = 'browse';
+    let editingListingId = null;
+    let listingPhotosDraft = [null, null, null, null, null, null, null, null];
+    let currentInterestListing = null;
+    let currentReportListing = null;
+
+    const MARKETPLACE_STATES = [
+      "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+    ];
+
+    function initMarketplace() {
+      // Populate state selectors
+      const filterStateSelect = document.getElementById('filterState');
+      const listingStateSelect = document.getElementById('listingState');
+      if (filterStateSelect && listingStateSelect) {
+        filterStateSelect.innerHTML = '<option value="">All States</option>' + 
+          MARKETPLACE_STATES.map(s => `<option value="${s}">${s}</option>`).join('');
+        listingStateSelect.innerHTML = '<option value="">Select State</option>' + 
+          MARKETPLACE_STATES.map(s => `<option value="${s}">${s}</option>`).join('');
+      }
+
+      // Populate year selector
+      const listingYearSelect = document.getElementById('listingYear');
+      if (listingYearSelect) {
+        const curYear = new Date().getFullYear();
+        let options = '<option value="">Select Year</option>';
+        for (let y = curYear; y >= 1995; y--) {
+          options += `<option value="${y}">${y}</option>`;
+        }
+        listingYearSelect.innerHTML = options;
+      }
+    }
+
+    // Open Marketplace
+    function openBuySell() {
+      document.getElementById('buySellPage').style.display = 'block';
+      document.getElementById('hamburgerPanel').style.display = 'none';
+      document.getElementById('hamburgerDrawer').style.transform = 'translateX(100%)';
+      initMarketplace();
+      loadMarketplaceListings();
+    }
+
+    // Close Marketplace
+    function closeBuySell() {
+      document.getElementById('buySellPage').style.display = 'none';
+    }
+
+    // Navigation and Close Bindings
+    document.getElementById('menuBuySell').addEventListener('click', openBuySell);
+    document.getElementById('buySellBack').addEventListener('click', closeBuySell);
+
+    // Tab buttons
+    document.getElementById('tabBrowse').addEventListener('click', () => {
+      document.getElementById('tabBrowse').classList.add('active');
+      document.getElementById('tabMyListings').classList.remove('active');
+      activeMarketTab = 'browse';
+      applyMarketplaceFilters();
+    });
+
+    document.getElementById('tabMyListings').addEventListener('click', () => {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Please sign in to view your listings.');
+        return;
+      }
+      document.getElementById('tabMyListings').classList.add('active');
+      document.getElementById('tabBrowse').classList.remove('active');
+      activeMarketTab = 'my';
+      applyMarketplaceFilters();
+    });
+
+    // Toggle Filters Panel
+    document.getElementById('toggleFiltersBtn').addEventListener('click', () => {
+      const panel = document.getElementById('filtersPanel');
+      if (panel.style.display === 'none' || !panel.style.display) {
+        panel.style.display = 'grid';
+      } else {
+        panel.style.display = 'none';
+      }
+    });
+
+    // Reset Filters
+    document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+      document.getElementById('filterBrand').value = '';
+      document.getElementById('filterModel').value = '';
+      document.getElementById('filterState').value = '';
+      document.getElementById('marketSort').value = 'newest';
+      document.getElementById('filterPriceMax').value = 1000000;
+      document.getElementById('valFilterPriceMax').textContent = '10,00,000+';
+      document.getElementById('filterOdoMax').value = 150000;
+      document.getElementById('valFilterOdoMax').textContent = '1,50,000+ km';
+      document.getElementById('filterAccidental').checked = false;
+      document.getElementById('filterService').checked = false;
+      applyMarketplaceFilters();
+    });
+
+    // Apply Filters Click
+    document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+      applyMarketplaceFilters();
+      document.getElementById('filtersPanel').style.display = 'none';
+    });
+
+    // Auto-fill details based on model
+    function handleListingBrandChanged() {
+      const brand = document.getElementById('listingBrand').value;
+      const modelInput = document.getElementById('listingModel');
+      if (modelInput) modelInput.value = '';
+    }
+
+    function handleListingModelInput() {
+      const brand = document.getElementById('listingBrand').value;
+      const modelInput = document.getElementById('listingModel');
+      const autocompleteDiv = document.getElementById('listingModelAutocomplete');
+      if (!modelInput || !autocompleteDiv) return;
+
+      const val = modelInput.value.toLowerCase().trim();
+      if (!val) {
+        autocompleteDiv.style.display = 'none';
+        return;
+      }
+
+      let dbList = BIKES_DB;
+      if (brand) {
+        dbList = BIKES_DB.filter(b => b.n.toLowerCase().includes(brand.toLowerCase()));
+      }
+      const matches = dbList.filter(b => b.n.toLowerCase().includes(val)).slice(0, 5);
+
+      if (matches.length === 0) {
+        autocompleteDiv.style.display = 'none';
+        return;
+      }
+
+      autocompleteDiv.innerHTML = matches.map(b => `
+        <div style="padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:600" onclick="selectListingModel('${b.n.replace(/'/g, "\\'")}')">
+          ${b.n}
+        </div>
+      `).join('');
+      autocompleteDiv.style.display = 'block';
+    }
+
+    function selectListingModel(name) {
+      const modelInput = document.getElementById('listingModel');
+      const autocompleteDiv = document.getElementById('listingModelAutocomplete');
+      if (modelInput) modelInput.value = name;
+      if (autocompleteDiv) autocompleteDiv.style.display = 'none';
+    }
+
+    // Photo selection helpers
+    function triggerListingPhotoUpload(idx) {
+      document.getElementById(`listingPhotoInput_${idx}`).click();
+    }
+
+    async function handleListingPhotoSelected(idx, event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const base64 = await compressFile(file);
+        listingPhotosDraft[idx] = base64;
+        const imgEl = document.getElementById(`listingPhotoPreview_${idx}`);
+        if (imgEl) {
+          imgEl.src = base64;
+          imgEl.style.display = 'block';
+        }
+      } catch (err) {
+        alert('Image compression failed: ' + err.message);
+      }
+    }
+
+    // Moderator spam keywords filter
+    function screenListingContent(text) {
+      if (!text) return false;
+      const prohibitedPattern = /\b(free money|casino|lottery|crypto profit|hack|weapons|drugs|guns|promocode|escort|sex|viagra|weed|cocaine|murder|kill|steal|fraud|fake rc|fake papers)\b/i;
+      return prohibitedPattern.test(text);
+    }
+
+    // Open Listing Editor
+    document.getElementById('listBikeBtn').addEventListener('click', () => {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Please sign in to list your motorcycle for sale.');
+        return;
+      }
+      openListingEditor();
+    });
+
+    document.getElementById('closeListingEditor').addEventListener('click', closeListingEditorModal);
+    document.getElementById('cancelListingBtn').addEventListener('click', closeListingEditorModal);
+
+    function closeListingEditorModal() {
+      document.getElementById('listingEditorModal').classList.remove('visible');
+    }
+
+    function openListingEditor(listing = null) {
+      editingListingId = listing ? listing.id : null;
+      document.getElementById('listingModalTitle').textContent = listing ? 'Edit Listing Details' : 'List Motorcycle for Sale';
+      document.getElementById('listingEditorError').style.display = 'none';
+
+      // Reset photos draft
+      listingPhotosDraft = [null, null, null, null, null, null, null, null];
+      for (let i = 0; i < 8; i++) {
+        const img = document.getElementById(`listingPhotoPreview_${i}`);
+        if (img) {
+          img.src = '';
+          img.style.display = 'none';
+        }
+        const fileInput = document.getElementById(`listingPhotoInput_${i}`);
+        if (fileInput) fileInput.value = '';
+      }
+
+      if (listing) {
+        document.getElementById('listingBrand').value = listing.brand || '';
+        document.getElementById('listingModel').value = listing.model || '';
+        document.getElementById('listingYear').value = listing.year || '';
+        document.getElementById('listingState').value = listing.state || '';
+        document.getElementById('listingOdo').value = listing.odo || '';
+        document.getElementById('listingPrice').value = listing.price || '';
+        document.getElementById('listingService').value = listing.serviceHistory || 'yes';
+        document.getElementById('listingAccidental').value = listing.accidental ? 'yes' : 'no';
+        document.getElementById('listingPhone').value = listing.phone || '';
+        document.getElementById('listingReason').value = listing.reason || '';
+        document.getElementById('listingNotes').value = listing.notes || '';
+
+        // Load photos
+        if (listing.photos) {
+          listing.photos.forEach((p, idx) => {
+            listingPhotosDraft[idx] = p;
+            const img = document.getElementById(`listingPhotoPreview_${idx}`);
+            if (img && p) {
+              img.src = p;
+              img.style.display = 'block';
+            }
+          });
+        }
+        if (listing.extraPhotos) {
+          listing.extraPhotos.forEach((p, idx) => {
+            listingPhotosDraft[idx + 4] = p;
+            const img = document.getElementById(`listingPhotoPreview_${idx + 4}`);
+            if (img && p) {
+              img.src = p;
+              img.style.display = 'block';
+            }
+          });
+        }
+      } else {
+        document.getElementById('listingBrand').value = '';
+        document.getElementById('listingModel').value = '';
+        document.getElementById('listingYear').value = '';
+        document.getElementById('listingState').value = '';
+        document.getElementById('listingOdo').value = '';
+        document.getElementById('listingPrice').value = '';
+        document.getElementById('listingService').value = 'yes';
+        document.getElementById('listingAccidental').value = 'no';
+        document.getElementById('listingReason').value = '';
+        document.getElementById('listingNotes').value = '';
+
+        // Prefill phone from current profile if available
+        const p = getProfile();
+        document.getElementById('listingPhone').value = p ? p.phone || '' : '';
+      }
+
+      document.getElementById('listingEditorModal').classList.add('visible');
+    }
+
+    // Save Listing Action
+    document.getElementById('saveListingBtn').addEventListener('click', saveListing);
+
+    async function saveListing() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const brand = document.getElementById('listingBrand').value.trim();
+      const model = document.getElementById('listingModel').value.trim();
+      const yearVal = document.getElementById('listingYear').value;
+      const state = document.getElementById('listingState').value.trim();
+      const odoVal = document.getElementById('listingOdo').value.trim();
+      const priceVal = document.getElementById('listingPrice').value.trim();
+      const serviceHistory = document.getElementById('listingService').value;
+      const accidental = document.getElementById('listingAccidental').value === 'yes';
+      const phone = document.getElementById('listingPhone').value.trim();
+      const reason = document.getElementById('listingReason').value.trim();
+      const notes = document.getElementById('listingNotes').value.trim();
+
+      const errDiv = document.getElementById('listingEditorError');
+      errDiv.style.display = 'none';
+
+      // Validations
+      if (!brand || !model || !yearVal || !state || !odoVal || !priceVal || !phone || !reason) {
+        errDiv.textContent = 'Please fill out all required fields (*).';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      const year = parseInt(yearVal);
+      const odo = parseInt(odoVal);
+      const price = parseInt(priceVal);
+
+      if (isNaN(year) || isNaN(odo) || isNaN(price) || odo < 0 || price < 0) {
+        errDiv.textContent = 'Odometer, Year, and Price must be valid positive numbers.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      // Check first 4 photos (mandatory)
+      for (let i = 0; i < 4; i++) {
+        if (!listingPhotosDraft[i]) {
+          const angles = ["Front View", "Rear View", "Left Side Profile", "Right Side Profile"];
+          errDiv.textContent = `Please upload the mandatory angle: ${angles[i]}.`;
+          errDiv.style.display = 'block';
+          return;
+        }
+      }
+
+      // 10-digit mobile check
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(phone)) {
+        errDiv.textContent = 'Please enter a valid 10-digit Indian contact number.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      // Moderation keyword screening
+      if (screenListingContent(reason) || screenListingContent(notes) || screenListingContent(model)) {
+        errDiv.textContent = 'Prohibited content detected. Please clean up your description or notes.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      const publishBtn = document.getElementById('saveListingBtn');
+      publishBtn.disabled = true;
+      publishBtn.textContent = 'Publishing...';
+
+      try {
+        const docId = editingListingId || 'list_' + Date.now();
+        const photos = listingPhotosDraft.slice(0, 4);
+        const extraPhotos = listingPhotosDraft.slice(4).filter(x => x !== null);
+
+        // Fetch seller trust metrics dynamically
+        const p = getProfile() || {};
+        let ridesCount = 0;
+        let totalKm = 0;
+        let memberSince = 'May 2026';
+
+        // Read Firestore creation time & trips stats
+        try {
+          const tripsSnap = await db.collection('trips').where('uid', '==', user.uid).get();
+          ridesCount = tripsSnap.size;
+          tripsSnap.forEach(doc => {
+            const t = doc.data();
+            totalKm += parseFloat(t.totalKm || 0);
+          });
+        } catch(e) { console.warn(e); }
+
+        try {
+          const userDoc = await db.collection('users').doc(user.uid).get();
+          if (userDoc.exists) {
+            const ud = userDoc.data();
+            if (ud.updatedAt) {
+              memberSince = new Date(ud.updatedAt.seconds * 1000).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+            }
+          }
+        } catch(e) { console.warn(e); }
+
+        const listingDoc = {
+          id: docId,
+          brand,
+          model,
+          year,
+          state,
+          odo,
+          price,
+          serviceHistory,
+          accidental,
+          phone,
+          reason,
+          notes,
+          photos,
+          extraPhotos,
+          sellerUid: user.uid,
+          sellerName: p.name || 'Anonymous Rider',
+          sellerPhoto: p.riderPhoto || null,
+          sellerTrust: {
+            ridesCount,
+            totalKm: Math.round(totalKm),
+            memberSince,
+            rating: '4.8 ★'
+          },
+          status: 'active',
+          reportedCount: 0,
+          createdAt: Date.now(),
+          expiryAt: Date.now() + (60 * 24 * 60 * 60 * 1000) // 60 days validity
+        };
+
+        await db.collection('marketplace_listings').doc(docId).set(listingDoc);
+        closeListingEditorModal();
+        alert(editingListingId ? '✅ Listing updated successfully!' : '🎉 Motorcycle listed for sale successfully!');
+        loadMarketplaceListings();
+      } catch(err) {
+        errDiv.textContent = 'Database error: ' + err.message;
+        errDiv.style.display = 'block';
+      } finally {
+        publishBtn.disabled = false;
+        publishBtn.textContent = 'Publish Listing';
+      }
+    }
+
+    // Load Listings from Cloud
+    async function loadMarketplaceListings() {
+      const container = document.getElementById('marketplaceContainer');
+      if (!container) return;
+      container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-3);font-size:.9rem">Loading marketplace listings... 🏍️</div>';
+
+      try {
+        const snap = await db.collection('marketplace_listings').get();
+        marketplaceListings = [];
+        snap.forEach(doc => {
+          const data = doc.data();
+          // Hide listings deleted or excessively flagged
+          if (data.status !== 'deleted' && (data.reportedCount || 0) < 3) {
+            marketplaceListings.push(data);
+          }
+        });
+
+        // Autocomplete list of states
+        populateFilterStates();
+        applyMarketplaceFilters();
+      } catch(err) {
+        console.warn('Error loading listings:', err);
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--error);font-size:.9rem">Failed to load listings. Check rules or connection.</div>`;
+      }
+    }
+
+    function populateFilterStates() {
+      const states = [...new Set(marketplaceListings.map(l => l.state))].filter(Boolean).sort();
+      const filterSelect = document.getElementById('filterState');
+      if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">All States</option>' + 
+          states.map(s => `<option value="${s}">${s}</option>`).join('');
+      }
+    }
+
+    // Apply Filter and Sorting
+    function applyMarketplaceFilters() {
+      const container = document.getElementById('marketplaceContainer');
+      if (!container) return;
+
+      const brand = document.getElementById('filterBrand').value;
+      const model = document.getElementById('filterModel').value.toLowerCase().trim();
+      const state = document.getElementById('filterState').value;
+      const priceMax = parseInt(document.getElementById('filterPriceMax').value) || 1000000;
+      const odoMax = parseInt(document.getElementById('filterOdoMax').value) || 150000;
+      const accidentalClean = document.getElementById('filterAccidental').checked;
+      const serviceHistoryOnly = document.getElementById('filterService').checked;
+      const sortBy = document.getElementById('marketSort').value;
+
+      const user = auth.currentUser;
+
+      // Filter
+      let filtered = marketplaceListings.filter(l => {
+        // Tab check
+        if (activeMarketTab === 'my') {
+          if (!user || l.sellerUid !== user.uid) return false;
+        } else {
+          // General browse: show active & sold listings
+          if (l.status !== 'active' && l.status !== 'sold') return false;
+        }
+
+        if (brand && l.brand !== brand) return false;
+        if (model && !l.model.toLowerCase().includes(model)) return false;
+        if (state && l.state !== state) return false;
+        if (l.price > priceMax) return false;
+        if (l.odo > odoMax) return false;
+        if (accidentalClean && l.accidental) return false;
+        if (serviceHistoryOnly && l.serviceHistory === 'no') return false;
+        
+        // Auto-expiry check
+        if (l.expiryAt < Date.now() && l.status === 'active') {
+          // Flag as expired internally
+          return false;
+        }
+
+        return true;
+      });
+
+      // Sort
+      filtered.sort((a, b) => {
+        if (sortBy === 'price_asc') return a.price - b.price;
+        if (sortBy === 'price_desc') return b.price - a.price;
+        if (sortBy === 'km_asc') return a.odo - b.odo;
+        return b.createdAt - a.createdAt; // newest
+      });
+
+      // Render Active filters badge
+      let activeFiltersCount = 0;
+      if (brand) activeFiltersCount++;
+      if (model) activeFiltersCount++;
+      if (state) activeFiltersCount++;
+      if (priceMax < 1000000) activeFiltersCount++;
+      if (odoMax < 150000) activeFiltersCount++;
+      if (accidentalClean) activeFiltersCount++;
+      if (serviceHistoryOnly) activeFiltersCount++;
+
+      const countBadge = document.getElementById('filtersActiveCount');
+      if (countBadge) {
+        if (activeFiltersCount > 0) {
+          countBadge.textContent = activeFiltersCount;
+          countBadge.style.display = 'inline-block';
+        } else {
+          countBadge.style.display = 'none';
+        }
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:5rem 2rem;color:var(--text-3);font-size:.9rem">
+          <div style="font-size:2rem;margin-bottom:.5rem">🏍️</div>
+          No matching motorcycles found.<br>
+          ${activeMarketTab === 'my' ? 'List your bike for sale by clicking "+ List Bike" above.' : 'Try adjusting your filters or search keywords.'}
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(l => {
+        const isOwner = user && l.sellerUid === user.uid;
+        const mainPhoto = l.photos && l.photos[0] ? l.photos[0] : '';
+        const badgesHtml = [];
+        if (l.accidental) badgesHtml.push(`<span class="market-pill accidental">Accidental</span>`);
+        if (l.serviceHistory !== 'no') badgesHtml.push(`<span class="market-pill service">${l.serviceHistory === 'yes' ? 'Full Service' : 'Partial Service'}</span>`);
+        if (l.status === 'sold') badgesHtml.push(`<span class="market-pill sold" style="background:#4a5568;color:#fff">Sold</span>`);
+
+        // Seller summary strings
+        const trust = l.sellerTrust || {};
+        const riderPhotoHtml = l.sellerPhoto ? 
+          `<img src="${l.sellerPhoto}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0">` : 
+          `<span style="font-size:.9rem">👤</span>`;
+
+        return `
+          <div class="market-card">
+            <div class="market-card-img-container">
+              <img src="${mainPhoto}" class="market-card-img" alt="${l.brand} ${l.model}">
+              <div class="market-card-badges">${badgesHtml.join('')}</div>
+            </div>
+            <div style="padding:1rem;display:flex;flex-direction:column;flex:1">
+              <span style="font-size:.65rem;color:var(--text-3);font-weight:800;text-transform:uppercase">${l.year} · ${l.state} Registration</span>
+              <h4 style="font-weight:900;font-size:1rem;color:var(--text);margin:2px 0 4px">${l.brand} ${l.model}</h4>
+              
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-size:1.15rem;font-weight:900;color:var(--primary)">₹${l.price.toLocaleString('en-IN')}</span>
+                <span style="font-size:.7rem;color:var(--text-2);font-weight:700">Odo: <b>${l.odo.toLocaleString()} km</b></span>
+              </div>
+
+              <div style="font-size:.75rem;color:var(--text-2);margin:4px 0;line-height:1.4;border-top:1px dashed var(--border);padding-top:6px">
+                <i>"${l.reason}"</i>
+              </div>
+
+              <!-- Trust profile Widget -->
+              <div class="seller-trust-box">
+                <div style="display:flex;align-items:center;gap:6px;font-weight:800;color:var(--text);margin-bottom:4px">
+                  ${riderPhotoHtml}
+                  <span>${l.sellerName}</span>
+                  <span style="color:#d69e2e;margin-left:auto">${trust.rating || '4.8 ★'}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;color:var(--text-2);font-size:.65rem;margin-top:2px">
+                  <span>Joined: <b>${trust.memberSince || 'May 2026'}</b></span>
+                  <span>Rides: <b>${trust.ridesCount || 0} logged</b></span>
+                  <span>Total Dist: <b>${(trust.totalKm || 0).toLocaleString()} km</b></span>
+                </div>
+              </div>
+
+              <!-- Safety Advisory (Sticky above button) -->
+              <div style="background:rgba(229,62,62,0.04);border:1px solid rgba(229,62,62,0.1);border-radius:8px;padding:.5rem;margin-top:.75rem;font-size:.6rem;color:var(--text-2);line-height:1.4">
+                ⚠️ Inspect bike physically & check RC copies. <b>Do not transfer money online!</b>
+              </div>
+
+              <div style="margin-top:auto;padding-top:1rem;display:flex;flex-direction:column;gap:.5rem">
+                ${isOwner ? `
+                  <div style="display:flex;gap:4px">
+                    <button class="btn-ghost" style="flex:1;min-height:36px;font-size:.75rem;padding:0" onclick="editListingHandler('${l.id}')">✏️ Edit</button>
+                    <button class="btn-ghost" style="flex:1.2;min-height:36px;font-size:.75rem;padding:0" onclick="toggleSoldHandler('${l.id}', '${l.status}')">
+                      ${l.status === 'sold' ? '🔄 Relist' : '✅ Mark Sold'}
+                    </button>
+                    <button class="btn-ghost" style="flex:0.8;min-height:36px;font-size:.75rem;padding:0;color:var(--error);border-color:rgba(229,62,62,0.2)" onclick="deleteListingHandler('${l.id}')">🗑️ Delete</button>
+                  </div>
+                ` : `
+                  <button class="btn-primary" style="width:100%;min-height:38px;padding:0;font-size:.8rem" 
+                    ${l.status === 'sold' ? 'disabled style="background:var(--border);color:var(--text-3);pointer-events:none"' : ''}
+                    onclick="interestButtonHandler('${l.id}')">
+                    ${l.status === 'sold' ? 'Sold' : '🤝 I\'m Interested'}
+                  </button>
+                  <div style="display:flex;justify-content:flex-end">
+                    <span class="report-btn" onclick="reportListingHandler('${l.id}')">🚩 Report</span>
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Owner controls mapping
+    window.editListingHandler = function(listingId) {
+      const listing = marketplaceListings.find(l => l.id === listingId);
+      if (listing) openListingEditor(listing);
+    };
+
+    window.toggleSoldHandler = async function(listingId, currentStatus) {
+      const listing = marketplaceListings.find(l => l.id === listingId);
+      if (!listing) return;
+
+      const nextStatus = currentStatus === 'sold' ? 'active' : 'sold';
+      const confirmMsg = currentStatus === 'sold' ? 
+        'Would you like to relist this motorcycle back on the marketplace?' : 
+        'Mark this motorcycle as Sold? It will be removed from active search.';
+      
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        await db.collection('marketplace_listings').doc(listingId).update({
+          status: nextStatus,
+          createdAt: Date.now(), // Refresh timestamp
+          expiryAt: Date.now() + (60 * 24 * 60 * 60 * 1000)
+        });
+        alert(nextStatus === 'sold' ? 'Bike marked as sold.' : 'Bike relisted successfully.');
+        loadMarketplaceListings();
+      } catch(err) {
+        alert('Update failed: ' + err.message);
+      }
+    };
+
+    window.deleteListingHandler = async function(listingId) {
+      if (!confirm('Are you sure you want to permanently delete this listing?')) return;
+      try {
+        await db.collection('marketplace_listings').doc(listingId).update({
+          status: 'deleted'
+        });
+        alert('Listing deleted.');
+        loadMarketplaceListings();
+      } catch(err) {
+        alert('Delete failed: ' + err.message);
+      }
+    };
+
+    // Buyer click handling - Reveal flow
+    window.interestButtonHandler = function(listingId) {
+      const listing = marketplaceListings.find(l => l.id === listingId);
+      if (!listing) return;
+
+      currentInterestListing = listing;
+      document.getElementById('interestConfirmPrice').textContent = `₹${listing.price.toLocaleString('en-IN')}`;
+      
+      // Reset steps
+      document.getElementById('interestStepConfirm').style.display = 'block';
+      document.getElementById('interestStepReveal').style.display = 'none';
+
+      document.getElementById('interestModal').classList.add('visible');
+    };
+
+    // Confirm price button reveal info
+    document.getElementById('interestConfirmBtn').addEventListener('click', () => {
+      if (!currentInterestListing) return;
+
+      document.getElementById('interestSellerPhone').textContent = currentInterestListing.phone;
+
+      // WhatsApp deep link building
+      const bikeName = `${currentInterestListing.brand} ${currentInterestListing.model}`;
+      const priceText = `₹${currentInterestListing.price.toLocaleString('en-IN')}`;
+      const msg = `Hi, I am interested in buying your listed motorcycle ${bikeName} (${priceText}) on MotoBhai. Let me know when we can connect for physical inspection and a test ride.`;
+      
+      document.getElementById('interestWhatsAppBtn').href = `https://wa.me/91${currentInterestListing.phone}?text=${encodeURIComponent(msg)}`;
+
+      document.getElementById('interestStepConfirm').style.display = 'none';
+      document.getElementById('interestStepReveal').style.display = 'block';
+    });
+
+    // Close Interest Modal Bindings
+    document.getElementById('closeInterestModal').addEventListener('click', closeInterestModal);
+    document.getElementById('interestCancelBtn').addEventListener('click', closeInterestModal);
+    document.getElementById('interestDoneBtn').addEventListener('click', closeInterestModal);
+
+    function closeInterestModal() {
+      document.getElementById('interestModal').classList.remove('visible');
+      currentInterestListing = null;
+    }
+
+    // Reporting Listing Flags
+    window.reportListingHandler = function(listingId) {
+      const listing = marketplaceListings.find(l => l.id === listingId);
+      if (!listing) return;
+
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Please sign in to report a listing.');
+        return;
+      }
+
+      currentReportListing = listing;
+      document.getElementById('reportReason').value = 'spam';
+      document.getElementById('reportNotes').value = '';
+      document.getElementById('reportModalError').style.display = 'none';
+      document.getElementById('reportListingModal').classList.add('visible');
+    };
+
+    document.getElementById('closeReportModal').addEventListener('click', closeReportModal);
+    document.getElementById('cancelReportBtn').addEventListener('click', closeReportModal);
+
+    function closeReportModal() {
+      document.getElementById('reportListingModal').classList.remove('visible');
+      currentReportListing = null;
+    }
+
+    document.getElementById('submitReportBtn').addEventListener('click', submitReport);
+
+    async function submitReport() {
+      const user = auth.currentUser;
+      if (!user || !currentReportListing) return;
+
+      const reason = document.getElementById('reportReason').value;
+      const notes = document.getElementById('reportNotes').value.trim();
+
+      const btn = document.getElementById('submitReportBtn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        const reportId = 'rep_' + Date.now();
+        const reportDoc = {
+          id: reportId,
+          listingId: currentReportListing.id,
+          sellerUid: currentReportListing.sellerUid,
+          reporterUid: user.uid,
+          reason,
+          notes,
+          createdAt: Date.now()
+        };
+
+        // Save report doc
+        await db.collection('marketplace_reports').doc(reportId).set(reportDoc);
+
+        // Increment listing's reportedCount
+        const curReportedCount = currentReportListing.reportedCount || 0;
+        await db.collection('marketplace_listings').doc(currentReportListing.id).update({
+          reportedCount: curReportedCount + 1
+        });
+
+        alert('Thank you for flagging. Our moderators will review this listing within 24-48 hours.');
+        closeReportModal();
+        loadMarketplaceListings();
+      } catch(err) {
+        document.getElementById('reportModalError').textContent = 'Error: ' + err.message;
+        document.getElementById('reportModalError').style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit Report';
+      }
+    }
   </script>
+
 
 <!-- STORE PAGE -->
 <div id="storePage" style="display:none;position:fixed;inset:0;z-index:2500;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
@@ -11250,6 +12411,147 @@ if ('serviceWorker' in navigator) {
 
 <style>
 @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* === BUY/SELL MARKETPLACE CSS === */
+.market-tab-btn {
+  padding: .75rem 1.25rem;
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--text-2);
+  border-bottom: 2.5px solid transparent;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.market-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.market-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all .25s var(--ease);
+  display: flex;
+  flex-direction: column;
+}
+.market-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-lx);
+}
+.market-card-img-container {
+  width: 100%;
+  height: 180px;
+  background: var(--surface-2);
+  position: relative;
+  overflow: hidden;
+}
+.market-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s ease;
+}
+.market-card:hover .market-card-img {
+  transform: scale(1.04);
+}
+.market-card-badges {
+  position: absolute;
+  top: .5rem;
+  left: .5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.market-pill {
+  font-size: .65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.market-pill.accidental {
+  background: #fed7d7;
+  color: #c53030;
+}
+.market-pill.service {
+  background: #c6f6d5;
+  color: #22543d;
+}
+.market-pill.sold {
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.silhouette-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--r-md);
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.silhouette-box:hover {
+  background: var(--surface-3);
+  border-color: var(--primary);
+}
+.silhouette-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+.silhouette-overlay {
+  width: 50px;
+  height: 50px;
+  color: var(--text-3);
+  opacity: .5;
+  transition: opacity .2s;
+  z-index: 1;
+}
+.silhouette-box:hover .silhouette-overlay {
+  opacity: .8;
+  color: var(--primary);
+}
+.silhouette-label {
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-top: 4px;
+  z-index: 1;
+}
+.seller-trust-box {
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  padding: .6rem;
+  margin-top: .5rem;
+  font-size: .7rem;
+  color: var(--text-2);
+  border: 1.5px solid var(--border);
+}
+.report-btn {
+  font-size: .7rem;
+  color: var(--error);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: .7;
+}
+.report-btn:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
 </style>
 
 </body>
