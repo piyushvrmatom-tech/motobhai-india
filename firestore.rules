@@ -59,14 +59,24 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId)
-        && request.resource.data.keys().hasOnly(['name', 'bike', 'mileage', 'km', 'phone', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'bike', 'mileage', 'km', 'phone', 'updatedAt', 'tankSize', 'efficiency', 'upi', 'riderPhoto', 'bikePhoto', 'doc_rc', 'doc_license', 'doc_puc', 'doc_insurance', 'activeBikeId'])
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 100;
       allow update: if isOwner(userId)
-        && request.resource.data.keys().hasOnly(['name', 'bike', 'mileage', 'km', 'phone', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'bike', 'mileage', 'km', 'phone', 'updatedAt', 'tankSize', 'efficiency', 'upi', 'riderPhoto', 'bikePhoto', 'doc_rc', 'doc_license', 'doc_puc', 'doc_insurance', 'activeBikeId'])
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 100;
       allow delete: if isOwner(userId);
+
+      // Service Logs Subcollection
+      match /service_logs/{logId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Bikes Subcollection
+      match /bikes/{bikeId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ── Searches Collection (analytics) ─────────────────────────
@@ -87,7 +97,7 @@ service cloud.firestore {
     match /trips/{tripId} {
       allow create: if isAuthenticated()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'origin', 'destination', 'tripType', 'bike', 'days', 'totalKm', 'fuelCost', 'title', 'dayCount', 'itinerary', 'estimatedFuelCost', 'ts', 'savedAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'origin', 'destination', 'tripType', 'bike', 'days', 'totalKm', 'fuelCost', 'title', 'dayCount', 'itinerary', 'estimatedFuelCost', 'ts', 'savedAt', 'bikeId'])
         && request.resource.data.origin is string
         && request.resource.data.origin.size() <= 200
         && request.resource.data.destination is string
@@ -118,6 +128,72 @@ service cloud.firestore {
         && request.resource.data.token is string
         && request.resource.data.uid == request.auth.uid;
       allow delete: if isOwner(userId);
+    }
+
+    match /bhailink_rides/{rideCode} {
+      allow read: if true;
+      allow create: if true
+        && rideCode.size() == 6;
+      allow update: if true;
+      allow delete: if false;
+
+      match /members/{memberId} {
+        allow read: if true;
+        allow write: if true
+          && memberId.size() <= 50
+          && request.resource.data.id == memberId
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 50;
+      }
+
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if true
+          && messageId.size() <= 100
+          && request.resource.data.keys().hasOnly(['id', 'senderId', 'senderName', 'text', 'type', 'ts'])
+          && request.resource.data.id == messageId
+          && request.resource.data.senderId is string
+          && request.resource.data.senderId.size() <= 50
+          && request.resource.data.senderName is string
+          && request.resource.data.senderName.size() <= 50
+          && request.resource.data.type in ['text', 'voice', 'sos']
+          && request.resource.data.text is string
+          && (
+               (request.resource.data.type == 'voice' && request.resource.data.text.size() <= 1048576) || 
+               (request.resource.data.type != 'voice' && request.resource.data.text.size() <= 500)
+             );
+        allow update, delete: if false;
+      }
+
+      match /expenses/{expenseId} {
+        allow read, write: if true;
+      }
+
+      match /checklist/{itemId} {
+        allow read, write: if true;
+      }
+    }
+
+    // ── Fuel Stops (crowdsourced petrol pumps verification) ─────
+    match /fuel_stops/{pumpId} {
+      allow read: if true;
+      allow create, update: if true
+        && pumpId.size() <= 120
+        && request.resource.data.keys().hasOnly(['name', 'types', 'verifiedCount', 'lastVerified'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.types is list;
+    }
+
+    // ── Service Centers (Locator community reviews & specialist tags) ─────
+    match /service_centers/{placeId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
     }
 
     // Default: deny everything else
