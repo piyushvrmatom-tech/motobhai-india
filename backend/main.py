@@ -6,6 +6,9 @@ business logic lives in `services/` and `routes/`.
 """
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 import os
 

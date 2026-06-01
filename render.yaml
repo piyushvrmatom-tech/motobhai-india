@@ -12,7 +12,7 @@ services:
     autoDeploy: true
     envVars:
       - key: GEMINI_API_KEY
-        sync: false
+        value: AIzaSyCoFuNciMBavkSggXA_JgJYue4OlKO9XF8
       - key: GMAPS_API_KEY
         sync: false
       - key: GOOGLE_ROUTES_API_KEY
