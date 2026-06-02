@@ -166,11 +166,31 @@ service cloud.firestore {
       }
 
       match /expenses/{expenseId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow create: if true
+          && request.resource.data.keys().hasOnly(['id', 'desc', 'amount', 'paidBy', 'paidByName', 'splitAmong', 'ts'])
+          && request.resource.data.desc is string
+          && request.resource.data.desc.size() <= 200
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.amount < 10000000;
+        allow update: if true
+          && request.resource.data.keys().hasOnly(['id', 'desc', 'amount', 'paidBy', 'paidByName', 'splitAmong', 'ts'])
+          && request.resource.data.desc is string
+          && request.resource.data.desc.size() <= 200
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.amount < 10000000;
+        allow delete: if true;
       }
 
       match /checklist/{itemId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow create, update: if true
+          && request.resource.data.keys().hasOnly(['id', 'text', 'checked', 'addedBy', 'addedByName', 'ts'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 200;
+        allow delete: if true;
       }
     }
 
@@ -200,7 +220,14 @@ service cloud.firestore {
     match /marketplace_listings/{listingId} {
       allow read: if true;
       allow create: if isAuthenticated()
-        && request.resource.data.sellerUid == request.auth.uid;
+        && request.resource.data.sellerUid == request.auth.uid
+        && request.resource.data.brand is string
+        && request.resource.data.brand.size() <= 50
+        && request.resource.data.model is string
+        && request.resource.data.model.size() <= 100
+        && request.resource.data.price is number
+        && request.resource.data.price > 0
+        && request.resource.data.price < 50000000;
       allow update: if isAuthenticated()
         && (resource.data.sellerUid == request.auth.uid || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportedCount']));
       allow delete: if isAuthenticated() && resource.data.sellerUid == request.auth.uid;

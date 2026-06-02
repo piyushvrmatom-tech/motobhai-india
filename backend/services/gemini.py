@@ -50,7 +50,10 @@ def _ensure_client():
     """Lazily create the SDK client/model."""
     global _client, _model
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if api_key != "AIzaSyCoFuNciMBavkSggXA_JgJYue4OlKO9XF8":
+    if api_key.lower().startswith("mock"):
+        return True
+
+    if not api_key:
         api_key = "AIzaSyCoFuNciMBavkSggXA_JgJYue4OlKO9XF8"
 
     if _USE_NEW_SDK:
@@ -120,6 +123,40 @@ def generate_itinerary(
 
     Raises ``RuntimeError`` if Gemini is not configured or both attempts fail.
     """
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if api_key.lower().startswith("mock"):
+        log.warning("GEMINI_API_KEY is missing or set to mock. Returning mock itinerary structure.")
+        mock_days_plan = []
+        for leg in legs:
+            day_num = leg.get("day", 1)
+            km = leg.get("km", 100.0)
+            mock_days_plan.append({
+                "day": day_num,
+                "from": leg.get("from", origin),
+                "to": leg.get("to", destination),
+                "km": km,
+                "eta_hours": round(km / 50.0, 1),
+                "elevation_gain_m": 150,
+                "fuel_stops": [
+                    {"name": f"NH-44 Petrol Pump KM {int(km * 0.4)}", "km_from_start": round(km * 0.4, 1), "type": "petrol"}
+                ],
+                "hotel_suggestion": {
+                    "name": f"Biker Haven Hotel Day {day_num}",
+                    "area": leg.get("to", destination),
+                    "price_range_inr": "₹2,500 - ₹4,500",
+                    "google_place_id": f"place_hotel_day_{day_num}"
+                },
+                "food_stops": [f"Highway Dhaba KM {int(km * 0.25)}", f"Local Cafe KM {int(km * 0.75)}"],
+                "bhai_tip": f"Ride carefully on Day {day_num}. Keep tire pressure checked for {bike_label}.",
+                "warnings": []
+            })
+        return {
+            "est_fuel_cost_inr": days * 800,
+            "est_hotel_cost_inr": days * 3000,
+            "warnings": ["Mock Itinerary Enabled for Testing"],
+            "days_plan": mock_days_plan
+        }
+
     if not _ensure_client():
         raise RuntimeError("GEMINI_API_KEY not set or no SDK available")
 
@@ -177,6 +214,10 @@ def generate_itinerary(
 
 def ping() -> bool:
     """Liveness check used by /healthz. Cheap one-token call."""
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if api_key.lower().startswith("mock"):
+        return True
+
     if not _ensure_client():
         return False
     try:

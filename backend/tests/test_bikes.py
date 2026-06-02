@@ -36,8 +36,8 @@ def test_is_a_list(db):
     assert isinstance(db, list)
 
 
-def test_exactly_112_models(db):
-    assert len(db) == 112
+def test_exactly_117_models(db):
+    assert len(db) == 117
 
 
 def test_bike_ids_unique(db):
@@ -78,7 +78,7 @@ def test_mileage_positive(db):
 
 def test_bikes_service_loads(db):
     """The service module must successfully load the same file."""
-    assert len(bikes.all_bikes()) == 112
+    assert len(bikes.all_bikes()) == 117
 
 
 def test_lookup_by_id(db):

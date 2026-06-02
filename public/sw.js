@@ -1,5 +1,5 @@
 // MotoBhai Service Worker v1
-const CACHE_NAME = 'motobhai-v1';
+const CACHE_NAME = 'motobhai-v13';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -28,15 +28,29 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // Skip non-GET and cross-origin API calls
+  // Skip non-GET
   if (e.request.method !== 'GET') return;
-  if (url.origin !== location.origin) return;
+
+  // Allow caching of local origin, Iconify SVG API, and Google Fonts
+  const isAllowedCrossOrigin = url.origin.includes('api.iconify.design') || 
+                               url.origin.includes('fonts.googleapis.com') || 
+                               url.origin.includes('fonts.gstatic.com');
+  
+  if (url.origin !== location.origin && !isAllowedCrossOrigin) return;
 
   e.respondWith(
     fetch(e.request)
       .then(response => {
         const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(e.request, clone);
+          // Limit cache size
+          cache.keys().then(keys => {
+            if (keys.length > 100) {
+              cache.delete(keys[0]);
+            }
+          });
+        });
         return response;
       })
       .catch(() => caches.match(e.request))

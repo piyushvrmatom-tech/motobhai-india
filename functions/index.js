@@ -7,6 +7,9 @@ const { logger } = require("firebase-functions");
 
 initializeApp();
 
+// Admin UIDs allowed to send custom notifications
+const ADMIN_UIDS = ['ADMIN_UID_HERE'];
+
 const db = getFirestore();
 const messaging = getMessaging();
 
@@ -306,6 +309,14 @@ exports.sendCustomNotification = onCall(
     enforceAppCheck: false,
   },
   async (request) => {
+    // Auth gate: only admins can send notifications
+    if (!request.auth || !ADMIN_UIDS.includes(request.auth.uid)) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only admins can send notifications.",
+      );
+    }
+
     const { title, body } = request.data;
 
     if (!title || !body) {
