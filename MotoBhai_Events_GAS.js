@@ -378,7 +378,19 @@ function doGet(e) {
           .split(' ')
           .map((w, idx) => idx === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
           .join('');
-        obj[key] = row[i] !== undefined && row[i] !== null ? row[i].toString() : '';
+        let val = row[i];
+        if (val instanceof Date) {
+          if (i === 3) {
+            val = Utilities.formatDate(val, 'Asia/Kolkata', 'yyyy-MM-dd');
+          } else if (i === 4) {
+            val = Utilities.formatDate(val, 'Asia/Kolkata', 'HH:mm');
+          } else {
+            val = Utilities.formatDate(val, 'Asia/Kolkata', 'yyyy-MM-dd HH:mm:ss');
+          }
+        } else {
+          val = val !== undefined && val !== null ? val.toString() : '';
+        }
+        obj[key] = val;
       });
       return obj;
     });
