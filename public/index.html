@@ -3011,19 +3011,18 @@ button:active:not(:disabled){transform:scale(.97)}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
-<script src="/gemini-config.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
 
 <script>
     // ===== FIREBASE CONFIG =====
     const firebaseConfig = {
-      apiKey: "AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww",
-      authDomain: "motobhai-india.firebaseapp.com",
-      projectId: "motobhai-india",
-      storageBucket: "motobhai-india.firebasestorage.app",
-      messagingSenderId: "309222701073",
-      appId: "1:309222701073:web:8bb6f9bd67cc5ccc8599b0"
+      apiKey: "AIzaSyDgojgJrScBtyl5mCWq8C4HuBr0k3RgiYM",
+      authDomain: "motobhai-app.firebaseapp.com",
+      projectId: "motobhai-app",
+      storageBucket: "motobhai-app.firebasestorage.app",
+      messagingSenderId: "783191998359",
+      appId: "1:783191998359:web:8c5c32e266d104766b4ed2"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -5320,7 +5319,7 @@ button:active:not(:disabled){transform:scale(.97)}
     // ===== GOOGLE PLACES AUTOCOMPLETE =====
     let destinationPlace = null;
     let originPlace = null;
-    const PLACES_API_KEY = 'AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww';
+    const PLACES_API_KEY = 'AIzaSyCHLEPyJ1jAMNtsNSByiPguHfV74fHzqRI';
 
     function initPlacesAutocomplete(inputId, onSelect) {
       const input = document.getElementById(inputId);
@@ -6095,191 +6094,91 @@ button:active:not(:disabled){transform:scale(.97)}
       if (genTxtDone) genTxtDone.textContent = 'Generate My Itinerary';
     });
 
-    function getGeminiKey() {
-      return atob('QUl6YVN5QlRWNTdJYm8yRl9WZHh5RTVuQmhrS0lnYVpPRkpfX1M0');
-    }
-
-    // ===== GEMINI API CALL =====
+    // ===== SECURE BACKEND API CALL =====
     async function generateWithGemini(params) {
       const { origin, destination, tripType, bike, mileage, days, riders, prefs, budget, startDate, tankSize, fuelPref } = params;
-      const seasonName = getSeasonName(startDate);
-      const rangeValue = Math.round(parseFloat(tankSize || 15) * parseFloat(mileage || 35) * 0.88);
-
-      // Key decoded at runtime (base64 to avoid GitHub secret scanner flagging)
-      const _gk = getGeminiKey();
-
-      const tripTypeLabel = tripType === 'round' ? 'round trip (include return journey)' :
-                            tripType === 'oneway' ? 'one-way trip' : 'multi-stop trip';
-
-      const vibeDesc = {
-        'scenic': 'scenic routes, mountain passes, riverside roads',
-        'offroad': 'offroad trails, dirt tracks, adventure paths',
-        'sightseeing': 'tourist spots, historical places, viewpoints',
-        'highway': 'highway riding, fastest routes, expressways'
-      };
-      const vibeHint = vibeDesc[prefs] || 'balanced mix of highway and scenic routes';
-
-      const budgetDesc = {
-        'economy': `ECONOMY budget (₹500–₹1,500/day per person). Travel style: Backpacker/Pilgrim.
-  - STAY: Dharamshalas, hostel dorms (like Zostel/mLoft), basic guesthouses. Suggest cheapest options ₹200-600/night.
-  - FOOD: Roadside dhabas, ₹50-80 thalis, chai stalls, local street food. Name REAL cheap dhabas.
-  - EXPERIENCE: Very affordable and authentic, basic comfort. Best for students, solo travelers, pilgrims.`,
-        'standard': `STANDARD budget (₹2,000–₹6,000/day per person). Travel style: Practical comfort.
-  - STAY: Budget hotels (OYO, FabHotel, Treebo), homestays, family lodges ₹800-2,500/night.
-  - FOOD: Clean local restaurants, standard dhabas, cafés ₹150-400/meal. Name REAL restaurants.
-  - EXPERIENCE: Good balance of comfort, cleanliness, and affordability. Best for families, regular tourists.`,
-        'premium': `PREMIUM budget (₹7,000–₹20,000/day per person). Travel style: Comfortable travel.
-  - STAY: Boutique hotels, 3-star properties, scenic resorts, luxury homestays ₹3,000-8,000/night.
-  - FOOD: Quality restaurants, curated cafés, rooftop dining ₹500-1,500/meal. Name REAL upscale places.
-  - EXPERIENCE: Better service, ambience, and amenities. Best for couples, workations, short vacations.`,
-        'luxury': `LUXURY budget (₹20,000–₹1,50,000+/day per person). Travel style: High-end experience.
-  - STAY: Heritage palaces (like Taj, Oberoi, ITC), luxury resorts, wellness retreats ₹10,000-50,000+/night.
-  - FOOD: Fine dining, tasting menus, luxury hotel restaurants ₹2,000-5,000+/meal. Name REAL fine-dining places.
-  - EXPERIENCE: Premium hospitality, personalized service, cultural luxury. Best for honeymoons, luxury holidays.`
-      };
-      const budgetHint = budgetDesc[budget] || budgetDesc['standard'];
-
-      const budgetTierLabel = {'economy':'💰 Economy','standard':'🏷️ Standard','premium':'⭐ Premium','luxury':'👑 Luxury'}[budget] || '🏷️ Standard';
-
-      const prompt = `You are Moto Bhai, an expert Indian motorcycle trip planner. Generate a DETAILED ${days}-day ${tripTypeLabel} motorcycle itinerary from ${origin} to ${destination} starting on ${startDate || 'today'} (${seasonName}).
-
-Motorcycle: ${bike} (${mileage} km/l). Ride vibe: ${vibeHint}.
-Preferred fuel type: ${fuelPref}
-Motorcycle usable range: ${rangeValue} km (including 12% reserve buffer)
-
-BUDGET TIER: ${budgetTierLabel}
-${budgetHint}
-
-CRITICAL INSTRUCTIONS:
-1. Use ONLY REAL places that exist in India
-2. Suggest REAL, NAMED fuel stations (e.g. "Indian Oil, NH-48 Dharuhera" or "HP Petrol Pump, Udaipur Bypass").
-   - Prefer petrol pumps of brands that carry the selected fuel grade: "${fuelPref}".
-   - Provide the brand of the pump (MUST be exactly one of: "HPCL", "BPCL", "IndianOil", "Reliance", "Shell", "Nayara").
-   - Determine the distance in km (e.g. 180) from the day's starting location to this fuel stop and return it in "fuelStopKm". Ensure that this distance is within the usable range of ${rangeValue} km.
-   - List the available fuel types at this station in "fuelStopTypes" (e.g., ["Petrol 91", "XP95", "Diesel"]) and make sure it includes the preferred type "${fuelPref}".
-3. FOOD must strictly match the budget tier:
-   - Economy: cheapest dhabas (₹50-80/thali), chai stalls, street food vendors
-   - Standard: clean dhabas, local restaurants, cafés (₹150-400/meal)
-   - Premium: quality restaurants, rooftop cafés, curated dining (₹500-1,500/meal)
-   - Luxury: fine dining, tasting menus, luxury hotel restaurants (₹2,000-5,000+/meal)
-4. STAY must strictly match the budget tier:
-   - Economy: dharamshalas, hostel dorms, guesthouses (₹200-600/night)
-   - Standard: OYO/FabHotel/Treebo, homestays, budget hotels (₹800-2,500/night)
-   - Premium: boutique hotels, 3-star properties, scenic resorts (₹3,000-8,000/night)
-   - Luxury: heritage palaces, luxury resorts (Taj/Oberoi/ITC), wellness retreats (₹10,000-50,000+/night)
-5. Use REAL highway numbers (NH-48, NH-44, SH-17, etc.)
-6. Each day should have 200-350km MAX riding distance
-7. Include specific landmarks, temples, forts, viewpoints as highlights
-8. Include approximate price in the food and stay fields
-9. Since the trip starts on ${startDate || 'today'}, you MUST estimate typical weather conditions for this route/destination for this time of year (season: ${seasonName}) and fill the "estimatedWeather" block. Use real climate averages:
-   - "maxTemp": typical high temp in Celsius (number)
-   - "minTemp": typical low temp in Celsius (number)
-   - "rainProb": typical rain probability percentage from 0 to 100 (number)
-   - "weatherCode": typical WMO weather code (0=clear, 3=cloudy, 45=fog, 51=drizzle, 61=rain, 80=heavy rain, 95=thunderstorm) (number)
-   - "windSpeed": typical max wind speed in km/h (number)
-
-Return ONLY valid JSON (no markdown, no backticks, no explanation) in this EXACT format:
-{
-  "title": "Trip Title with Route",
-  "totalKm": total_distance_number,
-  "estimatedFuelCost": total_fuel_cost_in_INR,
-  "budgetTier": "${budget || 'standard'}",
-  "estimatedDailyCost": estimated_per_person_per_day_total_cost_number,
-  "days": [
-    {
-      "day": 1,
-      "from": "City Name",
-      "to": "City Name",
-      "distanceKm": distance_number,
-      "rideHours": hours_number,
-      "highlights": "Real landmarks, viewpoints, temples to visit en route",
-      "fuelStop": "Real Named Fuel Station, Location",
-      "fuelStopBrand": "Exactly one of: HPCL, BPCL, IndianOil, Reliance, Shell, Nayara",
-      "fuelStopKm": distance_from_start_of_day_refuel,
-      "fuelStopTypes": ["Petrol 91", "XP95", "Diesel"],
-      "fuelStopVerifiedCount": mock_verification_count_between_1_and_5,
-      "food": "Real Named Restaurant/Dhaba — Signature Dish (~₹price/meal)",
-      "stay": "Real Named Hotel/Hostel (~₹price/night)",
-      "foodEstimate": food_cost_number_INR,
-      "stayEstimate": stay_cost_number_INR,
-      "estimatedWeather": {
-        "maxTemp": typical_max_temperature_celsius_number,
-        "minTemp": typical_min_temperature_celsius_number,
-        "rainProb": typical_rain_probability_percentage_number,
-        "weatherCode": typical_WMO_weathercode_number,
-        "windSpeed": typical_max_wind_speed_kmh_number
+      
+      // Parse stops if multi-stop
+      let stops = [];
+      let finalDest = destination;
+      if (tripType === 'multi') {
+        const parts = destination.split(' → ');
+        if (parts.length > 1) {
+          stops = parts.slice(0, -1);
+          finalDest = parts[parts.length - 1];
+        }
       }
-    }
-  ]
-}
 
-Fuel cost calculation: (totalKm / ${mileage}) × 105 INR per liter.
-${tripType === 'round' ? 'This is a ROUND TRIP — include return journey days back to ' + origin + '.' : ''}`;
+      const requestBody = {
+        from: origin,
+        to: finalDest,
+        days: parseInt(days),
+        bike_custom: bike,
+        vibe: prefs,
+        budget_tier: budget,
+        loop: tripType === 'round'
+      };
+      if (stops.length > 0) {
+        requestBody.waypoints = stops;
+      }
 
-      // Call Gemini 2.5 Flash Lite API (fast: ~3s)
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${_gk}`;
-
-      const resp = await fetch(geminiUrl, {
+      const resp = await fetch(`${API_BASE}/api/plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 4096,
-            responseMimeType: 'application/json'
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!resp.ok) {
         const errText = await resp.text();
-        console.error('[MotoBhai] Gemini API error:', resp.status, errText);
-        throw new Error(`Gemini API error: ${resp.status}`);
+        console.error('[MotoBhai] Backend planning error:', resp.status, errText);
+        throw new Error(`Backend planning error: ${resp.status}`);
       }
 
-      const result = await resp.json();
+      const data = await resp.json();
+      
+      // Save the trip ID and share URL for PDF downloads and sharing
+      window._lastTripId = data.trip_id;
+      window._lastShareUrl = data.share_url;
 
-
-      // Extract text from Gemini response
-      const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error('Empty Gemini response');
-
-      // Parse JSON (handle markdown code blocks if any)
-      let jsonStr = text.trim();
-      if (jsonStr.startsWith('```')) {
-        jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-      }
-
-      const data = JSON.parse(jsonStr);
-
-
+      // Parse and map the response to match the expected format of renderResults
       return {
-        title: data.title || `${origin} → ${destination}`,
-        totalKm: Math.round(data.totalKm || 0),
-        estimatedFuelCost: Math.round(data.estimatedFuelCost || 0),
-        budgetTier: data.budgetTier || budget || 'standard',
-        estimatedDailyCost: Math.round(data.estimatedDailyCost || 0),
-        days: (data.days || []).map((d, idx) => ({
-          day: d.day || idx + 1,
-          from: d.from || '',
-          to: d.to || '',
-          distanceKm: d.distanceKm || 0,
-          rideHours: d.rideHours || 0,
-          highlights: d.highlights || '',
-          fuelStop: d.fuelStop || '',
-          fuelStopBrand: d.fuelStopBrand || '',
-          fuelStopKm: d.fuelStopKm || 0,
-          fuelStopTypes: d.fuelStopTypes || [],
-          fuelStopVerifiedCount: d.fuelStopVerifiedCount || 3,
-          food: d.food || '',
-          stay: d.stay || '',
-          foodEstimate: Math.round(d.foodEstimate || 0),
-          stayEstimate: Math.round(d.stayEstimate || 0),
-          lat: d.lat || 0,
-          lng: d.lng || 0,
-          estimatedWeather: d.estimatedWeather || null
-        }))
+        title: `${origin} → ${destination}`,
+        totalKm: Math.round(data.summary.total_km || 0),
+        estimatedFuelCost: Math.round(data.summary.est_fuel_cost_inr || 0),
+        budgetTier: budget || 'standard',
+        estimatedDailyCost: Math.round((data.summary.est_fuel_cost_inr + data.summary.est_hotel_cost_inr) / data.summary.total_days || 0),
+        days: (data.days_plan || []).map((d, idx) => {
+          // Resolve brand from name
+          let fuelStopBrand = '';
+          const nameLower = (d.fuel_stops?.[0]?.name || '').toLowerCase();
+          if (nameLower.includes('hp')) fuelStopBrand = 'HPCL';
+          else if (nameLower.includes('bp') || nameLower.includes('bharat')) fuelStopBrand = 'BPCL';
+          else if (nameLower.includes('indian oil') || nameLower.includes('iocl')) fuelStopBrand = 'IndianOil';
+          else if (nameLower.includes('reliance')) fuelStopBrand = 'Reliance';
+          else if (nameLower.includes('shell')) fuelStopBrand = 'Shell';
+          else if (nameLower.includes('nayara')) fuelStopBrand = 'Nayara';
+
+          return {
+            day: d.day || idx + 1,
+            from: d.from || '',
+            to: d.to || '',
+            distanceKm: d.km || 0,
+            rideHours: d.eta_hours || 0,
+            highlights: d.bhai_tip || '',
+            fuelStop: d.fuel_stops?.[0]?.name || '',
+            fuelStopBrand: fuelStopBrand,
+            fuelStopKm: d.fuel_stops?.[0]?.km_from_start || 0,
+            fuelStopTypes: d.fuel_stops?.[0]?.types || ['Petrol 91'],
+            fuelStopVerifiedCount: 3,
+            food: d.food_stops?.[0] || '',
+            stay: d.hotel_suggestion?.name || '',
+            foodEstimate: budget === 'economy' ? 150 : budget === 'standard' ? 400 : budget === 'premium' ? 1000 : 2500,
+            stayEstimate: budget === 'economy' ? 500 : budget === 'standard' ? 1500 : budget === 'premium' ? 4000 : 15000,
+            lat: d.lat || 0,
+            lng: d.lng || 0,
+            estimatedWeather: null
+          };
+        })
       };
     }
 
@@ -12529,65 +12428,19 @@ function fileToBase64(file) {
 }
 
 async function analyzeReceiptWithGemini(base64Data, mimeType) {
-  const apiKey = getGeminiKey();
-  if (!apiKey) {
-    throw new Error('Gemini API key is not configured');
-  }
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-  
-  const prompt = `Analyze this receipt image. Extract:
-1. Title: The vendor name or a brief description of the expense (e.g. 'HP Petrol Pump', 'Highway Dhaba Lunch').
-2. Amount: The total amount of the transaction in INR (number).
-3. Category: Choose the most fitting category strictly from this list: 'fuel', 'stay', 'food', 'toll', 'repair', 'permit', 'misc'.
-
-Return ONLY a valid JSON object matching this structure:
-{
-  "title": "string",
-  "amount": number,
-  "category": "string"
-}
-Do not return any markdown code blocks, backticks, or other text.`;
-
-  const response = await fetch(geminiUrl, {
+  const response = await fetch(`${API_BASE}/api/analyze-receipt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: mimeType || 'image/jpeg',
-                data: base64Data
-              }
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: 'application/json'
-      }
-    })
+    body: JSON.stringify({ base64Data, mimeType })
   });
-  
+
   if (!response.ok) {
-    throw new Error(`Gemini API returned status code ${response.status}`);
+    const errText = await response.text();
+    console.error('[MotoBhai] Receipt analysis error:', response.status, errText);
+    throw new Error(`Receipt analysis error: ${response.status}`);
   }
-  
-  const resData = await response.json();
-  const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error('Empty response from Gemini API');
-  }
-  
-  let cleanedText = text.trim();
-  if (cleanedText.startsWith('```')) {
-    cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
-  }
-  
-  return JSON.parse(cleanedText);
+
+  return await response.json();
 }
 
 function openOCRScanner() {

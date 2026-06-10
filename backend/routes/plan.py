@@ -13,6 +13,7 @@ from backend.models.trip import (
     HotelSuggestion,
     PlanRequest,
     PlanResponse,
+    ReceiptRequest,
     TripSummary,
 )
 from backend.services import bikes, firestore_client, gemini, routes_api, sheets_logger
@@ -45,14 +46,22 @@ def create_plan(req: PlanRequest) -> PlanResponse:
 
     # 1. Get route distance via Routes API.
     try:
-        route = routes_api.compute(req.origin, req.destination)
+        route = routes_api.compute(req.origin, req.destination, req.waypoints)
     except routes_api.RoutesApiError as exc:
         log.exception("Routes API failed")
         raise HTTPException(status_code=502, detail=f"routes_api: {exc}") from exc
 
     # 2. Split into legs under the 350km cap.
+    split_waypoints = []
+    if req.waypoints and len(route.legs) > 1:
+        cum_km = 0.0
+        for idx, leg in enumerate(route.legs[:-1]):
+            if idx < len(req.waypoints):
+                cum_km += leg.distance_m / 1000.0
+                split_waypoints.append((req.waypoints[idx], cum_km))
+
     try:
-        plan = split(route.distance_km, req.days, req.origin, req.destination)
+        plan = split(route.distance_km, req.days, req.origin, req.destination, split_waypoints)
     except SplitterRejection as rej:
         raise HTTPException(
             status_code=422,
@@ -118,7 +127,7 @@ def create_plan(req: PlanRequest) -> PlanResponse:
 
     # 5. Persist + build response.
     trip_id = firestore_client.new_trip_id()
-    share_base = os.getenv("SHARE_BASE_URL", "https://motobhai-india.web.app").rstrip("/")
+    share_base = os.getenv("SHARE_BASE_URL", "https://motobhai.app").rstrip("/")
     share_url = f"{share_base}/s/{trip_id.removeprefix('mb_')}"
 
     summary = TripSummary(
@@ -165,3 +174,14 @@ def create_plan(req: PlanRequest) -> PlanResponse:
 @router.get("/api/motorcycles")
 def list_motorcycles():
     return {"motorcycles": bikes.all_bikes()}
+
+
+@router.post("/api/analyze-receipt")
+def analyze_receipt(req: ReceiptRequest):
+    try:
+        result = gemini.analyze_receipt(req.base64_data, req.mime_type)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))

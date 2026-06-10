@@ -27,6 +27,7 @@ class PlanRequest(BaseModel):
     vibe: Vibe = "standard"
     budget_tier: BudgetTier = "standard"
     loop: bool = False
+    waypoints: Optional[List[str]] = Field(default=None)
     user_phone_hash: Optional[str] = Field(default=None, max_length=128)
 
     model_config = {"populate_by_name": True}
@@ -87,3 +88,10 @@ class PlanResponse(BaseModel):
     warnings: List[str] = Field(default_factory=list)
     share_url: str
     pdf_url: Optional[str] = None
+
+
+class ReceiptRequest(BaseModel):
+    base64_data: str = Field(alias="base64Data")
+    mime_type: str = Field(alias="mimeType")
+
+    model_config = {"populate_by_name": True}

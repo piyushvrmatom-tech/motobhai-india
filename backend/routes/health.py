@@ -36,7 +36,8 @@ def healthz(response: Response, deep: bool = False) -> dict[str, Any]:
         },
         "firestore": firestore_client.is_enabled(),
     }
-    if not all(payload["config"].values()):
+    required_keys = {k: v for k, v in payload["config"].items() if k != "sentry_dsn"}
+    if not all(required_keys.values()):
         payload["ok"] = False
         response.status_code = 503
 

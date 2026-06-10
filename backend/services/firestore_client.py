@@ -52,7 +52,7 @@ def _init_rest():
         import google.auth.transport.requests
 
         info = json.loads(base64.b64decode(b64).decode("utf-8"))
-        _project_id = info.get("project_id") or os.getenv("GCP_PROJECT", "motobhai-india")
+        _project_id = info.get("project_id") or os.getenv("GCP_PROJECT", "motobhai-app")
         scopes = ["https://www.googleapis.com/auth/datastore"]
         _creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
         _BASE_URL = f"https://firestore.googleapis.com/v1/projects/{_project_id}/databases/default/documents"

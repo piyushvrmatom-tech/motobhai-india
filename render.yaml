@@ -12,7 +12,7 @@ services:
     autoDeploy: true
     envVars:
       - key: GEMINI_API_KEY
-        value: AIzaSyCoFuNciMBavkSggXA_JgJYue4OlKO9XF8
+        sync: false
       - key: GMAPS_API_KEY
         sync: false
       - key: GOOGLE_ROUTES_API_KEY
@@ -32,8 +32,8 @@ services:
       - key: SENTRY_DSN
         sync: false
       - key: FRONTEND_ORIGIN
-        value: https://motobhai-india.web.app
+        value: https://motobhai.app
       - key: SHARE_BASE_URL
-        value: https://motobhai-india.web.app
+        value: https://motobhai.app
       - key: ENV
         value: production

@@ -54,7 +54,8 @@ def _ensure_client():
         return True
 
     if not api_key:
-        api_key = "AIzaSyCoFuNciMBavkSggXA_JgJYue4OlKO9XF8"
+        log.error("GEMINI_API_KEY environment variable is not set.")
+        return False
 
     if _USE_NEW_SDK:
         if _client is None:
@@ -239,3 +240,72 @@ def ping() -> bool:
     except Exception as exc:
         log.warning("Gemini ping failed: %s — %s", type(exc).__name__, exc)
         return False
+
+
+def analyze_receipt(base64_data: str, mime_type: str) -> Dict[str, Any]:
+    """Call Gemini to analyze a receipt image and return title, amount, category.
+
+    Mandates return format to strictly match {"title": str, "amount": float, "category": str}.
+    """
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if api_key.lower().startswith("mock"):
+        log.warning("GEMINI_API_KEY is missing or set to mock. Returning mock receipt analysis.")
+        return {"title": "HP Petrol Pump", "amount": 1200.0, "category": "fuel"}
+
+    if not _ensure_client():
+        raise RuntimeError("GEMINI_API_KEY not set or no SDK available")
+
+    prompt = (
+        "Analyze this receipt image. Extract:\n"
+        "1. Title: The vendor name or a brief description of the expense (e.g. 'HP Petrol Pump', 'Highway Dhaba Lunch').\n"
+        "2. Amount: The total amount of the transaction in INR (number).\n"
+        "3. Category: Choose the most fitting category strictly from this list: 'fuel', 'stay', 'food', 'toll', 'repair', 'permit', 'misc'.\n\n"
+        "Return ONLY a valid JSON object matching this structure:\n"
+        "{\n"
+        "  \"title\": \"string\",\n"
+        "  \"amount\": number,\n"
+        "  \"category\": \"string\"\n"
+        "}\n"
+        "Do not return any markdown code blocks, backticks, or other text."
+    )
+
+    import base64 as _base64
+
+    try:
+        raw_bytes = _base64.b64decode(base64_data)
+    except Exception as exc:
+        raise ValueError(f"Invalid base64 data: {exc}")
+
+    try:
+        if _USE_NEW_SDK:
+            from google.genai import types
+            response = _client.models.generate_content(
+                model=MODEL_NAME,
+                contents=[
+                    types.Part.from_bytes(data=raw_bytes, mime_type=mime_type),
+                    prompt
+                ],
+                config=types.GenerateContentConfig(
+                    temperature=0.2,
+                    response_mime_type="application/json"
+                )
+            )
+            text = response.text or ""
+        else:
+            if _genai_old is None:
+                raise RuntimeError("No Gemini SDK available")
+            model = _genai_old.GenerativeModel(MODEL_NAME)
+            response = model.generate_content([
+                {
+                    "mime_type": mime_type,
+                    "data": raw_bytes
+                },
+                prompt
+            ], generation_config={"temperature": 0.2, "response_mime_type": "application/json"})
+            text = response.text or ""
+
+        text = _strip_code_fence(text)
+        return json.loads(text)
+    except Exception as exc:
+        log.exception("Gemini receipt analysis failed")
+        raise RuntimeError(f"Gemini receipt analysis failed: {exc}") from exc

@@ -1,5 +1,5 @@
 // Moto Bhai India - Firebase Web SDK initialization
-// Project: motobhai-india
+// Project: motobhai-app
 // App: Moto Bhai Web
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -8,12 +8,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebas
 import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAHadMoiOLutcsdWz0qqH7slnSI-YGZXww",
-  authDomain: "motobhai-india.firebaseapp.com",
-  projectId: "motobhai-india",
-  storageBucket: "motobhai-india.firebasestorage.app",
-  messagingSenderId: "309222701073",
-  appId: "1:309222701073:web:8bb6f9bd67cc5ccc8599b0"
+  apiKey: "AIzaSyDgojgJrScBtyl5mCWq8C4HuBr0k3RgiYM",
+  authDomain: "motobhai-app.firebaseapp.com",
+  projectId: "motobhai-app",
+  storageBucket: "motobhai-app.firebasestorage.app",
+  messagingSenderId: "783191998359",
+  appId: "1:783191998359:web:8c5c32e266d104766b4ed2"
 };
 
 const app = initializeApp(firebaseConfig);

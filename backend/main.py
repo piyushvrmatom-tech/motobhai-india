@@ -44,7 +44,7 @@ if SENTRY_DSN:
 # ─── App ─────────────────────────────────────────────────────────────────────
 app = FastAPI(title="Moto Bhai India", version="1.1.0")
 
-FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://motobhai-india.web.app")
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://motobhai.app")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_ORIGIN, "http://localhost:5173", "http://localhost:8000"],
