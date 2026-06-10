@@ -54,14 +54,13 @@ app.add_middleware(
 )
 
 # ─── Routers ────────────────────────────────────────────────────────────────
-from backend.routes import health, log as log_route, otp, pdf, plan, share  # noqa: E402
+from backend.routes import health, log as log_route, pdf, plan, share  # noqa: E402
 
 app.include_router(health.router, tags=["ops"])
 app.include_router(plan.router, tags=["plan"])
-app.include_router(share.router, tags=["share"])
+app.include_router(log_route.router, tags=["log"])
 app.include_router(pdf.router, tags=["pdf"])
-app.include_router(otp.router, tags=["auth"])
-app.include_router(log_route.router, tags=["ops"])
+app.include_router(share.router, tags=["share"])
 
 
 @app.get("/")

@@ -27,9 +27,6 @@ def healthz(response: Response, deep: bool = False) -> dict[str, Any]:
         "config": {
             "gemini_key": bool(os.getenv("GEMINI_API_KEY")),
             "routes_key": bool(os.getenv("GOOGLE_ROUTES_API_KEY")),
-            "msg91_key": bool(os.getenv("MSG91_AUTH_KEY")),
-            "otp_secret": bool(os.getenv("OTP_SECRET")),
-            "jwt_secret": bool(os.getenv("JWT_SECRET")),
             "sheets_webhook": bool(os.getenv("SHEETS_WEBHOOK_URL")),
             "firestore_creds": bool(os.getenv("FIRESTORE_CREDENTIALS_B64")),
             "sentry_dsn": bool(os.getenv("SENTRY_DSN")),
