@@ -6079,13 +6079,11 @@ button:active:not(:disabled){transform:scale(.97)}
       } catch (err) {
         clearInterval(statusInterval);
         aiStatus.classList.remove('visible');
-        console.error('[MotoBhai] Gemini API failed, using fallback:', err.message, err);
+        console.error('[MotoBhai] Gemini API failed:', err.message, err);
         // Show brief error notice
         const aiTh = document.getElementById('aiThinking');
-        if (aiTh) aiTh.textContent = 'AI unavailable, using smart fallback...';
-        // Fallback: generate a basic itinerary locally
-        const fallback = await generateFallbackItinerary({ origin, destination, tripType, days, mileage, budget: budgetLevel });
-        renderResults(fallback, origin, destination);
+        if (aiTh) aiTh.textContent = 'Error: Unable to generate itinerary.';
+        showStoreToast('⚠️ Unable to plan trip right now. Please try again.');
       }
 
       generateBtn.classList.remove('loading');
@@ -12905,133 +12903,7 @@ document.getElementById('closeFuelVerification').addEventListener('click', () =>
     }
 
     function getMockServiceCenters(lat, lng) {
-      return [
-        {
-          id: "mock_1",
-          displayName: { text: "Moto Garage - Superbike Specialist" },
-          formattedAddress: "Sector 14, Main Market Road, Gurugram, Haryana 122001",
-          location: {
-            latitude: lat + 0.005,
-            longitude: lng - 0.003
-          },
-          rating: 4.8,
-          userRatingCount: 142,
-          nationalPhoneNumber: "+91 98765 43210",
-          regularOpeningHours: {
-            openNow: true,
-            weekdayDescriptions: [
-              "Monday: 9:00 AM – 7:00 PM",
-              "Tuesday: 9:00 AM – 7:00 PM",
-              "Wednesday: 9:00 AM – 7:00 PM",
-              "Thursday: 9:00 AM – 7:00 PM",
-              "Friday: 9:00 AM – 7:00 PM",
-              "Saturday: 9:00 AM – 7:00 PM",
-              "Sunday: Closed"
-            ]
-          },
-          types: ["motorcycle_repair", "point_of_interest"]
-        },
-        {
-          id: "mock_2",
-          displayName: { text: "Speedy Puncture & Flat Tyre Fix" },
-          formattedAddress: "Vikas Marg, Near Metro Pillar 52, New Delhi, Delhi 110092",
-          location: {
-            latitude: lat - 0.002,
-            longitude: lng + 0.004
-          },
-          rating: 4.5,
-          userRatingCount: 89,
-          nationalPhoneNumber: "+91 99999 88888",
-          regularOpeningHours: {
-            openNow: true,
-            weekdayDescriptions: [
-              "Monday: Open 24 hours",
-              "Tuesday: Open 24 hours",
-              "Wednesday: Open 24 hours",
-              "Thursday: Open 24 hours",
-              "Friday: Open 24 hours",
-              "Saturday: Open 24 hours",
-              "Sunday: Open 24 hours"
-            ]
-          },
-          types: ["motorcycle_repair", "tire_shop", "point_of_interest"]
-        },
-        {
-          id: "mock_3",
-          displayName: { text: "Triumph Official Service Center" },
-          formattedAddress: "Okhla Industrial Area Phase 3, Block B, New Delhi, Delhi 110020",
-          location: {
-            latitude: lat + 0.012,
-            longitude: lng + 0.009
-          },
-          rating: 4.6,
-          userRatingCount: 210,
-          nationalPhoneNumber: "+91 11 4050 6070",
-          regularOpeningHours: {
-            openNow: true,
-            weekdayDescriptions: [
-              "Monday: 10:00 AM – 6:00 PM",
-              "Tuesday: 10:00 AM – 6:00 PM",
-              "Wednesday: 10:00 AM – 6:00 PM",
-              "Thursday: 10:00 AM – 6:00 PM",
-              "Friday: 10:00 AM – 6:00 PM",
-              "Saturday: 10:00 AM – 6:00 PM",
-              "Sunday: Closed"
-            ]
-          },
-          types: ["motorcycle_dealer", "motorcycle_repair", "point_of_interest"]
-        },
-        {
-          id: "mock_4",
-          displayName: { text: "Royal Enfield Bullet Zone" },
-          formattedAddress: "Whitefield Main Road, Opposite Phoenix Mall, Bengaluru, Karnataka 560048",
-          location: {
-            latitude: lat - 0.008,
-            longitude: lng - 0.007
-          },
-          rating: 4.3,
-          userRatingCount: 315,
-          nationalPhoneNumber: "+91 80 2233 4455",
-          regularOpeningHours: {
-            openNow: true,
-            weekdayDescriptions: [
-              "Monday: 9:00 AM – 7:30 PM",
-              "Tuesday: 9:00 AM – 7:30 PM",
-              "Wednesday: 9:00 AM – 7:30 PM",
-              "Thursday: 9:00 AM – 7:30 PM",
-              "Friday: 9:00 AM – 7:30 PM",
-              "Saturday: 9:00 AM – 7:30 PM",
-              "Sunday: 10:00 AM – 4:00 PM"
-            ]
-          },
-          types: ["motorcycle_dealer", "motorcycle_repair", "point_of_interest"]
-        },
-        {
-          id: "mock_5",
-          displayName: { text: "The Helmet & Gear Co." },
-          formattedAddress: "Linking Road, Bandra West, Near KFC, Mumbai, Maharashtra 400050",
-          location: {
-            latitude: lat + 0.004,
-            longitude: lng + 0.011
-          },
-          rating: 4.7,
-          userRatingCount: 167,
-          nationalPhoneNumber: "+91 22 2640 1234",
-          regularOpeningHours: {
-            openNow: true,
-            weekdayDescriptions: [
-              "Monday: 10:30 AM – 9:00 PM",
-              "Tuesday: 10:30 AM – 9:00 PM",
-              "Wednesday: 10:30 AM – 9:00 PM",
-              "Thursday: 10:30 AM – 9:00 PM",
-              "Friday: 10:30 AM – 9:00 PM",
-              "Saturday: 10:30 AM – 9:00 PM",
-              "Sunday: 11:00 AM – 8:00 PM"
-            ]
-          },
-          types: ["motorcycle_parts", "point_of_interest"]
-        }
-      ];
+      return [];
     }
 
     async function getPlacesPlaceClass() {
@@ -13186,9 +13058,9 @@ document.getElementById('closeFuelVerification').addEventListener('click', () =>
         localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: results }));
         return results;
       } catch (err) {
-        console.warn('[Locator] Places searchByText completely failed. Returning mock service centers:', err.message);
-        showStoreToast('⚠️ Offline Mode: Loaded offline fallback workshops');
-        return getMockServiceCenters(lat, lng);
+        console.warn('[Locator] Places searchByText completely failed:', err.message);
+        showStoreToast('⚠️ Error: Unable to fetch live workshop data. Please check your connection.');
+        return [];
       }
     }
 
@@ -16347,9 +16219,10 @@ async function loadMotoBhaiEvents(force){
     }
     loading.style.display='none';renderEvents(_eventsCache);
   }catch(e){
-    console.warn('[EventsWeb] Fetch failed, falling back to mock data:', e);
-    _eventsCache = MOCK_EVENTS;
+    console.warn('[EventsWeb] Fetch failed:', e);
+    _eventsCache = [];
     loading.style.display='none';
+    showStoreToast('⚠️ Unable to fetch events at this time.');
     renderEvents(_eventsCache);
   }
 }
