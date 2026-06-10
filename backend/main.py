@@ -47,7 +47,14 @@ app = FastAPI(title="Moto Bhai India", version="1.1.0")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://motobhai.app")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_ORIGIN, "http://localhost:5173", "http://localhost:8000"],
+    allow_origins=[
+        FRONTEND_ORIGIN,
+        "https://motobhai-app.web.app",
+        "https://motobhai-app.firebaseapp.com",
+        "http://localhost:5173",
+        "http://localhost:8000",
+        "http://localhost:3000",
+    ],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     allow_credentials=False,
