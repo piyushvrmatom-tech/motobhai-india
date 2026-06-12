@@ -3004,8 +3004,8 @@ button:active:not(:disabled){transform:scale(.97)}
   </div>
 </div>
 
-<div id="recaptcha-container" style="display:none"></div>
-<div id="profile-recaptcha-container" style="display:none"></div>
+<div id="recaptcha-container"></div>
+<div id="profile-recaptcha-container"></div>
 <!-- Google Maps removed — custom autocomplete handles city search -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -15972,7 +15972,10 @@ async function loadMotoBhaiEvents(force){
       const d=await r.json();
       if(d.error)throw new Error(d.error);
       const rawEvents = d.events || [];
-      _eventsCache = rawEvents.map(normalizeEvent);
+      const junkNames = ['tours', 'rides', 'motorcycle categories', 'motoculture', 'no ride found', 'art of motorcycling', 'motoverse', 'motorcycles', 'personalise your ride', 'moto-inspired wear', 'moto-lifestyle essentials'];
+      _eventsCache = rawEvents
+        .filter(e => !junkNames.includes((e.eventName || e.title || '').toLowerCase().trim()))
+        .map(normalizeEvent);
     }
     loading.style.display='none';renderEvents(_eventsCache);
   }catch(e){
