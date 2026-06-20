@@ -55,7 +55,10 @@ def _init_rest():
         _project_id = info.get("project_id") or os.getenv("GCP_PROJECT", "motobhai-app")
         scopes = ["https://www.googleapis.com/auth/datastore"]
         _creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
-        _BASE_URL = f"https://firestore.googleapis.com/v1/projects/{_project_id}/databases/default/documents"
+        # NOTE: the default Firestore database id is the literal string "(default)"
+        # (with parentheses). Using "default" points at a non-existent database and
+        # makes every REST read/write 404 silently. URL-encode the parentheses.
+        _BASE_URL = f"https://firestore.googleapis.com/v1/projects/{_project_id}/databases/%28default%29/documents"
         log.info("Firestore REST client ready for project=%s", _project_id)
         return True
     except Exception as exc:
@@ -75,7 +78,7 @@ def _init_admin():
             return False
         info = json.loads(base64.b64decode(b64).decode("utf-8"))
         cred = fb_credentials.Certificate(info)
-        project_id = info.get("project_id", "motobhai-india")
+        project_id = info.get("project_id") or os.getenv("GCP_PROJECT", "motobhai-app")
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred, {"projectId": project_id})
         _admin_db = fb_firestore.client()

@@ -99,15 +99,36 @@ def create_plan(req: PlanRequest) -> PlanResponse:
 
     # 4. Merge splitter legs (authoritative) with Gemini's colour.
     ai_days = {d.get("day"): d for d in (ai.get("days_plan") or [])}
+
+    # The splitter emits synthetic "Day N overnight stop" placeholders when no
+    # real waypoints were supplied. Gemini knows Indian geography, so we ask it
+    # for a real `overnight_town` per day and substitute those names here, then
+    # thread them so each day's start == the previous day's overnight town.
+    def _is_placeholder(name: str) -> bool:
+        return "overnight stop" in (name or "").lower()
+
+    resolved_to: dict[int, str] = {}
+    for leg in plan.legs:
+        ai_day = ai_days.get(leg.day, {})
+        town = str(ai_day.get("overnight_town", "")).strip()
+        if _is_placeholder(leg.destination) and town and not _is_placeholder(town):
+            resolved_to[leg.day] = town
+        else:
+            resolved_to[leg.day] = leg.destination
+
     days_plan: list[DayPlan] = []
     for leg in plan.legs:
         ai_day = ai_days.get(leg.day, {})
+        leg_from = leg.origin
+        if _is_placeholder(leg_from) and (leg.day - 1) in resolved_to:
+            leg_from = resolved_to[leg.day - 1]
+        leg_to = resolved_to.get(leg.day, leg.destination)
         days_plan.append(
             DayPlan(
                 day=leg.day,
                 **{
-                    "from": leg.origin,
-                    "to": leg.destination,
+                    "from": leg_from,
+                    "to": leg_to,
                 },
                 km=leg.km,
                 eta_hours=float(ai_day.get("eta_hours", round(leg.km / 50, 1))),

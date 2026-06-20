@@ -24,6 +24,7 @@ OUTPUT SCHEMA (strict JSON, no extra fields):
       "from": string,              // MUST match leg.from exactly
       "to": string,                // MUST match leg.to exactly
       "km": number,                // MUST match leg.km exactly
+      "overnight_town": string,    // REAL Indian town/city where the rider sleeps at the END of this day's leg. For the final day this is the destination city itself. Never write "overnight stop" or a placeholder — always a real, recognisable place name on or near the route at the correct cumulative distance.
       "eta_hours": number,         // realistic riding time including breaks
       "elevation_gain_m": int,     // estimated total climb in metres
       "fuel_stops": [
