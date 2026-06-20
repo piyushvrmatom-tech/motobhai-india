@@ -4034,19 +4034,31 @@ button:active:not(:disabled){transform:scale(.97)}
         const totalOffset = 220;
         sosCountdownInterval = setInterval(() => {
           count--;
-          countdownNum.textContent = count;
-          const progress = (5 - count) / 5;
+          countdownNum.textContent = count > 0 ? count : '!';
+          const progress = (5 - Math.max(count, 0)) / 5;
           countdownCircle.style.strokeDashoffset = totalOffset * progress;
-          
+
           if (count <= 0) {
+            // SAFETY: do NOT auto-fire the SOS. The countdown is a visual cue only;
+            // sending an emergency alert must always be an explicit user action via
+            // the "SEND SOS NOW" button. Auto-sending risks false alarms.
             clearInterval(sosCountdownInterval);
-            fireSosEmergency(false);
+            countdownNum.textContent = '!';
+            if (sendNowBtn) {
+              sendNowBtn.textContent = 'SEND SOS NOW';
+              sendNowBtn.style.animation = 'pulse 1s infinite';
+            }
           }
         }, 1000);
       }
 
       function closeSosConfirmationModal() {
         if (sosCountdownInterval) clearInterval(sosCountdownInterval);
+        isSosFired = false;
+        if (sendNowBtn) {
+          sendNowBtn.textContent = 'SEND SOS NOW';
+          sendNowBtn.style.animation = '';
+        }
         modal.classList.remove('visible');
         setTimeout(() => {
           modal.style.display = 'none';
@@ -4185,7 +4197,14 @@ button:active:not(:disabled){transform:scale(.97)}
       const profMenuMarketplace = document.getElementById('profMenuMarketplace');
       if (profMenuMarketplace) {
         profMenuMarketplace.addEventListener('click', () => {
-          document.getElementById('buySellPage').style.display = 'block';
+          // Use the full opener so listings are actually initialised + fetched.
+          // Previously this only set display:block, leaving the grid blank.
+          if (typeof openBuySell === 'function') {
+            openBuySell();
+          } else {
+            document.getElementById('buySellPage').style.display = 'block';
+            if (typeof loadMarketplaceListings === 'function') loadMarketplaceListings();
+          }
         });
       }
       const profMenuStore = document.getElementById('profMenuStore');
@@ -5700,6 +5719,12 @@ button:active:not(:disabled){transform:scale(.97)}
           opt.addEventListener('click', () => {
             const bike = displayMatches[i];
             bikeInput.value = bike.n;
+            // Keep the "RIDE DETAILS" header label in sync with the selected bike
+            // so it no longer shows "No Bike Active" once a bike is chosen here.
+            if (bikeInputId === 'bikeInput') {
+              const quickNameEl = document.getElementById('quickActiveBikeName');
+              if (quickNameEl) quickNameEl.textContent = bike.n;
+            }
             if (mileageInput) {
               mileageInput.value = bike.m;
               mileageInput.style.borderColor = 'var(--primary)';
@@ -6615,7 +6640,7 @@ button:active:not(:disabled){transform:scale(.97)}
         } else if (day.distanceKm > usableRange) {
           fuelStopHTML = `
             <div style="margin-top:.75rem;background:rgba(229,62,62,0.06);border:1px solid rgba(229,62,62,0.18);border-radius:10px;padding:.6rem .8rem;font-size:.75rem;color:#c53030;line-height:1.5">
-              ⚠️ <strong>Range Warning:</strong> This day's leg is ${day.distanceKm} km — beyond your estimated usable range of <strong>${usableRange} km</strong>. A fuel stop is required!
+              ⚠️ <strong>Range Warning:</strong> This day's leg is ${Math.round(day.distanceKm)} km — beyond your estimated usable range of <strong>${usableRange} km</strong>. A fuel stop is required!
             </div>
           `;
         }
@@ -6627,11 +6652,11 @@ button:active:not(:disabled){transform:scale(.97)}
             <div class="day-header">
               <div class="day-num">${day.day}</div>
               <div class="day-route-txt">${day.from||''} to ${day.to||''}</div>
-              <div class="day-km-badge">${day.distanceKm||0} km</div>
+              <div class="day-km-badge">${Math.round(day.distanceKm||0)} km</div>
             </div>
             <div class="day-meta">
               <span class="day-meta-item">~${day.rideHours||0}h ride</span>
-              <span class="day-meta-item">${cumulKm} km from start</span>
+              <span class="day-meta-item">${Math.round(cumulKm)} km from start</span>
             </div>
             <div class="day-stops">
               ${fuelStopHTML}
@@ -6761,7 +6786,7 @@ button:active:not(:disabled){transform:scale(.97)}
         }
         return `
         <div style="page-break-inside:avoid;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fafafa">
-          <h3 style="margin:0 0 6px;color:#d96b1a;font-size:16px">Day ${d.day}: ${d.from} → ${d.to} (${d.distanceKm} km)</h3>
+          <h3 style="margin:0 0 6px;color:#d96b1a;font-size:16px">Day ${d.day}: ${d.from} → ${d.to} (${Math.round(d.distanceKm)} km)</h3>
           <p style="margin:2px 0;font-size:13px;color:#555">~${d.rideHours}h ride</p>
           ${d.fuelStop ? `<p style="margin:4px 0;font-size:13px">⛽ <strong>Fuel:</strong> ${d.fuelStop}</p>` : ''}
           ${d.food ? `<p style="margin:4px 0;font-size:13px">🍽 <strong>Food:</strong> ${d.food}</p>` : ''}
